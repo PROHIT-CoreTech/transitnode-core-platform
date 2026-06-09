@@ -1,12 +1,26 @@
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const express = require('express');
 const app = express();
+const connectDB = require('./config/nosql');
+
+// Connect to Database
+connectDB();
 const http = require('http');
 const server = http.createServer(app);
 const { Server } = require('socket.io');
 const io = new Server(server, { cors: { origin: '*' } });
 
+const cors = require('cors');
 // Middleware
+app.use(cors());
 app.use(express.json());
+
+// Log all incoming requests
+app.use((req, res, next) => {
+  console.log(`[BACKEND] Received ${req.method} request to ${req.url}`);
+  next();
+});
 
 // Routes
 const authRoutes = require('./routes/auth');
@@ -33,6 +47,6 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
 });

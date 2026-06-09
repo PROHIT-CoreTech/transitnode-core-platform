@@ -1,10 +1,10 @@
-const { pool } = require('../config/db');
+const User = require('../models/NoSQL/User');
 
 // GET /api/users
 exports.getAllUsers = async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, email, role FROM users ORDER BY id ASC');
-    res.status(200).json({ users: result.rows });
+    const users = await User.find({}, '-password').sort({ createdAt: -1 });
+    res.status(200).json({ users });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error fetching users' });
@@ -15,13 +15,13 @@ exports.getAllUsers = async (req, res) => {
 exports.getUserById = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query('SELECT id, email, role FROM users WHERE id = $1', [id]);
+    const user = await User.findById(id, '-password');
     
-    if (result.rows.length === 0) {
+    if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
     
-    res.status(200).json({ user: result.rows[0] });
+    res.status(200).json({ user });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error fetching user details' });
@@ -32,18 +32,19 @@ exports.getUserById = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { email, role } = req.body;
+    const { email, name, role } = req.body;
     
-    const result = await pool.query(
-      'UPDATE users SET email = COALESCE($1, email), role = COALESCE($2, role) WHERE id = $3 RETURNING id, email, role',
-      [email, role, id]
-    );
+    const user = await User.findByIdAndUpdate(
+      id,
+      { email, name, role },
+      { new: true, runValidators: true }
+    ).select('-password');
 
-    if (result.rows.length === 0) {
+    if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.status(200).json({ message: 'User updated', user: result.rows[0] });
+    res.status(200).json({ message: 'User updated', user });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error updating user' });
@@ -54,9 +55,9 @@ exports.updateUser = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query('DELETE FROM users WHERE id = $1 RETURNING id', [id]);
+    const user = await User.findByIdAndDelete(id);
     
-    if (result.rows.length === 0) {
+    if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
     
