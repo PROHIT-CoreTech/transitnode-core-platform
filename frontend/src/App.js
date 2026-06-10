@@ -7,6 +7,8 @@ import './index.css';
 const Login = React.lazy(() => import('./views/Login'));
 const Dashboard = React.lazy(() => import('./views/Dashboard'));
 const PublicTracker = React.lazy(() => import('./views/PublicTracker'));
+const AdminDashboard = React.lazy(() => import('./views/Admin/AdminDashboard'));
+import YardArrivals from './views/GateOperations/YardArrivals';
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useContext(AuthContext);
@@ -30,6 +32,16 @@ const AppRoutes = () => {
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin" element={
+          <ProtectedRoute>
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/yard-arrivals" element={
+          <ProtectedRoute>
+            <YardArrivals />
           </ProtectedRoute>
         } />
       </Routes>

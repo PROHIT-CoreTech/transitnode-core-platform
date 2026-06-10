@@ -1,5 +1,5 @@
 import React from 'react';
-import Barcode from 'react-barcode';
+import InvoiceTemplate from './InvoiceTemplate';
 
 const ShippingLabelModal = ({ shipment, onClose }) => {
   if (!shipment) return null;
@@ -21,55 +21,8 @@ const ShippingLabelModal = ({ shipment, onClose }) => {
         </div>
 
         {/* The Label Area to be Printed */}
-        <div id="printable-label" className="p-8 bg-white print:p-0 print:w-full print:h-full">
-          {/* Label Border */}
-          <div className="border-4 border-black p-6 rounded-md">
-            
-            {/* Tracking Header */}
-            <div className="text-center border-b-4 border-black pb-4 mb-4">
-              <p className="text-sm font-bold uppercase tracking-widest text-gray-600 mb-1">TransitNode Express</p>
-              <h1 className="text-5xl font-black tracking-tight">{shipment.trackingNumber}</h1>
-            </div>
-
-            {/* Addresses */}
-            <div className="flex justify-between border-b-2 border-black pb-4 mb-4">
-              <div className="w-1/2 pr-4 border-r-2 border-black">
-                <p className="text-xs font-bold text-gray-500 uppercase mb-1">From</p>
-                <p className="font-bold text-gray-800">{shipment.logistics?.sender?.name || 'N/A'}</p>
-                <p className="text-sm text-gray-600">{shipment.logistics?.sender?.phone || 'N/A'}</p>
-              </div>
-              <div className="w-1/2 pl-4">
-                <p className="text-xs font-bold text-gray-500 uppercase mb-1">To</p>
-                <p className="font-bold text-gray-800 text-lg">{shipment.logistics?.receiver?.name || 'N/A'}</p>
-                <p className="text-sm text-gray-600">{shipment.logistics?.receiver?.phone || 'N/A'}</p>
-              </div>
-            </div>
-
-            {/* Details */}
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <p className="text-sm"><span className="font-bold">Weight:</span> {shipment.logistics?.package?.weight_kg || 1} kg</p>
-                <p className="text-sm"><span className="font-bold">Dims:</span> {shipment.logistics?.package?.dimensions || 'N/A'}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs font-bold text-gray-500 uppercase">Date Issued</p>
-                <p className="text-sm font-bold">{new Date().toLocaleDateString()}</p>
-              </div>
-            </div>
-
-            {/* Live Generated Barcode */}
-            <div className="w-full flex items-center justify-center mt-2">
-              <Barcode 
-                value={shipment.trackingNumber} 
-                height={65} 
-                width={2} 
-                fontSize={16} 
-                margin={0} 
-                displayValue={false} 
-              />
-            </div>
-
-          </div>
+        <div id="printable-label" className="bg-white print:w-full print:h-full">
+          <InvoiceTemplate data={shipment} />
         </div>
 
         {/* Footer Actions - Not printed */}
@@ -81,7 +34,12 @@ const ShippingLabelModal = ({ shipment, onClose }) => {
             Cancel
           </button>
           <button 
-            onClick={() => window.print()}
+            onClick={() => {
+              const originalTitle = document.title;
+              document.title = `TNE_${shipment.trackingNumber}`;
+              window.print();
+              document.title = originalTitle;
+            }}
             className="px-6 py-2 bg-green-600 text-white font-bold rounded shadow hover:bg-green-700 transition"
           >
             Print Label

@@ -2,14 +2,17 @@ const ShipmentLedger = require('../models/NoSQL/ShipmentLedger');
 
 exports.createShipment = async (req, res) => {
   try {
-    const { senderName, senderPhone, receiverName, receiverPhone, weight_kg, dimensions } = req.body;
+    const { 
+      senderName, senderPhone, receiverName, receiverPhone, weight_kg, dimensions,
+      vehicleNumber, vehicleType, driverName, driverPhone, origin, destination, commodityType 
+    } = req.body;
     
-    // Generate TN-YYYY-XXXXX tracking ID
-    const trackingNumber = 'TN-' + new Date().getFullYear() + '-' + Math.floor(10000 + Math.random() * 90000);
+    // Generate TR-YYYY-XXXXX tracking ID
+    const trackingNumber = 'TR-' + new Date().getFullYear() + '-' + Math.floor(10000 + Math.random() * 90000);
     
     // Base estimation logic
-    const baseRateApplied = 5.5; // Example: $5.50 per kg
-    const subtotal = (weight_kg || 1) * baseRateApplied;
+    const baseRateApplied = 5000; // Flat transport rate default
+    const subtotal = baseRateApplied;
     
     const newShipment = await ShipmentLedger.create({
       trackingNumber,
@@ -20,7 +23,16 @@ exports.createShipment = async (req, res) => {
       logistics: {
         sender: { name: senderName, phone: senderPhone },
         receiver: { name: receiverName, phone: receiverPhone },
-        package: { weight_kg, dimensions }
+        package: { weight_kg, dimensions },
+        transport: {
+          vehicleNumber: vehicleNumber ? vehicleNumber.toUpperCase() : undefined,
+          vehicleType,
+          driverName,
+          driverPhone,
+          origin,
+          destination,
+          commodityType
+        }
       },
       accounting: {
         baseRateApplied,
@@ -37,7 +49,28 @@ exports.createShipment = async (req, res) => {
 
 exports.listShipments = async (req, res) => {
   try {
-    const shipments = await ShipmentLedger.find().sort({ 'metadata.createdAt': -1 }).limit(50);
+    const { timeRange } = req.query;
+    let query = {};
+    const now = new Date();
+
+    if (timeRange && timeRange !== 'all') {
+      let startDate = new Date();
+      if (timeRange === 'day') {
+        startDate.setDate(now.getDate() - 1);
+      } else if (timeRange === 'week') {
+        startDate.setDate(now.getDate() - 7);
+      } else if (timeRange === 'month') {
+        startDate.setMonth(now.getMonth() - 1);
+      } else if (timeRange === '6month') {
+        startDate.setMonth(now.getMonth() - 6);
+      } else if (timeRange === 'year') {
+        startDate.setFullYear(now.getFullYear() - 1);
+      }
+      query['metadata.createdAt'] = { $gte: startDate };
+    }
+
+    const limitCount = timeRange === 'all' ? 100 : 500;
+    const shipments = await ShipmentLedger.find(query).sort({ 'metadata.createdAt': -1 }).limit(limitCount);
     res.status(200).json({ shipments });
   } catch (error) {
     console.error(error);

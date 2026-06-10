@@ -1,0 +1,566 @@
+import React, { useState, useEffect, useContext, useRef } from 'react';
+import axios from 'axios';
+import { AuthContext } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import io from 'socket.io-client';
+import {
+  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
+import MapView from '../../components/MapView';
+import ComplianceVault from './ComplianceVault';
+import ShipmentTransactions from './ShipmentTransactions';
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+
+const AdminDashboard = () => {
+  const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const token = localStorage.getItem('token');
+  
+  const [activeTab, setActiveTab] = useState('ANALYTICS'); // ANALYTICS, MANAGEMENT, MAP
+  const [isDemoActive, setIsDemoActive] = useState(false);
+  const [timeRange, setTimeRange] = useState('all');
+  const [metrics, setMetrics] = useState({
+    totalRevenue: 0,
+    netFleetMargin: 0,
+    activeFleet: 0,
+    maintenanceFleet: 0
+  });
+  const [charts, setCharts] = useState({
+    revenueOverTime: [],
+    statusData: [],
+    paymentMethodsData: []
+  });
+  const [loading, setLoading] = useState(true);
+
+  // Map / Fleet State
+  const [vehicles, setVehicles] = useState({});
+  const [vehicleHistory, setVehicleHistory] = useState({});
+  const [selectedVehicleId, setSelectedVehicleId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isMapConnected, setIsMapConnected] = useState(false);
+  const socketRef = useRef(null);
+
+  // Forms State
+  const [userForm, setUserForm] = useState({ name: '', email: '', password: '', role: 'RECEPTIONIST' });
+  const [rateForm, setRateForm] = useState({ basePricePerKg: '', volumetricDivisor: '', fuelSurchargeRate: '' });
+  const [deviceForm, setDeviceForm] = useState({ 
+    vehicleNumber: '', 
+    vehicleType: 'Container', 
+    hardwareIMEI: '', 
+    driverName: '', 
+    fitnessExpiry: '', 
+    currentStatus: 'YARD' 
+  });
+
+  useEffect(() => {
+    if (!token || user?.role !== 'ADMIN') {
+      navigate('/login');
+      return;
+    }
+    fetchAnalytics();
+    fetchRates();
+
+    // Socket Initialization
+    socketRef.current = io('http://localhost:3000');
+
+    socketRef.current.on('connect', () => {
+      setIsMapConnected(true);
+    });
+
+    socketRef.current.on('telemetry_update', (data) => {
+      setVehicles((prev) => ({
+        ...prev,
+        [data.imei]: data
+      }));
+      setVehicleHistory((prev) => {
+        const currentHistory = prev[data.imei] || [];
+        return {
+          ...prev,
+          [data.imei]: [...currentHistory, [data.location.lat, data.location.lng]]
+        };
+      });
+    });
+
+    socketRef.current.on('location-update', (data) => {
+      if (data.status === 'YARD') {
+        setVehicles(prev => {
+          const updated = { ...prev };
+          const imei = Object.keys(updated).find(key => updated[key].vehicleRegistration === data.vehicleId);
+          if (imei) {
+            delete updated[imei];
+          }
+          return updated;
+        });
+      }
+    });
+
+    socketRef.current.on('disconnect', () => {
+      setIsMapConnected(false);
+    });
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
+  }, [token, user, navigate]);
+
+  useEffect(() => {
+    if (token && user?.role === 'ADMIN') {
+      fetchAnalytics();
+    }
+  }, [timeRange]);
+
+  const fetchAnalytics = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`http://localhost:3000/api/admin/analytics/revenue?timeRange=${timeRange}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMetrics(res.data.metrics);
+      setCharts(res.data.charts);
+    } catch (error) {
+      console.error('Failed to fetch analytics', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchRates = async () => {
+    try {
+      const res = await axios.get('http://localhost:3000/api/admin/rates', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setRateForm({
+        basePricePerKg: res.data.basePricePerKg || '',
+        volumetricDivisor: res.data.volumetricDivisor || '',
+        fuelSurchargeRate: res.data.fuelSurchargeRate || ''
+      });
+    } catch (error) {
+      console.error('Failed to fetch rates', error);
+    }
+  };
+
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post('http://localhost:3000/api/admin/users/create', userForm, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert('User created successfully');
+      setUserForm({ name: '', email: '', password: '', role: 'RECEPTIONIST' });
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to create user');
+    }
+  };
+
+  const handleUpdateRates = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put('http://localhost:3000/api/admin/rates/update', rateForm, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert('Rates updated successfully');
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to update rates');
+    }
+  };
+
+  const handleRegisterFleet = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post('http://localhost:3000/api/admin/fleet/register', deviceForm, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert('Fleet asset registered successfully');
+      setDeviceForm({ vehicleNumber: '', vehicleType: 'Container', hardwareIMEI: '', driverName: '', fitnessExpiry: '', currentStatus: 'YARD' });
+      fetchAnalytics(); // refresh metrics
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to register fleet asset');
+    }
+  };
+
+  const toggleDemoMode = async () => {
+    try {
+      const newState = !isDemoActive;
+      await axios.post('http://localhost:3000/api/admin/demo/toggle', { active: newState }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setIsDemoActive(newState);
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to toggle demo mode');
+    }
+  };
+
+  const formatVehicleNumber = (val) => {
+    let clean = val.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    if (clean.length === 0) return '';
+    let res = clean.substring(0, 2);
+    if (clean.length > 2) res += ' ' + clean.substring(2, 4);
+    if (clean.length > 4) {
+      let remaining = clean.substring(4);
+      let letters = '';
+      let numbers = '';
+      for(let i=0; i<remaining.length; i++) {
+        if (/[A-Z]/.test(remaining[i]) && numbers.length === 0) {
+          letters += remaining[i];
+        } else if (/[0-9]/.test(remaining[i])) {
+          numbers += remaining[i];
+        }
+      }
+      if (letters.length > 0) res += ' ' + letters.substring(0, 3);
+      if (numbers.length > 0) res += ' ' + numbers.substring(0, 4);
+    }
+    return res;
+  };
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div></div>;
+  }
+
+  return (
+    <div className="flex h-screen bg-slate-50 font-sans text-slate-800">
+      {/* Sidebar */}
+      <aside className="w-64 bg-slate-900 text-white flex flex-col shadow-xl">
+        <div className="p-6">
+          <h1 className="text-2xl font-bold tracking-tight text-white mb-2">TransitNode</h1>
+          <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Command Center</p>
+        </div>
+        
+        <nav className="flex-1 mt-6">
+          <div className="px-4 space-y-2">
+            <button 
+              onClick={() => setActiveTab('ANALYTICS')}
+              className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'ANALYTICS' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
+            >
+              Analytics
+            </button>
+            <button 
+              onClick={() => setActiveTab('MANAGEMENT')}
+              className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'MANAGEMENT' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
+            >
+              User & Rates
+            </button>
+            <button 
+              onClick={() => setActiveTab('MAP')}
+              className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'MAP' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
+            >
+              Live Fleet Map
+            </button>
+            <button 
+              onClick={() => setActiveTab('COMPLIANCE')}
+              className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'COMPLIANCE' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
+            >
+              Compliance Vault
+            </button>
+            <button 
+              onClick={() => setActiveTab('TRANSACTIONS')}
+              className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'TRANSACTIONS' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
+            >
+              Shipment Ledger
+            </button>
+          </div>
+        </nav>
+        <div className="p-4 border-t border-slate-800">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold">A</div>
+            <div>
+              <p className="text-sm font-medium">{user?.name}</p>
+              <p className="text-xs text-slate-400">{user?.role}</p>
+            </div>
+          </div>
+          <button onClick={logout} className="w-full py-2 px-4 bg-slate-800 hover:bg-red-500 hover:text-white transition-colors rounded text-sm text-center">Logout</button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="p-8">
+          
+          {/* Demo Mode Toggle & Banner */}
+          <div className="mb-6 flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+            <div className="flex items-center space-x-3">
+              <div className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer ${isDemoActive ? 'bg-indigo-600' : 'bg-slate-300'}`} onClick={toggleDemoMode}>
+                <div className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ease-in-out ${isDemoActive ? 'translate-x-6' : ''}`}></div>
+              </div>
+              <span className="font-bold text-slate-800">⚡ Activate System Demo Mode</span>
+            </div>
+          </div>
+
+          {isDemoActive && (
+            <div className="mb-6 bg-amber-100 border border-amber-300 text-amber-800 px-4 py-3 rounded-xl shadow-sm animate-pulse flex items-center">
+              <span className="mr-2">⚠️</span>
+              <p className="font-medium">System running in simulated environment. Mocking live tracking streams.</p>
+            </div>
+          )}
+
+          {/* Top Metrics Bar */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col transition-all hover:shadow-md">
+              <span className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">Gross Trip Revenue</span>
+              <span className="text-3xl font-bold text-slate-900">₹{metrics.totalRevenue.toLocaleString('en-IN')}</span>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col transition-all hover:shadow-md">
+              <span className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">Net Fleet Margin</span>
+              <span className="text-3xl font-bold text-emerald-600">{metrics.netFleetMargin}%</span>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col transition-all hover:shadow-md">
+              <span className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">Active Fleet on Road</span>
+              <span className="text-3xl font-bold text-indigo-600">{metrics.activeFleet}</span>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col transition-all hover:shadow-md">
+              <span className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">In Maintenance</span>
+              <span className="text-3xl font-bold text-amber-500">{metrics.maintenanceFleet}</span>
+            </div>
+          </div>
+
+          {/* Views */}
+          {activeTab === 'ANALYTICS' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h2 className="text-xl font-bold text-slate-800">Analytics Overview</h2>
+                <div className="flex space-x-1 bg-white p-1 rounded-lg border border-slate-200 shadow-sm">
+                  {['daily', 'weekly', 'monthly', 'yearly', 'all'].map(tr => (
+                    <button
+                      key={tr}
+                      onClick={() => setTimeRange(tr)}
+                      className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-md transition-colors ${timeRange === tr ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:bg-slate-100'}`}
+                    >
+                      {tr}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                {/* Line Chart */}
+                <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                  <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wider">Net Profitability by Route</h3>
+                  <div className="h-72">
+                    <LineChart width={600} height={250} data={charts.revenueOverTime}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748B'}} />
+                      <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748B'}} tickFormatter={(value) => `₹${value}`} />
+                      <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                      <Line type="monotone" dataKey="revenue" stroke="#4F46E5" strokeWidth={3} dot={{r: 4, strokeWidth: 2}} activeDot={{r: 6}} />
+                    </LineChart>
+                  </div>
+                </div>
+
+                {/* Donut Chart */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                  <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wider">Payment Methods</h3>
+                  <div className="h-72">
+                    <PieChart width={300} height={250}>
+                      <Pie
+                        data={charts.paymentMethodsData}
+                        innerRadius={60}
+                        outerRadius={90}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {charts.paymentMethodsData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend verticalAlign="bottom" height={36}/>
+                    </PieChart>
+                  </div>
+                </div>
+
+                {/* Bar Chart */}
+                <div className="lg:col-span-3 bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                  <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wider">Fleet Utilization</h3>
+                  <div className="h-72">
+                    <BarChart width={900} height={250} data={charts.statusData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748B'}} />
+                      <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748B'}} />
+                      <Tooltip cursor={{fill: '#F1F5F9'}} />
+                      <Bar dataKey="count" fill="#0EA5E9" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'MANAGEMENT' && (
+            <div className="space-y-8">
+              <h2 className="text-xl font-bold text-slate-800">Management Controls</h2>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* User Provisioning */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                  <h3 className="text-lg font-bold text-slate-800 mb-4">Provision New User</h3>
+                  <form onSubmit={handleCreateUser} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+                      <input type="text" required value={userForm.name} onChange={e => setUserForm({...userForm, name: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                      <input type="email" required value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                      <input type="password" required value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+                      <select value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border bg-white">
+                        <option value="RECEPTIONIST">Receptionist</option>
+                        <option value="ACCOUNTANT">Accountant</option>
+                        <option value="ADMIN">Admin</option>
+                      </select>
+                    </div>
+                    <button type="submit" className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition font-medium">Create User</button>
+                  </form>
+                </div>
+
+                {/* Rates config */}
+                <div className="space-y-8">
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                    <h3 className="text-lg font-bold text-slate-800 mb-4">Rate Card Configuration</h3>
+                    <form onSubmit={handleUpdateRates} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Base Price Per KG (₹)</label>
+                        <input type="number" required value={rateForm.basePricePerKg} onChange={e => setRateForm({...rateForm, basePricePerKg: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Volumetric Divisor</label>
+                        <input type="number" required value={rateForm.volumetricDivisor} onChange={e => setRateForm({...rateForm, volumetricDivisor: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Fuel Surcharge Rate (%)</label>
+                        <input type="number" required value={rateForm.fuelSurchargeRate} onChange={e => setRateForm({...rateForm, fuelSurchargeRate: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                      </div>
+                      <button type="submit" className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition font-medium">Update Rates</button>
+                    </form>
+                  </div>
+
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                    <h3 className="text-lg font-bold text-slate-800 mb-4">Register Fleet Asset</h3>
+                    <form onSubmit={handleRegisterFleet} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Vehicle Registration Number</label>
+                        <input type="text" required placeholder="e.g. MH 12 AB 1234" value={deviceForm.vehicleNumber} onChange={e => setDeviceForm({...deviceForm, vehicleNumber: formatVehicleNumber(e.target.value)})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border uppercase font-mono" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Vehicle Type</label>
+                        <select value={deviceForm.vehicleType} onChange={e => setDeviceForm({...deviceForm, vehicleType: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border bg-white">
+                          <option value="Container">Container</option>
+                          <option value="Open Truck">Open Truck</option>
+                          <option value="Trailer">Trailer</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Hardware IMEI</label>
+                        <input type="text" required value={deviceForm.hardwareIMEI} onChange={e => setDeviceForm({...deviceForm, hardwareIMEI: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Assigned Driver Name</label>
+                        <input type="text" required value={deviceForm.driverName} onChange={e => setDeviceForm({...deviceForm, driverName: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Fitness Expiry Date</label>
+                        <input type="date" value={deviceForm.fitnessExpiry} onChange={e => setDeviceForm({...deviceForm, fitnessExpiry: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Current Status</label>
+                        <select value={deviceForm.currentStatus} onChange={e => setDeviceForm({...deviceForm, currentStatus: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border bg-white">
+                          <option value="YARD">YARD (Idle)</option>
+                          <option value="ON_TRIP">ON_TRIP (Active)</option>
+                          <option value="MAINTENANCE">MAINTENANCE</option>
+                        </select>
+                      </div>
+                      <button type="submit" className="w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 transition font-medium">Register Asset</button>
+                    </form>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'MAP' && (
+            <div className="flex h-[calc(100vh-14rem)] gap-6">
+              {/* Left Sidebar */}
+              <div className="w-1/4 min-w-[320px] bg-white rounded-xl shadow-sm border border-slate-100 flex flex-col overflow-hidden">
+                <div className="p-4 border-b border-slate-100 bg-slate-50">
+                  <h3 className="font-bold text-slate-800 mb-3">Live Fleet Status</h3>
+                  <input 
+                    type="text" 
+                    placeholder="Search by Vehicle Plate or Driver..." 
+                    className="w-full text-sm p-2 border border-slate-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                  {Object.values(vehicles).filter(v => 
+                    v.vehicleRegistration.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                    v.driverName.toLowerCase().includes(searchTerm.toLowerCase())
+                  ).map(v => {
+                    const isSelected = selectedVehicleId === v.imei;
+                    const isMoving = v.speed > 0;
+                    return (
+                      <div 
+                        key={v.imei}
+                        onClick={() => setSelectedVehicleId(v.imei)}
+                        className={`p-3 rounded-lg border cursor-pointer transition-all ${isSelected ? 'border-indigo-500 bg-indigo-50 shadow-md' : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'}`}
+                      >
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="font-bold text-slate-800">{v.vehicleRegistration}</span>
+                          <div className="relative flex h-3 w-3">
+                            {isMoving && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
+                            <span className={`relative inline-flex rounded-full h-3 w-3 ${isMoving ? 'bg-emerald-500' : 'bg-orange-500'}`}></span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-slate-600">{v.driverName}</span>
+                          <span className="font-medium text-slate-800">{v.speed} km/h</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {Object.keys(vehicles).length === 0 && (
+                    <div className="p-4 text-center text-slate-500 text-sm">Waiting for telemetry data...</div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Right Content Area */}
+              <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden relative">
+                <MapView 
+                  vehicles={vehicles} 
+                  vehicleHistory={vehicleHistory} 
+                  selectedVehicleId={selectedVehicleId} 
+                  isConnected={isMapConnected} 
+                />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'COMPLIANCE' && (
+            <div className="w-full h-full">
+              <ComplianceVault />
+            </div>
+          )}
+
+          {activeTab === 'TRANSACTIONS' && (
+            <div className="w-full h-full animate-fade-in">
+              <ShipmentTransactions />
+            </div>
+          )}
+
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default AdminDashboard;

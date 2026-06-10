@@ -9,8 +9,8 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check local storage on initial load
-    const storedToken = localStorage.getItem('transitnode_token');
-    const storedUser = localStorage.getItem('transitnode_user');
+    const storedToken = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
     
     if (storedToken && storedUser) {
       setToken(storedToken);
@@ -20,15 +20,15 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (tokenData, userData) => {
-    localStorage.setItem('transitnode_token', tokenData);
-    localStorage.setItem('transitnode_user', JSON.stringify(userData));
+    localStorage.setItem('token', tokenData);
+    localStorage.setItem('user', JSON.stringify(userData));
     setToken(tokenData);
     setUser(userData);
   };
 
   const logout = () => {
-    localStorage.removeItem('transitnode_token');
-    localStorage.removeItem('transitnode_user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setToken(null);
     setUser(null);
   };

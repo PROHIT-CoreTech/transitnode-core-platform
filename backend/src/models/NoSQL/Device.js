@@ -1,0 +1,39 @@
+const mongoose = require('mongoose');
+
+const deviceSchema = new mongoose.Schema(
+  {
+    imei: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+    },
+    vehicleRegistration: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    vehicleType: {
+      type: String,
+      required: true,
+      default: 'Container'
+    },
+    driverName: {
+      type: String,
+      required: true,
+    },
+    fitnessExpiry: {
+      type: Date
+    },
+    status: {
+      type: String,
+      enum: ['YARD', 'ON_TRIP', 'MAINTENANCE', 'ACTIVE', 'INACTIVE'], // Keep ACTIVE/INACTIVE for backwards compatibility just in case
+      default: 'YARD',
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+module.exports = mongoose.model('Device', deviceSchema);

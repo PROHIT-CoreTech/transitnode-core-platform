@@ -9,9 +9,13 @@ const BillingDashboard = () => {
   
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   
-  // Calculation State
-  const [baseRate, setBaseRate] = useState(50);
-  const [fuelSurcharge, setFuelSurcharge] = useState(0);
+  // Freight Calculation State
+  const [baseFreightRate, setBaseFreightRate] = useState(45000);
+  const [driverAdvanceCash, setDriverAdvanceCash] = useState(0);
+  const [fuelVoucherAmount, setFuelVoucherAmount] = useState(0);
+  const [tollAllowance, setTollAllowance] = useState(0);
+  const [rcmApplied, setRcmApplied] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [processing, setProcessing] = useState(false);
   const [printData, setPrintData] = useState(null);
 
@@ -31,51 +35,50 @@ const BillingDashboard = () => {
     }
   };
 
+  const fetchRates = async () => {
+    // Global rates are less relevant here, but keeping for compatibility if needed.
+    // We default baseFreightRate to 45000 for transport.
+  };
+
   useEffect(() => {
     fetchInvoices();
+    fetchRates();
   }, []);
 
-  // Volumetric Calculation Utility
-  let actualWeight = 0;
-  let volumetricWeight = 0;
-  let billableWeight = 0;
-
-  if (selectedInvoice) {
-    actualWeight = selectedInvoice.logistics?.package?.weight_kg || 0;
-    
-    // Parse dimensions (e.g. "10x20x30")
-    const dims = selectedInvoice.logistics?.package?.dimensions || '0x0x0';
-    const [l, w, h] = dims.split('x').map(n => Number(n) || 0);
-    volumetricWeight = (l * w * h) / 5000;
-    
-    // If dimensions are 0 (e.g., missing), fallback to actual weight completely
-    if (l === 0 && w === 0 && h === 0) {
-      volumetricWeight = 0;
+  // Reset form inputs when a new shipment is selected
+  useEffect(() => {
+    if (selectedInvoice) {
+      setBaseFreightRate(45000);
+      setDriverAdvanceCash(0);
+      setFuelVoucherAmount(0);
+      setTollAllowance(0);
+      setRcmApplied(false);
+      setPaymentMethod('CASH');
     }
-    
-    billableWeight = Math.max(actualWeight, volumetricWeight);
-  }
+  }, [selectedInvoice]);
 
-  const baseSubtotal = billableWeight * Number(baseRate || 0);
-  const surcharge = Number(fuelSurcharge || 0);
-  const taxableAmount = baseSubtotal + surcharge;
-  
-  const gstAmount = taxableAmount * 0.18;
+  // B2B Freight Calculation Utility
+  const baseRate = Number(baseFreightRate) || 0;
+  const gstRate = rcmApplied ? 0.05 : 0.18;
+  const gstAmount = baseRate * gstRate;
   const cgst = gstAmount / 2;
   const sgst = gstAmount / 2;
   
-  const grandTotal = taxableAmount + gstAmount;
+  const grandTotal = baseRate + gstAmount;
 
   const handleSettle = async () => {
     if (!selectedInvoice) return;
     setProcessing(true);
     try {
       const payload = {
-        baseRateApplied: Number(baseRate),
-        subtotal: baseSubtotal,
-        fuelSurcharge: surcharge,
+        baseFreightRate: baseRate,
+        driverAdvanceCash: Number(driverAdvanceCash),
+        fuelVoucherAmount: Number(fuelVoucherAmount),
+        tollAllowance: Number(tollAllowance),
+        rcmApplied,
         gstAmount,
-        grandTotal
+        grandTotalToClient: grandTotal,
+        paymentMethod
       };
       
       const token = localStorage.getItem('token');
@@ -87,21 +90,24 @@ const BillingDashboard = () => {
       setPrintData({
         ...selectedInvoice,
         calculated: {
-          actualWeight,
-          volumetricWeight,
-          billableWeight,
-          baseRate: Number(baseRate),
-          baseSubtotal,
-          fuelSurcharge: surcharge,
+          baseFreightRate: baseRate,
+          driverAdvanceCash: Number(driverAdvanceCash),
+          fuelVoucherAmount: Number(fuelVoucherAmount),
+          tollAllowance: Number(tollAllowance),
+          rcmApplied,
           cgst,
           sgst,
+          gstAmount,
           grandTotal
         }
       });
 
       // Timeout allows React to render the InvoiceTemplate before calling print
       setTimeout(() => {
+        const originalTitle = document.title;
+        document.title = `TNE_${selectedInvoice.trackingNumber}`;
         window.print();
+        document.title = originalTitle;
         // Clear selection and refresh queue
         setSelectedInvoice(null);
         setPrintData(null);
@@ -148,7 +154,8 @@ const BillingDashboard = () => {
                   <span className="font-mono text-sm font-bold text-blue-400">{inv.trackingNumber}</span>
                   <span className="text-[10px] bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded border border-yellow-500/30">PENDING</span>
                 </div>
-                <div className="text-xs text-gray-300 truncate">{inv.logistics?.sender?.name} → {inv.logistics?.receiver?.name}</div>
+                <div className="text-xs text-gray-300 truncate font-bold">{inv.logistics?.transport?.origin || 'Unknown'} → {inv.logistics?.transport?.destination || 'Unknown'}</div>
+                <div className="text-[10px] text-gray-400 mt-1">{inv.logistics?.transport?.vehicleType || 'Unknown Vehicle'} | {inv.logistics?.transport?.vehicleNumber || 'Unregistered'}</div>
               </div>
             ))
           )}
@@ -176,56 +183,60 @@ const BillingDashboard = () => {
             {/* Metrics Breakdown */}
             <div className="grid grid-cols-2 gap-6">
               
-              {/* Volumetric Section */}
+              {/* Freight Financials */}
               <div className="bg-gray-800/30 p-4 rounded-xl border border-gray-700/50 space-y-4">
-                <h4 className="text-sm font-bold text-gray-400 tracking-wider">WEIGHT ANALYSIS</h4>
-                
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-500">Actual Weight</span>
-                  <span className="font-mono text-white">{actualWeight.toFixed(2)} kg</span>
+                <div className="flex justify-between items-center">
+                  <h4 className="text-sm font-bold text-gray-400 tracking-wider">FREIGHT FINANCIALS</h4>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-gray-500">RCM APPLIED (5%)</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" checked={rcmApplied} onChange={() => setRcmApplied(!rcmApplied)} className="sr-only peer" />
+                      <div className="w-9 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+                    </label>
+                  </div>
                 </div>
                 
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-500">Dimensions (LxWxH)</span>
-                  <span className="font-mono text-white">{selectedInvoice.logistics?.package?.dimensions || 'N/A'}</span>
-                </div>
-                
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-500">Volumetric Weight</span>
-                  <span className="font-mono text-white">{volumetricWeight.toFixed(2)} kg</span>
-                </div>
-
-                <div className="border-t border-gray-700 pt-3 flex justify-between items-center">
-                  <span className="text-sm font-bold text-blue-400">Billable Weight</span>
-                  <span className="font-mono font-bold text-lg text-blue-400">{billableWeight.toFixed(2)} kg</span>
+                  <span className="text-gray-500 font-bold">Base Freight Rate (₹)</span>
+                  <input 
+                    type="number" 
+                    value={baseFreightRate}
+                    onChange={e => setBaseFreightRate(e.target.value)}
+                    className="w-32 bg-gray-900 border border-gray-600 rounded px-2 py-1 text-right focus:border-blue-500 focus:outline-none font-mono text-white text-lg font-bold"
+                  />
                 </div>
               </div>
 
-              {/* Financial Editor */}
+              {/* Expense Editor */}
               <div className="bg-gray-800/30 p-4 rounded-xl border border-gray-700/50 space-y-4">
-                <h4 className="text-sm font-bold text-gray-400 tracking-wider">BILLING MODIFIERS</h4>
+                <h4 className="text-sm font-bold text-gray-400 tracking-wider">TRIP EXPENSES (DRIVER ALLOCATION)</h4>
                 
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-500">Base Rate (₹/kg)</span>
+                  <span className="text-gray-500">Driver Advance Cash (₹)</span>
                   <input 
                     type="number" 
-                    value={baseRate}
-                    onChange={e => setBaseRate(e.target.value)}
+                    value={driverAdvanceCash}
+                    onChange={e => setDriverAdvanceCash(e.target.value)}
                     className="w-24 bg-gray-900 border border-gray-600 rounded px-2 py-1 text-right focus:border-blue-500 focus:outline-none font-mono text-white"
                   />
                 </div>
                 
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-500">Base Subtotal</span>
-                  <span className="font-mono text-white">₹{baseSubtotal.toFixed(2)}</span>
+                  <span className="text-gray-500">Fuel Voucher Amount (₹)</span>
+                  <input 
+                    type="number" 
+                    value={fuelVoucherAmount}
+                    onChange={e => setFuelVoucherAmount(e.target.value)}
+                    className="w-24 bg-gray-900 border border-gray-600 rounded px-2 py-1 text-right focus:border-blue-500 focus:outline-none font-mono text-white"
+                  />
                 </div>
                 
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-500">Fuel Surcharge (₹)</span>
+                  <span className="text-gray-500">Toll Allocation (₹)</span>
                   <input 
                     type="number" 
-                    value={fuelSurcharge}
-                    onChange={e => setFuelSurcharge(e.target.value)}
+                    value={tollAllowance}
+                    onChange={e => setTollAllowance(e.target.value)}
                     className="w-24 bg-gray-900 border border-gray-600 rounded px-2 py-1 text-right focus:border-blue-500 focus:outline-none font-mono text-white"
                   />
                 </div>
@@ -235,21 +246,37 @@ const BillingDashboard = () => {
             {/* Grand Total Breakdown */}
             <div className="bg-[#0B0E14] p-5 rounded-xl border border-gray-700 shadow-inner space-y-3">
               <div className="flex justify-between text-sm text-gray-400">
-                <span>Taxable Amount</span>
-                <span className="font-mono">₹{taxableAmount.toFixed(2)}</span>
+                <span>Taxable Amount (Base Freight)</span>
+                <span className="font-mono">₹{baseRate.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
               </div>
               <div className="flex justify-between text-sm text-gray-400">
-                <span>CGST (9%)</span>
-                <span className="font-mono">+ ₹{cgst.toFixed(2)}</span>
+                <span>CGST ({rcmApplied ? '2.5%' : '9%'})</span>
+                <span className="font-mono">+ ₹{cgst.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
               </div>
               <div className="flex justify-between text-sm text-gray-400">
-                <span>SGST (9%)</span>
-                <span className="font-mono">+ ₹{sgst.toFixed(2)}</span>
+                <span>SGST ({rcmApplied ? '2.5%' : '9%'})</span>
+                <span className="font-mono">+ ₹{sgst.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
               </div>
               <div className="border-t border-gray-700 pt-3 flex justify-between items-end">
                 <span className="text-lg font-bold text-white">Grand Total</span>
-                <span className="text-3xl font-mono font-bold text-green-400">₹{grandTotal.toFixed(2)}</span>
+                <span className="text-3xl font-mono font-bold text-green-400">₹{grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
               </div>
+            </div>
+
+            {/* Payment Method Selector */}
+            <div className="bg-gray-800/30 p-4 rounded-xl border border-gray-700/50 flex justify-between items-center">
+              <span className="text-sm font-bold text-gray-400 tracking-wider">PAYMENT METHOD</span>
+              <select 
+                value={paymentMethod}
+                onChange={e => setPaymentMethod(e.target.value)}
+                className="bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:border-blue-500 focus:outline-none"
+              >
+                <option value="CASH">Cash</option>
+                <option value="UPI">UPI</option>
+                <option value="CREDIT_CARD">Credit Card</option>
+                <option value="NET_BANKING">Net Banking</option>
+                <option value="CORPORATE_ACCOUNT">Corporate Account</option>
+              </select>
             </div>
 
             {/* Action */}

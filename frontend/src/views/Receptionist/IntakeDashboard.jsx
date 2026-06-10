@@ -11,12 +11,12 @@ const IntakeDashboard = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
 
   const [formData, setFormData] = useState({
-    senderName: '',
-    senderPhone: '',
-    receiverName: '',
-    receiverPhone: '',
-    weight_kg: '',
-    dimensions: ''
+    senderName: '', senderPhone: '',
+    receiverName: '', receiverPhone: '',
+    vehicleNumber: '', vehicleType: '14-Ft Container',
+    driverName: '', driverPhone: '',
+    origin: '', destination: '',
+    commodityType: ''
   });
 
   useEffect(() => {
@@ -34,8 +34,35 @@ const IntakeDashboard = () => {
     }
   };
 
+  const formatVehicleNumber = (val) => {
+    let clean = val.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    if (clean.length === 0) return '';
+    let res = clean.substring(0, 2);
+    if (clean.length > 2) res += ' ' + clean.substring(2, 4);
+    if (clean.length > 4) {
+      let remaining = clean.substring(4);
+      let letters = '';
+      let numbers = '';
+      for(let i=0; i<remaining.length; i++) {
+        if (/[A-Z]/.test(remaining[i]) && numbers.length === 0) {
+          letters += remaining[i];
+        } else if (/[0-9]/.test(remaining[i])) {
+          numbers += remaining[i];
+        }
+      }
+      if (letters.length > 0) res += ' ' + letters.substring(0, 3);
+      if (numbers.length > 0) res += ' ' + numbers.substring(0, 4);
+    }
+    return res;
+  };
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    let formattedValue = value;
+    if (name === 'vehicleNumber') {
+      formattedValue = formatVehicleNumber(value);
+    }
+    setFormData({ ...formData, [name]: formattedValue });
   };
 
   const handleSubmit = async (e) => {
@@ -53,7 +80,10 @@ const IntakeDashboard = () => {
       setFormData({
         senderName: '', senderPhone: '',
         receiverName: '', receiverPhone: '',
-        weight_kg: '', dimensions: ''
+        vehicleNumber: '', vehicleType: '14-Ft Container',
+        driverName: '', driverPhone: '',
+        origin: '', destination: '',
+        commodityType: ''
       });
       fetchRecentShipments();
     } catch (err) {
@@ -151,26 +181,66 @@ const IntakeDashboard = () => {
                 </div>
               </div>
 
-              {/* Package Metrics */}
+              {/* Transport Logistics */}
               <div className="bg-gray-800 bg-opacity-30 p-6 rounded-xl border border-gray-700/50 hover:bg-opacity-50 transition-all duration-300">
                  <div className="flex items-center gap-3 mb-6">
                     <div className="p-1.5 bg-blue-500 bg-opacity-20 rounded-md text-blue-400">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
                     </div>
-                    <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest">Package Logistics</h3>
+                    <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest">Transport Logistics</h3>
                   </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                   <div className="relative">
-                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-cyan-400">Weight (kg)</label>
-                    <input type="number" step="0.1" min="0.1" name="weight_kg" value={formData.weight_kg} onChange={handleChange} required 
-                      className={inputClasses('weight')} onFocus={() => setFocusedField('weight')} onBlur={() => setFocusedField(null)} />
+                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-cyan-400">Vehicle Registration Number</label>
+                    <input type="text" name="vehicleNumber" placeholder="e.g. MH12AB1234" value={formData.vehicleNumber} onChange={handleChange} required 
+                      className={inputClasses('vehicleNumber')} onFocus={() => setFocusedField('vehicleNumber')} onBlur={() => setFocusedField(null)} />
                   </div>
                   <div className="relative">
-                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-purple-400">Dimensions (LxWxH)</label>
-                    <input type="text" name="dimensions" placeholder="e.g. 12x10x5" value={formData.dimensions} onChange={handleChange} 
-                      className={inputClasses('dimensions')} onFocus={() => setFocusedField('dimensions')} onBlur={() => setFocusedField(null)} />
+                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-cyan-400">Vehicle Type</label>
+                    <select name="vehicleType" value={formData.vehicleType} onChange={handleChange} required
+                      className={inputClasses('vehicleType')} onFocus={() => setFocusedField('vehicleType')} onBlur={() => setFocusedField(null)}>
+                      <option value="14-Ft Container">14-Ft Container</option>
+                      <option value="19-Ft Container">19-Ft Container</option>
+                      <option value="22-Ft Open">22-Ft Open</option>
+                      <option value="Pickup">Pickup</option>
+                      <option value="Trailer">Trailer</option>
+                    </select>
                   </div>
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div className="relative">
+                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-blue-400">Driver Name</label>
+                    <input type="text" name="driverName" value={formData.driverName} onChange={handleChange} required 
+                      className={inputClasses('driverName')} onFocus={() => setFocusedField('driverName')} onBlur={() => setFocusedField(null)} />
+                  </div>
+                  <div className="relative">
+                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-blue-400">Driver Mobile</label>
+                    <input type="text" name="driverPhone" value={formData.driverPhone} onChange={handleChange} required 
+                      className={inputClasses('driverPhone')} onFocus={() => setFocusedField('driverPhone')} onBlur={() => setFocusedField(null)} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div className="relative">
+                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-purple-400">Origin Terminal / City</label>
+                    <input type="text" name="origin" value={formData.origin} onChange={handleChange} required 
+                      className={inputClasses('origin')} onFocus={() => setFocusedField('origin')} onBlur={() => setFocusedField(null)} />
+                  </div>
+                  <div className="relative">
+                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-purple-400">Destination City</label>
+                    <input type="text" name="destination" value={formData.destination} onChange={handleChange} required 
+                      className={inputClasses('destination')} onFocus={() => setFocusedField('destination')} onBlur={() => setFocusedField(null)} />
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-pink-400">Type of Goods / Cargo Description</label>
+                  <textarea name="commodityType" value={formData.commodityType} onChange={handleChange} required rows="2"
+                    className={inputClasses('commodityType')} onFocus={() => setFocusedField('commodityType')} onBlur={() => setFocusedField(null)}></textarea>
+                </div>
+
               </div>
 
               <button type="submit" disabled={loading} 

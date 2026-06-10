@@ -98,7 +98,7 @@ const AccountantDashboard = () => {
                   <p className="text-gray-500 text-xs">{inv.logistics?.package?.weight_kg} kg • {inv.logistics?.package?.dimensions}</p>
                 </div>
                 <div className="w-1/4">
-                  <span className="text-gray-300 font-mono">${(inv.accounting?.subtotal || 0).toFixed(2)}</span>
+                  <span className="text-gray-300 font-mono">₹{(inv.accounting?.subtotal || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
                 <div className="w-1/4 text-right">
                   <button 
@@ -138,7 +138,7 @@ const AccountantDashboard = () => {
               <div className="space-y-3 bg-gray-800/30 p-4 rounded-xl border border-gray-700/50">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Base Subtotal ({selectedInvoice.logistics?.package?.weight_kg}kg)</span>
-                  <span className="font-mono text-gray-200">${subtotal.toFixed(2)}</span>
+                  <span className="font-mono text-gray-200">₹{subtotal.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
                 
                 <div className="flex justify-between items-center text-sm">
@@ -155,12 +155,12 @@ const AccountantDashboard = () => {
                 
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Tax Amount</span>
-                  <span className="font-mono text-gray-200">+ ${liveGstAmount.toFixed(2)}</span>
+                  <span className="font-mono text-gray-200">+ ₹{liveGstAmount.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
 
                 <div className="border-t border-gray-700/50 pt-3 flex justify-between items-end">
                   <span className="text-gray-300 font-bold">Grand Total</span>
-                  <span className="text-2xl font-mono font-bold text-[#4ade80]">${liveGrandTotal.toFixed(2)}</span>
+                  <span className="text-2xl font-mono font-bold text-[#4ade80]">₹{liveGrandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
               </div>
 
