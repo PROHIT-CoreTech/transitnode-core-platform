@@ -42,6 +42,8 @@ const shipmentRoutes = require('./routes/shipments');
 const invoiceRoutes = require('./routes/invoices');
 const adminRoutes = require('./routes/admin');
 const transportRoutes = require('./routes/transports');
+const financeRoutes = require('./routes/finance');
+const payrollRoutes = require('./routes/payroll');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -49,6 +51,8 @@ app.use('/api/shipments', shipmentRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/transports', transportRoutes);
+app.use('/api/finance', financeRoutes);
+app.use('/api/payroll', payrollRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

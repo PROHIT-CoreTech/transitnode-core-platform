@@ -1,0 +1,94 @@
+const ShipmentLedger = require('../models/NoSQL/ShipmentLedger');
+
+exports.getTrialBalance = async (req, res) => {
+  try {
+    // A simplified Trial Balance aggregation
+    const result = await ShipmentLedger.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalAccountsReceivable: {
+            $sum: {
+              $cond: [{ $eq: ['$accounting.paymentStatus', 'PENDING'] }, '$accounting.grandTotal', 0],
+            },
+          },
+          totalCashBank: {
+            $sum: {
+              $cond: [{ $eq: ['$accounting.paymentStatus', 'PAID'] }, '$accounting.grandTotal', 0],
+            },
+          },
+          totalFreightIncome: { $sum: '$accounting.subtotal' },
+          totalDriverAdvances: { $sum: '$accounting.driverAdvanceCash' },
+          totalFuelExpenses: { $sum: '$accounting.fuelVoucherAmount' },
+          totalTollExpenses: { $sum: '$accounting.tollAllowance' },
+          totalGSTCollected: { $sum: '$accounting.tax.gstAmount' },
+        },
+      },
+    ]);
+
+    if (result.length === 0) {
+      return res.status(200).json({ success: true, data: {} });
+    }
+
+    const data = result[0];
+    
+    // Split GST roughly into CGST/SGST (assuming standard 18% intra-state for simplicity)
+    const gstHalf = (data.totalGSTCollected || 0) / 2;
+
+    const trialBalance = [
+      { account: 'Accounts Receivable', debit: data.totalAccountsReceivable, credit: 0 },
+      { account: 'Cash/Bank Accounts', debit: data.totalCashBank, credit: 0 },
+      { account: 'Driver Advances (Assets)', debit: data.totalDriverAdvances, credit: 0 },
+      { account: 'Fuel Expenses', debit: data.totalFuelExpenses, credit: 0 },
+      { account: 'Toll Expenses', debit: data.totalTollExpenses, credit: 0 },
+      { account: 'Freight Income', debit: 0, credit: data.totalFreightIncome },
+      { account: 'CGST Payable', debit: 0, credit: gstHalf },
+      { account: 'SGST Payable', debit: 0, credit: gstHalf },
+    ];
+
+    res.status(200).json({ success: true, data: trialBalance });
+  } catch (error) {
+    console.error('Error fetching Trial Balance:', error);
+    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+  }
+};
+
+exports.getPnL = async (req, res) => {
+  try {
+    const result = await ShipmentLedger.aggregate([
+      {
+        $group: {
+          _id: null,
+          revenue: { $sum: '$accounting.subtotal' },
+          fuelExpenses: { $sum: '$accounting.fuelVoucherAmount' },
+          tollExpenses: { $sum: '$accounting.tollAllowance' },
+          driverAdvances: { $sum: '$accounting.driverAdvanceCash' }, // Treating as expense for simplicity here if not recouped, but usually asset until payroll. Let's show it as direct cost for P&L for trips.
+        },
+      },
+    ]);
+
+    if (result.length === 0) {
+      return res.status(200).json({ success: true, data: {} });
+    }
+
+    const data = result[0];
+    const totalExpenses = data.fuelExpenses + data.tollExpenses + data.driverAdvances;
+    const netProfit = data.revenue - totalExpenses;
+
+    const pnl = {
+      revenue: data.revenue,
+      expenses: {
+        fuel: data.fuelExpenses,
+        toll: data.tollExpenses,
+        driverAdvances: data.driverAdvances,
+        total: totalExpenses
+      },
+      netProfit: netProfit
+    };
+
+    res.status(200).json({ success: true, data: pnl });
+  } catch (error) {
+    console.error('Error fetching P&L:', error);
+    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+  }
+};

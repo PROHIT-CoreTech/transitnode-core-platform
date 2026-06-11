@@ -10,6 +10,7 @@ import {
 import MapView from '../../components/MapView';
 import ComplianceVault from './ComplianceVault';
 import ShipmentTransactions from './ShipmentTransactions';
+import FinancialLedger from './FinancialLedger';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
@@ -260,6 +261,12 @@ const AdminDashboard = () => {
               className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'TRANSACTIONS' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
             >
               Shipment Ledger
+            </button>
+            <button 
+              onClick={() => setActiveTab('FINANCE')}
+              className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'FINANCE' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
+            >
+              Financial Engine
             </button>
           </div>
         </nav>
@@ -554,6 +561,12 @@ const AdminDashboard = () => {
           {activeTab === 'TRANSACTIONS' && (
             <div className="w-full h-full animate-fade-in">
               <ShipmentTransactions />
+            </div>
+          )}
+
+          {activeTab === 'FINANCE' && (
+            <div className="w-full h-full animate-fade-in">
+              <FinancialLedger />
             </div>
           )}
 
