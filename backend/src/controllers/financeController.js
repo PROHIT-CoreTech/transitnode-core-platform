@@ -62,17 +62,29 @@ exports.getPnL = async (req, res) => {
           revenue: { $sum: '$accounting.subtotal' },
           fuelExpenses: { $sum: '$accounting.fuelVoucherAmount' },
           tollExpenses: { $sum: '$accounting.tollAllowance' },
-          driverAdvances: { $sum: '$accounting.driverAdvanceCash' }, // Treating as expense for simplicity here if not recouped, but usually asset until payroll. Let's show it as direct cost for P&L for trips.
+          driverAdvances: { $sum: '$accounting.driverAdvanceCash' }, // Asset, not expense
         },
       },
     ]);
+
+    const Payroll = require('../models/NoSQL/Payroll');
+    const payrollAgg = await Payroll.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalBaseSalary: { $sum: '$baseSalary' }
+        }
+      }
+    ]);
+    const totalPayroll = payrollAgg.length > 0 ? payrollAgg[0].totalBaseSalary : 0;
 
     if (result.length === 0) {
       return res.status(200).json({ success: true, data: {} });
     }
 
     const data = result[0];
-    const totalExpenses = data.fuelExpenses + data.tollExpenses + data.driverAdvances;
+    // Driver advances are recouped through payroll, so the actual expense to the company is the Payroll (Gross Salary).
+    const totalExpenses = data.fuelExpenses + data.tollExpenses + totalPayroll;
     const netProfit = data.revenue - totalExpenses;
 
     const pnl = {
@@ -80,7 +92,8 @@ exports.getPnL = async (req, res) => {
       expenses: {
         fuel: data.fuelExpenses,
         toll: data.tollExpenses,
-        driverAdvances: data.driverAdvances,
+        payroll: totalPayroll,
+        driverAdvances: data.driverAdvances, // Kept for reference, but not in total expenses
         total: totalExpenses
       },
       netProfit: netProfit

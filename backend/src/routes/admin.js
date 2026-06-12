@@ -27,6 +27,8 @@ router.put('/rates/update', adminController.updateRates);
 // Live Hardware Tracking
 router.post('/devices/map', adminController.mapDevice);
 router.post('/fleet/register', adminController.registerFleetAsset);
+router.get('/fleet', adminController.getFleetAssets);
+router.put('/drivers/:driverId/assign-vehicle', adminController.assignVehicleToDriver);
 
 // Compliance Vault
 const multer = require('multer');

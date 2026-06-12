@@ -43,6 +43,7 @@ const invoiceRoutes = require('./routes/invoices');
 const adminRoutes = require('./routes/admin');
 const transportRoutes = require('./routes/transports');
 const financeRoutes = require('./routes/finance');
+const exportRoutes = require('./routes/export');
 const payrollRoutes = require('./routes/payroll');
 
 app.use('/api/auth', authRoutes);
@@ -52,6 +53,7 @@ app.use('/api/invoices', invoiceRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/transports', transportRoutes);
 app.use('/api/finance', financeRoutes);
+app.use('/api/finance/export', exportRoutes);
 app.use('/api/payroll', payrollRoutes);
 
 // Root endpoint

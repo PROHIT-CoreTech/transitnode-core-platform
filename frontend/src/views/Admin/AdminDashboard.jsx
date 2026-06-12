@@ -56,6 +56,7 @@ const AdminDashboard = () => {
   });
   const [driverForm, setDriverForm] = useState({ name: '', phone: '', licenseNumber: '', status: 'AVAILABLE' });
   const [drivers, setDrivers] = useState([]);
+  const [fleetAssets, setFleetAssets] = useState([]);
 
   useEffect(() => {
     if (!token || user?.role !== 'ADMIN') {
@@ -65,6 +66,7 @@ const AdminDashboard = () => {
     fetchAnalytics();
     fetchRates();
     fetchDrivers();
+    fetchFleetAssets();
 
     // Socket Initialization
     socketRef.current = io('http://localhost:3000');
@@ -158,6 +160,17 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchFleetAssets = async () => {
+    try {
+      const res = await axios.get('http://localhost:3000/api/admin/fleet', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setFleetAssets(res.data.assets || []);
+    } catch (error) {
+      console.error('Failed to fetch fleet assets', error);
+    }
+  };
+
   const handleCreateUser = async (e) => {
     e.preventDefault();
     try {
@@ -208,6 +221,20 @@ const AdminDashboard = () => {
       fetchDrivers();
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to create driver');
+    }
+  };
+
+  const handleAssignVehicle = async (driverId, vehicleRegistration) => {
+    try {
+      await axios.put(`http://localhost:3000/api/admin/drivers/${driverId}/assign-vehicle`, 
+        { vehicleRegistration }, 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert('Vehicle assigned to driver successfully');
+      fetchDrivers();
+      fetchFleetAssets(); // Refresh assignments
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to assign vehicle');
     }
   };
 
@@ -384,7 +411,10 @@ const AdminDashboard = () => {
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748B'}} />
                       <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748B'}} tickFormatter={(value) => `₹${value}`} />
-                      <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                      <Tooltip 
+                        formatter={(value) => `₹${Number(value).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} 
+                      />
                       <Line type="monotone" dataKey="revenue" stroke="#4F46E5" strokeWidth={3} dot={{r: 4, strokeWidth: 2}} activeDot={{r: 6}} />
                     </LineChart>
                   </div>
@@ -576,6 +606,7 @@ const AdminDashboard = () => {
                           <th className="py-3 px-4 font-bold">Phone</th>
                           <th className="py-3 px-4 font-bold">License</th>
                           <th className="py-3 px-4 font-bold">Status</th>
+                          <th className="py-3 px-4 font-bold">Assigned Vehicle</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -590,11 +621,25 @@ const AdminDashboard = () => {
                                   {d.status}
                                 </span>
                               </td>
+                              <td className="py-3 px-4">
+                                <select 
+                                  value={d.assignedVehicle || ''} 
+                                  onChange={(e) => handleAssignVehicle(d._id, e.target.value)}
+                                  className="w-full text-sm border border-slate-300 rounded p-1 bg-white focus:ring-indigo-500 focus:border-indigo-500"
+                                >
+                                  <option value="">-- Unassigned --</option>
+                                  {fleetAssets.map(asset => (
+                                    <option key={asset._id} value={asset.vehicleRegistration}>
+                                      {asset.vehicleRegistration} ({asset.vehicleType})
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
                             </tr>
                           ))
                         ) : (
                           <tr>
-                            <td colSpan="4" className="py-8 text-center text-slate-400">No drivers found. Add one to get started.</td>
+                            <td colSpan="5" className="py-8 text-center text-slate-400">No drivers found. Add one to get started.</td>
                           </tr>
                         )}
                       </tbody>

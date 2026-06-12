@@ -29,6 +29,20 @@ exports.createUser = async (req, res) => {
 
     await newUser.save();
 
+    // If role is DRIVER, also create a Driver record
+    if (role === 'DRIVER') {
+      const existingDriver = await Driver.findOne({ phone: newUser.username || newUser.email });
+      if (!existingDriver) {
+        const newDriver = new Driver({
+          name: name,
+          phone: newUser.username || newUser.email,
+          licenseNumber: 'PENDING', // Default or generate a temp one until updated
+          status: 'AVAILABLE'
+        });
+        await newDriver.save();
+      }
+    }
+
     res.status(201).json({ message: 'User created successfully', user: { id: newUser._id, name: newUser.name, email: newUser.email, role: newUser.role } });
   } catch (error) {
     console.error('Error creating user:', error);
@@ -276,6 +290,16 @@ exports.registerFleetAsset = async (req, res) => {
   }
 };
 
+exports.getFleetAssets = async (req, res) => {
+  try {
+    const assets = await Device.find().sort({ createdAt: -1 });
+    res.status(200).json({ assets });
+  } catch (error) {
+    console.error('Error fetching fleet assets:', error);
+    res.status(500).json({ message: 'Server error fetching fleet assets' });
+  }
+};
+
 exports.createDriver = async (req, res) => {
   try {
     const { name, phone, licenseNumber, status } = req.body;
@@ -297,6 +321,29 @@ exports.createDriver = async (req, res) => {
     });
 
     await newDriver.save();
+
+    // Also create a User account for the Driver
+    const existingUser = await User.findOne({ username: phone });
+    if (!existingUser) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash('TN@pass123', salt); // Default password
+
+      const newUser = new User({
+        username: phone,
+        email: `${phone}@transitnode.demo`,
+        password: hashedPassword,
+        name: name,
+        role: 'DRIVER',
+        isActive: true,
+        driverProfile: {
+          fullName: name,
+          licenseNumber: licenseNumber,
+          phoneNumber: phone,
+        }
+      });
+      await newUser.save();
+    }
+
     res.status(201).json({ message: 'Driver created successfully', driver: newDriver });
   } catch (error) {
     console.error('Error creating driver:', error);
@@ -311,6 +358,32 @@ exports.getDrivers = async (req, res) => {
   } catch (error) {
     console.error('Error fetching drivers:', error);
     res.status(500).json({ message: 'Server error fetching drivers' });
+  }
+};
+
+exports.assignVehicleToDriver = async (req, res) => {
+  try {
+    const { driverId } = req.params;
+    const { vehicleRegistration } = req.body;
+
+    const driver = await Driver.findById(driverId);
+    if (!driver) {
+      return res.status(404).json({ message: 'Driver not found' });
+    }
+
+    // Optional: update the old vehicle's driverName if necessary, but here we just update Driver and new Device
+    driver.assignedVehicle = vehicleRegistration;
+    await driver.save();
+
+    // Also update the Device collection to reflect the assignment
+    if (vehicleRegistration) {
+      await Device.updateMany({ vehicleRegistration }, { driverName: driver.name, driverPhone: driver.phone });
+    }
+
+    res.status(200).json({ message: 'Vehicle assigned successfully', driver });
+  } catch (error) {
+    console.error('Error assigning vehicle:', error);
+    res.status(500).json({ message: 'Server error assigning vehicle' });
   }
 };
 

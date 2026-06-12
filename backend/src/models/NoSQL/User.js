@@ -2,11 +2,15 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema(
   {
+    username: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
     email: {
       type: String,
-      required: true,
       unique: true,
-      index: true,
+      sparse: true,
     },
     password: {
       type: String,
@@ -14,13 +18,22 @@ const userSchema = new mongoose.Schema(
     },
     name: {
       type: String,
-      required: true,
     },
     role: {
       type: String,
-      enum: ['RECEPTIONIST', 'ACCOUNTANT', 'ADMIN'],
+      enum: ['RECEPTIONIST', 'ACCOUNTANT', 'ADMIN', 'DRIVER'],
       required: true,
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    driverProfile: {
+      fullName: String,
+      licenseNumber: String,
+      phoneNumber: String,
+      assignedVehicle: String,
+    }
   },
   {
     timestamps: true,

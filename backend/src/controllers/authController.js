@@ -33,10 +33,23 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, username, password } = req.body;
 
-    // Fetch user
-    const user = await User.findOne({ email });
+    if (!password) {
+      return res.status(400).json({ message: 'Password is required' });
+    }
+
+    if (!email && !username) {
+      return res.status(400).json({ message: 'Email or Username is required' });
+    }
+
+    // Fetch user by email or username
+    const queryConditions = [];
+    if (email) queryConditions.push({ email });
+    if (username) queryConditions.push({ username });
+
+    const user = await User.findOne({ $or: queryConditions });
+
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -58,7 +71,7 @@ exports.login = async (req, res) => {
     res.status(200).json({
       message: 'Login successful',
       token,
-      user: { id: user._id, email: user.email, name: user.name, role: user.role }
+      user: { id: user._id, email: user.email, username: user.username, name: user.name, role: user.role }
     });
   } catch (error) {
     console.error(error);
