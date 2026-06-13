@@ -4,12 +4,12 @@ const User = require('../models/NoSQL/User');
 
 exports.register = async (req, res) => {
   try {
-    const { email, password, name, role } = req.body;
+    const { email, password, name, role, mobileNumber } = req.body;
     
     // Check if user exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ $or: [{ email }, { mobileNumber: mobileNumber || '---' }] });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: 'User with this email or mobile number already exists' });
     }
 
     // Hash password
@@ -19,6 +19,7 @@ exports.register = async (req, res) => {
     // Save user
     const newUser = await User.create({
       email,
+      mobileNumber,
       password: hashedPassword,
       name,
       role: role || 'RECEPTIONIST'
@@ -40,12 +41,16 @@ exports.login = async (req, res) => {
     }
 
     if (!email && !username) {
-      return res.status(400).json({ message: 'Email or Username is required' });
+      return res.status(400).json({ message: 'Email, Username or Mobile Number is required' });
     }
 
-    // Fetch user by email or username
+    // Fetch user by email, username, or mobileNumber
+    // We assume 'email' could also contain a mobile number if the user typed it in the email field.
     const queryConditions = [];
-    if (email) queryConditions.push({ email });
+    if (email) {
+      queryConditions.push({ email });
+      queryConditions.push({ mobileNumber: email });
+    }
     if (username) queryConditions.push({ username });
 
     const user = await User.findOne({ $or: queryConditions });

@@ -8,5 +8,6 @@ const verifyToken = require('../middleware/verifyToken');
 
 router.get('/ledger', financeController.getTrialBalance);
 router.get('/pnl', financeController.getPnL);
+router.get('/trips/:trackingNumber', financeController.getTripDetails);
 
 module.exports = router;

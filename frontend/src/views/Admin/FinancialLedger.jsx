@@ -7,7 +7,7 @@ const FinancialLedger = () => {
   const [payrollData, setPayrollData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('LEDGER'); // LEDGER or PAYROLL
-  const [selectedMonth, setSelectedMonth] = useState('All');
+  const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().substring(0, 7));
   
   // Export states
   const [exportStartDate, setExportStartDate] = useState('');
@@ -257,7 +257,7 @@ const FinancialLedger = () => {
                   className="bg-gray-800 border border-white/10 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5"
                 >
                   <option value="All">All Months</option>
-                  {[...new Set(payrollData.map(r => r.paymentMonth))].sort().reverse().map(month => (
+                  {[...new Set([new Date().toISOString().substring(0, 7), ...payrollData.map(r => r.paymentMonth)])].sort().reverse().map(month => (
                     <option key={month} value={month}>{month}</option>
                   ))}
                 </select>

@@ -40,6 +40,17 @@ exports.createShipment = async (req, res) => {
       }
     });
 
+    // Mark the assigned Driver and Vehicle as ON_TRIP
+    if (driverPhone) {
+      const Driver = require('../models/NoSQL/Driver');
+      await Driver.findOneAndUpdate({ phone: driverPhone }, { status: 'ON_TRIP' });
+    }
+    
+    if (vehicleNumber) {
+      const Device = require('../models/NoSQL/Device');
+      await Device.findOneAndUpdate({ vehicleRegistration: vehicleNumber.toUpperCase() }, { status: 'ON_TRIP' });
+    }
+
     res.status(201).json({ message: 'Shipment created', shipment: newShipment });
   } catch (error) {
     console.error('Error creating shipment:', error);

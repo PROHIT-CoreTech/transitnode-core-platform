@@ -12,6 +12,11 @@ const userSchema = new mongoose.Schema(
       unique: true,
       sparse: true,
     },
+    mobileNumber: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
     password: {
       type: String,
       required: true,
@@ -30,7 +35,18 @@ const userSchema = new mongoose.Schema(
     },
     driverProfile: {
       fullName: String,
-      licenseNumber: String,
+      licenseNumber: {
+        type: String,
+        set: v => v ? v.replace(/[\s\W_]+/g, '').toUpperCase() : v,
+        validate: {
+          validator: function(v) {
+            if (!v) return true; // Optional for non-drivers
+            return /^[A-Z]{2}[0-9]{2}[0-9]{4}[0-9]{7}$/.test(v);
+          },
+          message: 'License number must match the standard 15-character Indian DL format (e.g., MH1220260089421).'
+        }
+      },
+      licenseExpiryDate: Date,
       phoneNumber: String,
       assignedVehicle: String,
     }

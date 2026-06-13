@@ -41,7 +41,7 @@ const seedDriver = async () => {
       isActive: true,
       driverProfile: {
         fullName: 'Suresh Kumar',
-        licenseNumber: 'DL-1420260089421',
+        licenseNumber: 'DL1420260089421',
         phoneNumber: '9811122233',
         assignedVehicle: 'MH-12-QW-1234'
       }

@@ -4,7 +4,7 @@ const complianceDocumentSchema = new mongoose.Schema(
   {
     targetType: {
       type: String,
-      enum: ['VEHICLE', 'DRIVER'],
+      enum: ['VEHICLE', 'DRIVER', 'EMPLOYEE'],
       required: true
     },
     targetId: {
@@ -13,7 +13,7 @@ const complianceDocumentSchema = new mongoose.Schema(
     },
     documentType: {
       type: String,
-      enum: ['INSURANCE', 'DL', 'NATIONAL_PERMIT', 'PUC'],
+      enum: ['INSURANCE', 'DL', 'NATIONAL_PERMIT', 'PUC', 'FUEL_TOLL_SLIP', 'AADHAAR', 'PAN', 'ADDRESS_PROOF'],
       required: true
     },
     expiryDate: {

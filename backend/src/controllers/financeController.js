@@ -105,3 +105,17 @@ exports.getPnL = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server Error', error: error.message });
   }
 };
+
+exports.getTripDetails = async (req, res) => {
+  try {
+    const { trackingNumber } = req.params;
+    const trip = await ShipmentLedger.findOne({ trackingNumber });
+    if (!trip) {
+      return res.status(404).json({ success: false, message: 'Trip not found' });
+    }
+    res.status(200).json({ success: true, data: trip });
+  } catch (error) {
+    console.error('Error fetching trip details:', error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};

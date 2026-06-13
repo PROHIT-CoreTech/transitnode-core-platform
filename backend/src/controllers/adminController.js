@@ -7,12 +7,12 @@ const Driver = require('../models/NoSQL/Driver');
 
 exports.createUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, mobileNumber, password, role } = req.body;
     
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ $or: [{ email }, { mobileNumber: mobileNumber || '---' }] });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: 'User with this email or mobile number already exists' });
     }
 
     // Hash password
@@ -23,6 +23,7 @@ exports.createUser = async (req, res) => {
     const newUser = new User({
       name,
       email,
+      mobileNumber,
       password: hashedPassword,
       role
     });
@@ -156,9 +157,6 @@ exports.getAnalytics = async (req, res) => {
         { name: 'Corporate Account', value: 300 }
       );
     }
-    if (Object.values(statusData).reduce((a, b) => a + b, 0) === 0) {
-      statusData = { ON_TRIP: 40, YARD: 15, MAINTENANCE: 5 };
-    }
 
     res.status(200).json({
       metrics: {
@@ -283,6 +281,16 @@ exports.registerFleetAsset = async (req, res) => {
 
     await newFleetAsset.save();
 
+    if (req.file) {
+      await ComplianceDocument.create({
+        targetType: 'VEHICLE',
+        targetId: vehicleNumber,
+        documentType: 'INSURANCE', // Or let the user specify
+        expiryDate: fitnessExpiry ? new Date(fitnessExpiry) : new Date('2099-12-31'),
+        fileUrl: `/uploads/${req.file.filename}`
+      });
+    }
+
     res.status(201).json({ message: 'Fleet asset registered successfully', asset: newFleetAsset });
   } catch (error) {
     console.error('Error registering fleet asset:', error);
@@ -300,12 +308,36 @@ exports.getFleetAssets = async (req, res) => {
   }
 };
 
+exports.deleteFleetAsset = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const device = await Device.findById(id);
+    if (!device) {
+      return res.status(404).json({ message: 'Fleet asset not found' });
+    }
+
+    // Optionally update Driver if it was assigned to this vehicle
+    if (device.vehicleRegistration) {
+      await Driver.updateMany(
+        { assignedVehicle: device.vehicleRegistration }, 
+        { assignedVehicle: '' }
+      );
+    }
+
+    await Device.findByIdAndDelete(id);
+    res.status(200).json({ message: 'Fleet asset deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting fleet asset:', error);
+    res.status(500).json({ message: 'Server error deleting fleet asset' });
+  }
+};
+
 exports.createDriver = async (req, res) => {
   try {
-    const { name, phone, licenseNumber, status } = req.body;
+    const { name, phone, licenseNumber, status, assignedVehicle, username, password } = req.body;
 
-    if (!name || !phone || !licenseNumber) {
-      return res.status(400).json({ message: 'Name, Phone, and License Number are required' });
+    if (!name || !phone || !licenseNumber || !username || !password) {
+      return res.status(400).json({ message: 'Name, Phone, License Number, Username, and Password are required' });
     }
 
     const existingDriver = await Driver.findOne({ $or: [{ phone }, { licenseNumber }] });
@@ -317,20 +349,41 @@ exports.createDriver = async (req, res) => {
       name,
       phone,
       licenseNumber,
-      status: status || 'AVAILABLE'
+      status: status || 'AVAILABLE',
+      assignedVehicle: assignedVehicle || null
     });
 
     await newDriver.save();
 
+    // Also update Device if a vehicle was assigned
+    if (assignedVehicle) {
+      await Device.updateMany(
+        { vehicleRegistration: assignedVehicle }, 
+        { driverName: name, driverPhone: phone }
+      );
+    }
+
+    // Handle document upload if present
+    if (req.file) {
+      await ComplianceDocument.create({
+        targetType: 'DRIVER',
+        targetId: newDriver._id.toString(),
+        documentType: 'DL',
+        expiryDate: new Date('2099-12-31'), // Or get from req.body if provided
+        fileUrl: `/uploads/${req.file.filename}`
+      });
+    }
+
     // Also create a User account for the Driver
-    const existingUser = await User.findOne({ username: phone });
+    const existingUser = await User.findOne({ username });
     if (!existingUser) {
       const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash('TN@pass123', salt); // Default password
+      const hashedPassword = await bcrypt.hash(password, salt);
 
       const newUser = new User({
-        username: phone,
-        email: `${phone}@transitnode.demo`,
+        username: username,
+        email: `${username}@transitnode.demo`,
+        mobileNumber: phone,
         password: hashedPassword,
         name: name,
         role: 'DRIVER',
@@ -358,6 +411,30 @@ exports.getDrivers = async (req, res) => {
   } catch (error) {
     console.error('Error fetching drivers:', error);
     res.status(500).json({ message: 'Server error fetching drivers' });
+  }
+};
+
+exports.deleteDriver = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const driver = await Driver.findById(id);
+    if (!driver) {
+      return res.status(404).json({ message: 'Driver not found' });
+    }
+
+    // Delete the associated user
+    await User.findOneAndDelete({ username: driver.phone });
+
+    // Delete the driver
+    await Driver.findByIdAndDelete(id);
+
+    // Optionally clear driver assigned in Device
+    await Device.updateMany({ driverPhone: driver.phone }, { driverName: '', driverPhone: '' });
+
+    res.status(200).json({ message: 'Driver deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting driver:', error);
+    res.status(500).json({ message: 'Server error deleting driver' });
   }
 };
 
@@ -425,6 +502,54 @@ exports.getComplianceDocuments = async (req, res) => {
     res.status(200).json({ documents });
   } catch (error) {
     console.error('Error fetching compliance documents:', error);
-    res.status(500).json({ message: 'Server error fetching documents' });
+    res.status(500).json({ message: 'Server error fetching compliance documents' });
+  }
+};
+
+exports.verifyEmployee = async (req, res) => {
+  try {
+    const { employeeId, employeeName } = req.body;
+    
+    if (!req.files || !req.files.aadhaar || !req.files.pan || !req.files.addressProof) {
+      return res.status(400).json({ message: 'Aadhaar, PAN, and Address Proof are all mandatory.' });
+    }
+
+    if (!employeeId || !employeeName) {
+      return res.status(400).json({ message: 'Employee ID and Name are required.' });
+    }
+
+    const fileUrl = `/uploads/`;
+    
+    // Save Aadhaar
+    await ComplianceDocument.create({
+      targetType: 'EMPLOYEE',
+      targetId: employeeId,
+      documentType: 'AADHAAR',
+      expiryDate: new Date('2099-12-31'), // No expiry
+      fileUrl: `${fileUrl}${req.files.aadhaar[0].filename}`
+    });
+
+    // Save PAN
+    await ComplianceDocument.create({
+      targetType: 'EMPLOYEE',
+      targetId: employeeId,
+      documentType: 'PAN',
+      expiryDate: new Date('2099-12-31'),
+      fileUrl: `${fileUrl}${req.files.pan[0].filename}`
+    });
+
+    // Save Address Proof
+    await ComplianceDocument.create({
+      targetType: 'EMPLOYEE',
+      targetId: employeeId,
+      documentType: 'ADDRESS_PROOF',
+      expiryDate: new Date('2099-12-31'),
+      fileUrl: `${fileUrl}${req.files.addressProof[0].filename}`
+    });
+
+    res.status(201).json({ message: 'Employee verified and documents uploaded successfully!' });
+  } catch (error) {
+    console.error('Error verifying employee:', error);
+    res.status(500).json({ message: 'Server error verifying employee' });
   }
 };

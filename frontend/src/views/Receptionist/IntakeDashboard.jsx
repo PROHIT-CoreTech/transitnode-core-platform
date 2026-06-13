@@ -286,14 +286,23 @@ const IntakeDashboard = () => {
                   </div>
                   <div className="relative">
                     <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-cyan-400">Vehicle Type</label>
-                    <select name="vehicleType" value={formData.vehicleType} onChange={handleChange} required
-                      className={inputClasses('vehicleType')} onFocus={() => setFocusedField('vehicleType')} onBlur={() => setFocusedField(null)}>
-                      <option value="14-Ft Container">14-Ft Container</option>
-                      <option value="19-Ft Container">19-Ft Container</option>
-                      <option value="22-Ft Open">22-Ft Open</option>
-                      <option value="Pickup">Pickup</option>
-                      <option value="Trailer">Trailer</option>
-                    </select>
+                    <input 
+                      type="text" 
+                      list="intake-vehicle-types"
+                      name="vehicleType" 
+                      value={formData.vehicleType} 
+                      onChange={handleChange} 
+                      required
+                      className={inputClasses('vehicleType')} 
+                      onFocus={() => setFocusedField('vehicleType')} 
+                      onBlur={() => setFocusedField(null)} 
+                      placeholder="Select or type..."
+                    />
+                    <datalist id="intake-vehicle-types">
+                      {[...new Set(['14-Ft Container', '19-Ft Container', '22-Ft Open', 'Pickup', 'Trailer', ...fleet.map(a => a.vehicleType).filter(Boolean)])].map(type => (
+                        <option key={type} value={type} />
+                      ))}
+                    </datalist>
                   </div>
                 </div>
 

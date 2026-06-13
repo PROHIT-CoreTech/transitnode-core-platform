@@ -32,7 +32,7 @@ exports.verifyDeliveryOtp = async (req, res) => {
     shipment.metadata.closedAt = new Date();
     await shipment.save();
 
-    // Revert assigned vehicle to YARD
+    // Revert assigned vehicle to YARD and Driver to AVAILABLE
     const vehicleReg = shipment.logistics?.transport?.vehicleNumber;
     if (vehicleReg) {
       const device = await Device.findOne({ vehicleRegistration: vehicleReg });
@@ -46,6 +46,12 @@ exports.verifyDeliveryOtp = async (req, res) => {
           io.emit('location-update', { vehicleId: vehicleReg, status: 'YARD' });
         }
       }
+    }
+
+    const driverPhone = shipment.logistics?.transport?.driverPhone;
+    if (driverPhone) {
+      const Driver = require('../models/NoSQL/Driver');
+      await Driver.findOneAndUpdate({ phone: driverPhone }, { status: 'AVAILABLE' });
     }
 
     res.status(200).json({ message: 'OTP Verified. Cargo Unloading Authorized.', shipment });

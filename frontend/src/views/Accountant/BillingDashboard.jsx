@@ -101,15 +101,8 @@ const BillingDashboard = () => {
           grandTotal
         }
       });
-      const res = await axios.put(`http://localhost:3000/api/shipments/${selectedInvoice._id}/status`, {
-        status: 'DELIVERED',
-        remarks: 'Final billing processed'
-      });
-      
-      if (res.data.success) {
-        // printData is already set above with calculated values, which opens the modal
-        fetchInvoices(); // Refresh queue
-      }
+      // Refresh queue after successful patch
+      fetchInvoices();
 
     } catch (err) {
       console.error('Failed to settle invoice', err);
