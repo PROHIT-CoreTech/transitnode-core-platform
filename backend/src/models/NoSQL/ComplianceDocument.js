@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const complianceDocumentSchema = new mongoose.Schema(
   {
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', required: true, index: true },
     targetType: {
       type: String,
       enum: ['VEHICLE', 'DRIVER', 'EMPLOYEE'],

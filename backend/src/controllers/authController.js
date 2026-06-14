@@ -68,7 +68,8 @@ exports.login = async (req, res) => {
     // Generate JWT
     const payload = {
       id: user._id,
-      role: user.role
+      role: user.role,
+      tenantId: user.tenantId
     };
     
     const token = jwt.sign(payload, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '1d' });
@@ -81,5 +82,47 @@ exports.login = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error during login' });
+  }
+};
+
+exports.magicLogin = async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ message: 'Magic link token is required' });
+    }
+
+    // Find user with this token and ensure it hasn't expired
+    const user = await User.findOne({
+      magicLinkToken: token,
+      magicLinkExpires: { $gt: new Date() }
+    });
+
+    if (!user) {
+      return res.status(401).json({ message: 'Magic link is invalid or has expired' });
+    }
+
+    // Generate JWT
+    const payload = {
+      id: user._id,
+      role: user.role,
+      tenantId: user.tenantId
+    };
+    
+    const jwtToken = jwt.sign(payload, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '1d' });
+
+    // Invalidate the token so it can't be used again
+    user.magicLinkToken = undefined;
+    user.magicLinkExpires = undefined;
+    await user.save();
+
+    res.status(200).json({
+      message: 'Magic login successful',
+      token: jwtToken,
+      user: { id: user._id, email: user.email, username: user.username, name: user.name, role: user.role }
+    });
+  } catch (error) {
+    console.error('Error in magic login:', error);
+    res.status(500).json({ message: 'Server error during magic login' });
   }
 };

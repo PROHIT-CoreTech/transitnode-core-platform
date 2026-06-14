@@ -2,6 +2,12 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema(
   {
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Tenant',
+      required: true,
+      index: true,
+    },
     username: {
       type: String,
       unique: true,
@@ -49,6 +55,12 @@ const userSchema = new mongoose.Schema(
       licenseExpiryDate: Date,
       phoneNumber: String,
       assignedVehicle: String,
+    },
+    magicLinkToken: {
+      type: String,
+    },
+    magicLinkExpires: {
+      type: Date,
     }
   },
   {

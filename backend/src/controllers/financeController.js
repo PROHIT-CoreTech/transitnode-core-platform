@@ -1,9 +1,17 @@
 const ShipmentLedger = require('../models/NoSQL/ShipmentLedger');
 
+const mongoose = require('mongoose');
+
 exports.getTrialBalance = async (req, res) => {
   try {
+    if (!req.user.tenantId) {
+      return res.status(401).json({ success: false, message: 'Invalid session: Missing tenant ID. Please log out and log back in.' });
+    }
+    const tenantMatch = { tenantId: new mongoose.Types.ObjectId(req.user.tenantId) };
+    
     // A simplified Trial Balance aggregation
     const result = await ShipmentLedger.aggregate([
+      { $match: tenantMatch },
       {
         $group: {
           _id: null,
@@ -55,7 +63,10 @@ exports.getTrialBalance = async (req, res) => {
 
 exports.getPnL = async (req, res) => {
   try {
+    const tenantMatch = { tenantId: new mongoose.Types.ObjectId(req.user.tenantId) };
+    
     const result = await ShipmentLedger.aggregate([
+      { $match: tenantMatch },
       {
         $group: {
           _id: null,
@@ -69,6 +80,7 @@ exports.getPnL = async (req, res) => {
 
     const Payroll = require('../models/NoSQL/Payroll');
     const payrollAgg = await Payroll.aggregate([
+      { $match: tenantMatch },
       {
         $group: {
           _id: null,
@@ -109,7 +121,7 @@ exports.getPnL = async (req, res) => {
 exports.getTripDetails = async (req, res) => {
   try {
     const { trackingNumber } = req.params;
-    const trip = await ShipmentLedger.findOne({ trackingNumber });
+    const trip = await ShipmentLedger.findOne({ trackingNumber, tenantId: req.user.tenantId });
     if (!trip) {
       return res.status(404).json({ success: false, message: 'Trip not found' });
     }

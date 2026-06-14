@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt');
+const mongoose = require('mongoose');
 const User = require('../models/NoSQL/User');
 const ShipmentLedger = require('../models/NoSQL/ShipmentLedger');
 const Device = require('../models/NoSQL/Device');
@@ -10,7 +11,7 @@ exports.createUser = async (req, res) => {
     const { name, email, mobileNumber, password, role } = req.body;
     
     // Check if user already exists
-    const existingUser = await User.findOne({ $or: [{ email }, { mobileNumber: mobileNumber || '---' }] });
+    const existingUser = await User.findOne({ $or: [{ email }, { mobileNumber: mobileNumber || '---' }], tenantId: req.user.tenantId });
     if (existingUser) {
       return res.status(400).json({ message: 'User with this email or mobile number already exists' });
     }
@@ -21,6 +22,7 @@ exports.createUser = async (req, res) => {
 
     // Create user
     const newUser = new User({
+      tenantId: req.user.tenantId,
       name,
       email,
       mobileNumber,
@@ -32,9 +34,10 @@ exports.createUser = async (req, res) => {
 
     // If role is DRIVER, also create a Driver record
     if (role === 'DRIVER') {
-      const existingDriver = await Driver.findOne({ phone: newUser.username || newUser.email });
+      const existingDriver = await Driver.findOne({ phone: newUser.username || newUser.email, tenantId: req.user.tenantId });
       if (!existingDriver) {
         const newDriver = new Driver({
+          tenantId: req.user.tenantId,
           name: name,
           phone: newUser.username || newUser.email,
           licenseNumber: 'PENDING', // Default or generate a temp one until updated
@@ -72,8 +75,9 @@ exports.getAnalytics = async (req, res) => {
 
     // Top Level Metrics
     // 1. Gross Trip Revenue
+    const tenantMatch = { tenantId: new mongoose.Types.ObjectId(req.user.tenantId) };
     const revenueAgg = await ShipmentLedger.aggregate([
-      { $match: { 'accounting.paymentStatus': 'PAID', ...dateMatch } },
+      { $match: { 'accounting.paymentStatus': 'PAID', ...dateMatch, ...tenantMatch } },
       { $group: { 
           _id: null, 
           grossTotal: { $sum: '$accounting.grandTotal' },
@@ -88,17 +92,18 @@ exports.getAnalytics = async (req, res) => {
     const netFleetMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(2) : 0;
 
     // 2. Active Fleet on Road
-    const activeFleet = await Device.countDocuments({ status: 'ON_TRIP' });
+    const activeFleet = await Device.countDocuments({ status: 'ON_TRIP', tenantId: req.user.tenantId });
 
     // 3. Trucks in Maintenance
-    const maintenanceFleet = await Device.countDocuments({ status: 'MAINTENANCE' });
+    const maintenanceFleet = await Device.countDocuments({ status: 'MAINTENANCE', tenantId: req.user.tenantId });
 
     // 4. Total Registered Fleet
-    const totalFleet = await Device.countDocuments();
+    const totalFleet = await Device.countDocuments({ tenantId: req.user.tenantId });
 
     // Charts Data
     // A. Fleet Utilization Bar Chart
     const fleetStatusAgg = await Device.aggregate([
+      { $match: tenantMatch },
       { $group: { _id: '$status', count: { $sum: 1 } } }
     ]);
     let statusData = { ON_TRIP: 0, YARD: 0, MAINTENANCE: 0 };
@@ -106,7 +111,7 @@ exports.getAnalytics = async (req, res) => {
     
     // B. Payment Methods Donut Chart (Kept for compatibility or can be removed, but harmless)
     const paymentAgg = await ShipmentLedger.aggregate([
-      { $match: { 'accounting.paymentStatus': 'PAID', ...dateMatch } },
+      { $match: { 'accounting.paymentStatus': 'PAID', ...dateMatch, ...tenantMatch } },
       { $group: { _id: '$accounting.paymentMethod', count: { $sum: 1 } } }
     ]);
     const paymentMethodsData = paymentAgg.map(item => ({ name: item._id || 'CASH', value: item.count }));
@@ -114,7 +119,7 @@ exports.getAnalytics = async (req, res) => {
     // C. Route Profitability Line Chart
     // Group by Origin-Destination and calculate Net Profitability
     const routeRevAgg = await ShipmentLedger.aggregate([
-      { $match: { 'accounting.paymentStatus': 'PAID', ...dateMatch } },
+      { $match: { 'accounting.paymentStatus': 'PAID', ...dateMatch, ...tenantMatch } },
       { 
         $group: { 
           _id: { 
@@ -186,9 +191,9 @@ exports.updateRates = async (req, res) => {
   try {
     const { basePricePerKg, volumetricDivisor, fuelSurchargeRate } = req.body;
     
-    let rateCard = await RateCard.findOne({ type: 'GLOBAL' });
+    let rateCard = await RateCard.findOne({ type: 'GLOBAL', tenantId: req.user.tenantId });
     if (!rateCard) {
-      rateCard = new RateCard({ type: 'GLOBAL' });
+      rateCard = new RateCard({ type: 'GLOBAL', tenantId: req.user.tenantId });
     }
 
     if (basePricePerKg !== undefined) rateCard.basePricePerKg = basePricePerKg;
@@ -205,9 +210,9 @@ exports.updateRates = async (req, res) => {
 
 exports.getRates = async (req, res) => {
   try {
-    let rateCard = await RateCard.findOne({ type: 'GLOBAL' });
+    let rateCard = await RateCard.findOne({ type: 'GLOBAL', tenantId: req.user.tenantId });
     if (!rateCard) {
-      rateCard = new RateCard({ type: 'GLOBAL', basePricePerKg: 10, volumetricDivisor: 5000, fuelSurchargeRate: 5 });
+      rateCard = new RateCard({ type: 'GLOBAL', tenantId: req.user.tenantId, basePricePerKg: 10, volumetricDivisor: 5000, fuelSurchargeRate: 5 });
       await rateCard.save();
     }
     res.status(200).json(rateCard);
@@ -221,7 +226,7 @@ exports.mapDevice = async (req, res) => {
   try {
     const { imei, vehicleRegistration, driverName } = req.body;
 
-    let device = await Device.findOne({ imei });
+    let device = await Device.findOne({ imei, tenantId: req.user.tenantId });
     if (device) {
       device.vehicleRegistration = vehicleRegistration;
       device.driverName = driverName;
@@ -230,6 +235,7 @@ exports.mapDevice = async (req, res) => {
     }
 
     device = new Device({
+      tenantId: req.user.tenantId,
       imei,
       vehicleRegistration,
       driverName,
@@ -264,12 +270,13 @@ exports.registerFleetAsset = async (req, res) => {
       driverName = req.body.driverName;
     }
 
-    let device = await Device.findOne({ imei: hardwareIMEI });
+    let device = await Device.findOne({ imei: hardwareIMEI, tenantId: req.user.tenantId });
     if (device) {
       return res.status(400).json({ message: 'Hardware IMEI already registered to another asset' });
     }
 
     const newFleetAsset = new Device({
+      tenantId: req.user.tenantId,
       imei: hardwareIMEI,
       vehicleRegistration: vehicleNumber,
       vehicleType: vehicleType || 'Container',
@@ -283,6 +290,7 @@ exports.registerFleetAsset = async (req, res) => {
 
     if (req.file) {
       await ComplianceDocument.create({
+        tenantId: req.user.tenantId,
         targetType: 'VEHICLE',
         targetId: vehicleNumber,
         documentType: 'INSURANCE', // Or let the user specify
@@ -300,7 +308,7 @@ exports.registerFleetAsset = async (req, res) => {
 
 exports.getFleetAssets = async (req, res) => {
   try {
-    const assets = await Device.find().sort({ createdAt: -1 });
+    const assets = await Device.find({ tenantId: req.user.tenantId }).sort({ createdAt: -1 });
     res.status(200).json({ assets });
   } catch (error) {
     console.error('Error fetching fleet assets:', error);
@@ -311,7 +319,7 @@ exports.getFleetAssets = async (req, res) => {
 exports.deleteFleetAsset = async (req, res) => {
   try {
     const { id } = req.params;
-    const device = await Device.findById(id);
+    const device = await Device.findOne({ _id: id, tenantId: req.user.tenantId });
     if (!device) {
       return res.status(404).json({ message: 'Fleet asset not found' });
     }
@@ -319,12 +327,12 @@ exports.deleteFleetAsset = async (req, res) => {
     // Optionally update Driver if it was assigned to this vehicle
     if (device.vehicleRegistration) {
       await Driver.updateMany(
-        { assignedVehicle: device.vehicleRegistration }, 
+        { assignedVehicle: device.vehicleRegistration, tenantId: req.user.tenantId }, 
         { assignedVehicle: '' }
       );
     }
 
-    await Device.findByIdAndDelete(id);
+    await Device.findOneAndDelete({ _id: id, tenantId: req.user.tenantId });
     res.status(200).json({ message: 'Fleet asset deleted successfully' });
   } catch (error) {
     console.error('Error deleting fleet asset:', error);
@@ -340,12 +348,13 @@ exports.createDriver = async (req, res) => {
       return res.status(400).json({ message: 'Name, Phone, License Number, Username, and Password are required' });
     }
 
-    const existingDriver = await Driver.findOne({ $or: [{ phone }, { licenseNumber }] });
+    const existingDriver = await Driver.findOne({ $or: [{ phone }, { licenseNumber }], tenantId: req.user.tenantId });
     if (existingDriver) {
       return res.status(400).json({ message: 'Driver with this phone or license already exists' });
     }
 
     const newDriver = new Driver({
+      tenantId: req.user.tenantId,
       name,
       phone,
       licenseNumber,
@@ -358,7 +367,7 @@ exports.createDriver = async (req, res) => {
     // Also update Device if a vehicle was assigned
     if (assignedVehicle) {
       await Device.updateMany(
-        { vehicleRegistration: assignedVehicle }, 
+        { vehicleRegistration: assignedVehicle, tenantId: req.user.tenantId }, 
         { driverName: name, driverPhone: phone }
       );
     }
@@ -366,6 +375,7 @@ exports.createDriver = async (req, res) => {
     // Handle document upload if present
     if (req.file) {
       await ComplianceDocument.create({
+        tenantId: req.user.tenantId,
         targetType: 'DRIVER',
         targetId: newDriver._id.toString(),
         documentType: 'DL',
@@ -381,6 +391,7 @@ exports.createDriver = async (req, res) => {
       const hashedPassword = await bcrypt.hash(password, salt);
 
       const newUser = new User({
+        tenantId: req.user.tenantId,
         username: username,
         email: `${username}@transitnode.demo`,
         mobileNumber: phone,
@@ -406,7 +417,7 @@ exports.createDriver = async (req, res) => {
 
 exports.getDrivers = async (req, res) => {
   try {
-    const drivers = await Driver.find().sort({ createdAt: -1 });
+    const drivers = await Driver.find({ tenantId: req.user.tenantId }).sort({ createdAt: -1 });
     res.status(200).json({ drivers });
   } catch (error) {
     console.error('Error fetching drivers:', error);
@@ -417,7 +428,7 @@ exports.getDrivers = async (req, res) => {
 exports.deleteDriver = async (req, res) => {
   try {
     const { id } = req.params;
-    const driver = await Driver.findById(id);
+    const driver = await Driver.findOne({ _id: id, tenantId: req.user.tenantId });
     if (!driver) {
       return res.status(404).json({ message: 'Driver not found' });
     }
@@ -426,10 +437,10 @@ exports.deleteDriver = async (req, res) => {
     await User.findOneAndDelete({ username: driver.phone });
 
     // Delete the driver
-    await Driver.findByIdAndDelete(id);
+    await Driver.findOneAndDelete({ _id: id, tenantId: req.user.tenantId });
 
     // Optionally clear driver assigned in Device
-    await Device.updateMany({ driverPhone: driver.phone }, { driverName: '', driverPhone: '' });
+    await Device.updateMany({ driverPhone: driver.phone, tenantId: req.user.tenantId }, { driverName: '', driverPhone: '' });
 
     res.status(200).json({ message: 'Driver deleted successfully' });
   } catch (error) {
@@ -454,7 +465,7 @@ exports.assignVehicleToDriver = async (req, res) => {
 
     // Also update the Device collection to reflect the assignment
     if (vehicleRegistration) {
-      await Device.updateMany({ vehicleRegistration }, { driverName: driver.name, driverPhone: driver.phone });
+      await Device.updateMany({ vehicleRegistration, tenantId: req.user.tenantId }, { driverName: driver.name, driverPhone: driver.phone });
     }
 
     res.status(200).json({ message: 'Vehicle assigned successfully', driver });
@@ -481,6 +492,7 @@ exports.uploadComplianceDocument = async (req, res) => {
     const fileUrl = `/uploads/${req.file.filename}`;
 
     const newDoc = new ComplianceDocument({
+      tenantId: req.user.tenantId,
       targetType,
       targetId,
       documentType,
@@ -498,7 +510,7 @@ exports.uploadComplianceDocument = async (req, res) => {
 
 exports.getComplianceDocuments = async (req, res) => {
   try {
-    const documents = await ComplianceDocument.find().sort({ createdAt: -1 });
+    const documents = await ComplianceDocument.find({ tenantId: req.user.tenantId }).sort({ createdAt: -1 });
     res.status(200).json({ documents });
   } catch (error) {
     console.error('Error fetching compliance documents:', error);
@@ -522,6 +534,7 @@ exports.verifyEmployee = async (req, res) => {
     
     // Save Aadhaar
     await ComplianceDocument.create({
+      tenantId: req.user.tenantId,
       targetType: 'EMPLOYEE',
       targetId: employeeId,
       documentType: 'AADHAAR',
@@ -531,6 +544,7 @@ exports.verifyEmployee = async (req, res) => {
 
     // Save PAN
     await ComplianceDocument.create({
+      tenantId: req.user.tenantId,
       targetType: 'EMPLOYEE',
       targetId: employeeId,
       documentType: 'PAN',
@@ -540,6 +554,7 @@ exports.verifyEmployee = async (req, res) => {
 
     // Save Address Proof
     await ComplianceDocument.create({
+      tenantId: req.user.tenantId,
       targetType: 'EMPLOYEE',
       targetId: employeeId,
       documentType: 'ADDRESS_PROOF',

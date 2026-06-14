@@ -15,9 +15,11 @@ const FinancialLedger = () => {
 
   const fetchFinanceData = async () => {
     try {
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
       const [tbRes, pnlRes] = await Promise.all([
-        axios.get('http://localhost:3000/api/finance/ledger'),
-        axios.get('http://localhost:3000/api/finance/pnl')
+        axios.get('http://localhost:3000/api/finance/ledger', { headers }),
+        axios.get('http://localhost:3000/api/finance/pnl', { headers })
       ]);
       setTrialBalance(tbRes.data.data || []);
       setPnl(pnlRes.data.data || null);
@@ -28,7 +30,8 @@ const FinancialLedger = () => {
 
   const fetchPayroll = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/payroll');
+      const token = localStorage.getItem('token');
+      const res = await axios.get('http://localhost:3000/api/payroll', { headers: { Authorization: `Bearer ${token}` } });
       setPayrollData(res.data.data || []);
     } catch (err) {
       console.error('Failed to fetch payroll', err);
@@ -62,7 +65,8 @@ const FinancialLedger = () => {
   const handleCalculatePayroll = async () => {
     try {
       const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
-      await axios.post(`http://localhost:3000/api/payroll/calculate?month=${currentMonth}`);
+      const token = localStorage.getItem('token');
+      await axios.post(`http://localhost:3000/api/payroll/calculate?month=${currentMonth}`, {}, { headers: { Authorization: `Bearer ${token}` } });
       await fetchPayroll();
       alert('Payroll calculated successfully!');
     } catch (err) {
@@ -72,7 +76,8 @@ const FinancialLedger = () => {
 
   const handleDisbursePayroll = async (ids) => {
     try {
-      await axios.post('http://localhost:3000/api/payroll/disburse', { ids });
+      const token = localStorage.getItem('token');
+      await axios.post('http://localhost:3000/api/payroll/disburse', { ids }, { headers: { Authorization: `Bearer ${token}` } });
       await fetchPayroll();
       alert('Payroll disbursed!');
     } catch (err) {

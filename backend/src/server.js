@@ -45,6 +45,7 @@ const transportRoutes = require('./routes/transports');
 const financeRoutes = require('./routes/finance');
 const exportRoutes = require('./routes/export');
 const payrollRoutes = require('./routes/payroll');
+const saasRoutes = require('./routes/saas');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -55,6 +56,7 @@ app.use('/api/transports', transportRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/finance/export', exportRoutes);
 app.use('/api/payroll', payrollRoutes);
+app.use('/api/saas', saasRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
