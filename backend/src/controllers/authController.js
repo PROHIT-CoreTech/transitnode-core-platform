@@ -67,12 +67,12 @@ exports.login = async (req, res) => {
 
     // Generate JWT
     const payload = {
-      id: user._id,
+      userId: user._id,
       role: user.role,
       tenantId: user.tenantId
     };
     
-    const token = jwt.sign(payload, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '1d' });
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
 
     res.status(200).json({
       message: 'Login successful',
@@ -104,12 +104,12 @@ exports.magicLogin = async (req, res) => {
 
     // Generate JWT
     const payload = {
-      id: user._id,
+      userId: user._id,
       role: user.role,
       tenantId: user.tenantId
     };
     
-    const jwtToken = jwt.sign(payload, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '1d' });
+    const jwtToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
 
     // Invalidate the token so it can't be used again
     user.magicLinkToken = undefined;

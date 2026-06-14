@@ -1,5 +1,7 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
+const { validateEnvironment } = require('./config/environment');
+validateEnvironment();
 const express = require('express');
 const app = express();
 const connectDB = require('./config/nosql');
