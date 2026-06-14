@@ -1,0 +1,13 @@
+#Fri Jun 12 17:17:54 IST 2026
+path.3=6/classes.dex
+path.2=0/classes.dex
+path.1=0/classes.dex
+path.0=classes.dex
+base.3=/Users/rohitbarge/Documents/New Topics/TransitNode ERP/app/transitnode-core-platform/mobile/android/app/build/intermediates/dex/debug/mergeProjectDexDebug/6/classes.dex
+base.2=/Users/rohitbarge/Documents/New Topics/TransitNode ERP/app/transitnode-core-platform/mobile/android/app/build/intermediates/dex/debug/mergeProjectDexDebug/0/classes.dex
+base.1=/Users/rohitbarge/Documents/New Topics/TransitNode ERP/app/transitnode-core-platform/mobile/android/app/build/intermediates/dex/debug/mergeLibDexDebug/0/classes.dex
+base.0=/Users/rohitbarge/Documents/New Topics/TransitNode ERP/app/transitnode-core-platform/mobile/android/app/build/intermediates/dex/debug/mergeExtDexDebug/classes.dex
+renamed.3=classes4.dex
+renamed.2=classes3.dex
+renamed.1=classes2.dex
+renamed.0=classes.dex
