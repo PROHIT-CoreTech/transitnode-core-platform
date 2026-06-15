@@ -9,7 +9,7 @@ exports.verifyDeliveryOtp = async (req, res) => {
       return res.status(400).json({ message: 'Tracking Number and OTP are required' });
     }
 
-    const shipment = await ShipmentLedger.findOne({ trackingNumber, tenantId: req.user.tenantId });
+    const shipment = await ShipmentLedger.findOne({ trackingNumber, tenantId: req.user.tenantId, companyId: req.workspaceId });
 
     if (!shipment) {
       return res.status(404).json({ message: 'Shipment not found' });
@@ -35,7 +35,7 @@ exports.verifyDeliveryOtp = async (req, res) => {
     // Revert assigned vehicle to YARD and Driver to AVAILABLE
     const vehicleReg = shipment.logistics?.transport?.vehicleNumber;
     if (vehicleReg) {
-      const device = await Device.findOne({ vehicleRegistration: vehicleReg, tenantId: req.user.tenantId });
+      const device = await Device.findOne({ vehicleRegistration: vehicleReg, tenantId: req.user.tenantId, companyId: req.workspaceId });
       if (device) {
         device.status = 'YARD';
         await device.save();
@@ -51,7 +51,7 @@ exports.verifyDeliveryOtp = async (req, res) => {
     const driverPhone = shipment.logistics?.transport?.driverPhone;
     if (driverPhone) {
       const Driver = require('../models/NoSQL/Driver');
-      await Driver.findOneAndUpdate({ phone: driverPhone, tenantId: req.user.tenantId }, { status: 'AVAILABLE' });
+      await Driver.findOneAndUpdate({ phone: driverPhone, tenantId: req.user.tenantId, companyId: req.workspaceId }, { status: 'AVAILABLE' });
     }
 
     res.status(200).json({ message: 'OTP Verified. Cargo Unloading Authorized.', shipment });
@@ -63,7 +63,7 @@ exports.verifyDeliveryOtp = async (req, res) => {
 
 exports.getFleet = async (req, res) => {
   try {
-    const fleet = await Device.find({ tenantId: req.user.tenantId });
+    const fleet = await Device.find({ tenantId: req.user.tenantId, companyId: req.workspaceId });
     res.status(200).json({ fleet });
   } catch (error) {
     console.error('Error fetching fleet:', error);
@@ -74,7 +74,7 @@ exports.getFleet = async (req, res) => {
 const Driver = require('../models/NoSQL/Driver');
 exports.getDrivers = async (req, res) => {
   try {
-    const drivers = await Driver.find({ status: 'AVAILABLE', tenantId: req.user.tenantId });
+    const drivers = await Driver.find({ status: 'AVAILABLE', tenantId: req.user.tenantId, companyId: req.workspaceId });
     res.status(200).json({ drivers });
   } catch (error) {
     console.error('Error fetching drivers:', error);
@@ -89,7 +89,7 @@ exports.startTrip = async (req, res) => {
       return res.status(400).json({ message: 'Tracking number is required' });
     }
 
-    const shipment = await ShipmentLedger.findOne({ trackingNumber, tenantId: req.user.tenantId });
+    const shipment = await ShipmentLedger.findOne({ trackingNumber, tenantId: req.user.tenantId, companyId: req.workspaceId });
     if (!shipment) {
       return res.status(404).json({ message: 'Shipment not found' });
     }
@@ -106,7 +106,7 @@ exports.startTrip = async (req, res) => {
     const driverPhone = shipment.logistics?.transport?.driverPhone;
     if (driverPhone) {
       await Driver.findOneAndUpdate(
-        { phone: driverPhone, tenantId: req.user.tenantId },
+        { phone: driverPhone, tenantId: req.user.tenantId, companyId: req.workspaceId },
         { status: 'ON_TRIP' }
       );
     }
@@ -115,7 +115,7 @@ exports.startTrip = async (req, res) => {
     const vehicleReg = shipment.logistics?.transport?.vehicleNumber;
     if (vehicleReg) {
       await Device.findOneAndUpdate(
-        { vehicleRegistration: vehicleReg, tenantId: req.user.tenantId },
+        { vehicleRegistration: vehicleReg, tenantId: req.user.tenantId, companyId: req.workspaceId },
         { status: 'ON_TRIP' }
       );
     }

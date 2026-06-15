@@ -15,7 +15,7 @@ exports.createShipment = async (req, res) => {
     const subtotal = baseRateApplied;
     
     const newShipment = await ShipmentLedger.create({
-      tenantId: req.user.tenantId,
+      tenantId: req.user.tenantId, companyId: req.workspaceId,
       trackingNumber,
       status: 'PENDING',
       metadata: {
@@ -83,6 +83,7 @@ exports.listShipments = async (req, res) => {
 
     const limitCount = timeRange === 'all' ? 100 : 500;
     query.tenantId = req.user.tenantId;
+    query.companyId = req.workspaceId;
     const shipments = await ShipmentLedger.find(query).sort({ 'metadata.createdAt': -1 }).limit(limitCount);
     res.status(200).json({ shipments });
   } catch (error) {
@@ -110,8 +111,8 @@ exports.getShipment = async (req, res) => {
 
 exports.getStats = async (req, res) => {
   try {
-    const activeShipments = await ShipmentLedger.countDocuments({ status: { $ne: 'DELIVERED' }, tenantId: req.user.tenantId });
-    const pendingInvoices = await ShipmentLedger.countDocuments({ 'accounting.paymentStatus': 'PENDING', tenantId: req.user.tenantId });
+    const activeShipments = await ShipmentLedger.countDocuments({ status: { $ne: 'DELIVERED' }, tenantId: req.user.tenantId, companyId: req.workspaceId });
+    const pendingInvoices = await ShipmentLedger.countDocuments({ 'accounting.paymentStatus': 'PENDING', tenantId: req.user.tenantId, companyId: req.workspaceId });
     
     res.status(200).json({ activeShipments, pendingInvoices });
   } catch (error) {
@@ -122,7 +123,7 @@ exports.getStats = async (req, res) => {
 
 exports.getPendingInvoices = async (req, res) => {
   try {
-    const invoices = await ShipmentLedger.find({ 'accounting.paymentStatus': 'PENDING', tenantId: req.user.tenantId }).sort({ 'metadata.createdAt': -1 });
+    const invoices = await ShipmentLedger.find({ 'accounting.paymentStatus': 'PENDING', tenantId: req.user.tenantId, companyId: req.workspaceId }).sort({ 'metadata.createdAt': -1 });
     res.status(200).json({ invoices });
   } catch (error) {
     console.error('Error fetching pending invoices:', error);
@@ -135,7 +136,7 @@ exports.processPayment = async (req, res) => {
     const { trackingId } = req.params;
     const { gstPercentage } = req.body;
     
-    const shipment = await ShipmentLedger.findOne({ trackingNumber: trackingId, tenantId: req.user.tenantId });
+    const shipment = await ShipmentLedger.findOne({ trackingNumber: trackingId, tenantId: req.user.tenantId, companyId: req.workspaceId });
     if (!shipment) return res.status(404).json({ message: 'Shipment not found' });
     if (shipment.accounting.paymentStatus === 'PAID') {
       return res.status(400).json({ message: 'Shipment is already paid' });

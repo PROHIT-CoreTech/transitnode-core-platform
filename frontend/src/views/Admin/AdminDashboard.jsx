@@ -35,6 +35,12 @@ const AdminDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   
+  // Sister Companies / Workspaces State
+  const [workspaces, setWorkspaces] = useState([]);
+  const [activeWorkspace, setActiveWorkspace] = useState(null);
+  const [sisterCompanyForm, setSisterCompanyForm] = useState({ companyName: '' });
+  const [sisterCompanyLoading, setSisterCompanyLoading] = useState(false);
+
   // Subscription State
   const [subscriptionDetails, setSubscriptionDetails] = useState(null);
   const [pendingUpgradePlan, setPendingUpgradePlan] = useState(null);
@@ -82,12 +88,9 @@ const AdminDashboard = () => {
       navigate('/login');
       return;
     }
-    fetchAnalytics();
-    fetchRates();
-    fetchDrivers();
-    fetchFleetAssets();
     fetchUsersList();
     fetchSubscription();
+    fetchWorkspaces();
 
     // Socket Initialization
     socketRef.current = io('http://localhost:3000');
@@ -134,11 +137,28 @@ const AdminDashboard = () => {
     };
   }, [token, user, navigate]);
 
+  // Inject Workspace Context
   useEffect(() => {
-    if (token && user?.role === 'ADMIN') {
-      fetchAnalytics();
-    }
-  }, [timeRange]);
+    if (!token || user?.role !== 'ADMIN') return;
+    
+    const interceptor = axios.interceptors.request.use(config => {
+      if (config.headers && typeof config.headers.set === 'function') {
+        config.headers.set('x-workspace-id', activeWorkspace || 'MAIN');
+      } else {
+        config.headers['x-workspace-id'] = activeWorkspace || 'MAIN';
+      }
+      return config;
+    });
+
+    fetchAnalytics();
+    fetchRates();
+    fetchDrivers();
+    fetchFleetAssets();
+
+    return () => axios.interceptors.request.eject(interceptor);
+  }, [activeWorkspace, timeRange, token, user]);
+
+
 
   useEffect(() => {
     if (activeTab === 'PROFILE') {
@@ -182,7 +202,10 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
       const res = await axios.get(`http://localhost:3000/api/admin/analytics/revenue?timeRange=${timeRange}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'x-workspace-id': activeWorkspace || 'MAIN'
+        }
       });
       setMetrics(res.data.metrics);
       setCharts(res.data.charts);
@@ -196,7 +219,10 @@ const AdminDashboard = () => {
   const fetchRates = async () => {
     try {
       const res = await axios.get('http://localhost:3000/api/admin/rates', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'x-workspace-id': activeWorkspace || 'MAIN'
+        }
       });
       setRateForm({
         basePricePerKg: res.data.basePricePerKg || '',
@@ -211,7 +237,10 @@ const AdminDashboard = () => {
   const fetchDrivers = async () => {
     try {
       const res = await axios.get('http://localhost:3000/api/admin/drivers', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'x-workspace-id': activeWorkspace || 'MAIN'
+        }
       });
       setDrivers(res.data.drivers || []);
     } catch (error) {
@@ -222,7 +251,10 @@ const AdminDashboard = () => {
   const fetchFleetAssets = async () => {
     try {
       const res = await axios.get('http://localhost:3000/api/admin/fleet', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'x-workspace-id': activeWorkspace || 'MAIN'
+        }
       });
       setFleetAssets(res.data.assets || []);
     } catch (error) {
@@ -251,6 +283,38 @@ const AdminDashboard = () => {
       setSubscriptionDetails(res.data);
     } catch (error) {
       console.error('Failed to fetch subscription', error);
+    }
+  };
+
+  const fetchWorkspaces = async () => {
+    try {
+      const res = await axios.get('http://localhost:3000/api/companies/my-workspaces', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setWorkspaces(res.data.workspaces || []);
+    } catch (error) {
+      console.error('Failed to fetch workspaces', error);
+    }
+  };
+
+  const handleCreateSisterCompany = async (e) => {
+    e.preventDefault();
+    if (!sisterCompanyForm.companyName) {
+      alert("Company Name is required.");
+      return;
+    }
+    setSisterCompanyLoading(true);
+    try {
+      await axios.post('http://localhost:3000/api/companies/add-sister', sisterCompanyForm, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert('Sister company created successfully');
+      setSisterCompanyForm({ companyName: '' });
+      fetchWorkspaces();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to create sister company');
+    } finally {
+      setSisterCompanyLoading(false);
     }
   };
 
@@ -502,7 +566,18 @@ const AdminDashboard = () => {
       <aside className="w-64 bg-slate-900 text-white flex flex-col shadow-xl">
         <div className="p-6">
           <h1 className="text-2xl font-bold tracking-tight text-white mb-2">TransitNode</h1>
-          <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Command Center</p>
+          <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-4">Command Center</p>
+          
+          <select 
+            className="w-full bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2"
+            value={activeWorkspace || 'MAIN'}
+            onChange={(e) => setActiveWorkspace(e.target.value === 'MAIN' ? null : e.target.value)}
+          >
+            <option value="MAIN">Primary Workspace</option>
+            {workspaces.map(ws => (
+              <option key={ws._id} value={ws._id}>{ws.companyName}</option>
+            ))}
+          </select>
         </div>
         
         <nav className="flex-1 mt-6">
@@ -1314,6 +1389,33 @@ const AdminDashboard = () => {
                   </ul>
                 </div>
               </div>
+
+              {subscriptionDetails.planType === 'LIFETIME' && (
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 mt-6">
+                  <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Add Sister Company (Lifetime Feature)</h3>
+                  <form onSubmit={handleCreateSisterCompany} className="flex gap-4 items-end">
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Sister Company Name</label>
+                      <input 
+                        type="text" 
+                        required 
+                        value={sisterCompanyForm.companyName} 
+                        onChange={e => setSisterCompanyForm({companyName: e.target.value})} 
+                        className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" 
+                        placeholder="e.g. CoreMatrix Logistics Pvt Ltd"
+                      />
+                    </div>
+                    <button 
+                      type="submit" 
+                      disabled={sisterCompanyLoading}
+                      className="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 transition font-medium disabled:opacity-50"
+                    >
+                      {sisterCompanyLoading ? 'Creating...' : 'Create Workspace'}
+                    </button>
+                  </form>
+                  <p className="text-xs text-slate-500 mt-2">You can register up to 3 distinct corporate workspaces under your tenant profile.</p>
+                </div>
+              )}
 
               {subscriptionDetails.planType !== 'LIFETIME' ? (
                 <div className="bg-slate-900 rounded-xl shadow-lg p-8 text-center mt-8 text-white relative overflow-hidden">

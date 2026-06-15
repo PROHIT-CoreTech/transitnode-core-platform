@@ -20,6 +20,12 @@ const authGuard = (req, res, next) => {
     // Inject decoded payload straight into req.user
     req.user = decoded;
     
+    // Parse Workspace ID from Headers
+    const workspaceId = req.header('x-workspace-id');
+    console.log('[AUTH GUARD] Received x-workspace-id header:', workspaceId);
+    req.workspaceId = (!workspaceId || workspaceId === 'MAIN') ? null : workspaceId;
+    console.log('[AUTH GUARD] Parsed req.workspaceId:', req.workspaceId);
+
     if (req.user.tenantId) {
       tenantContext.run(req.user.tenantId, () => {
         next();

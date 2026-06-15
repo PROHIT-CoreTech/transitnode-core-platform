@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const rateCardSchema = new mongoose.Schema(
   {
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', required: true, index: true },
+    companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company', default: null },
     type: {
       type: String,
       default: 'GLOBAL',

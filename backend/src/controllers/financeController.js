@@ -7,7 +7,8 @@ exports.getTrialBalance = async (req, res) => {
     if (!req.user.tenantId) {
       return res.status(401).json({ success: false, message: 'Invalid session: Missing tenant ID. Please log out and log back in.' });
     }
-    const tenantMatch = { tenantId: new mongoose.Types.ObjectId(req.user.tenantId) };
+    const companyIdQuery = req.workspaceId ? new mongoose.Types.ObjectId(req.workspaceId) : null;
+    const tenantMatch = { tenantId: new mongoose.Types.ObjectId(req.user.tenantId), companyId: companyIdQuery };
     
     // A simplified Trial Balance aggregation
     const result = await ShipmentLedger.aggregate([
@@ -63,7 +64,8 @@ exports.getTrialBalance = async (req, res) => {
 
 exports.getPnL = async (req, res) => {
   try {
-    const tenantMatch = { tenantId: new mongoose.Types.ObjectId(req.user.tenantId) };
+    const companyIdQuery = req.workspaceId ? new mongoose.Types.ObjectId(req.workspaceId) : null;
+    const tenantMatch = { tenantId: new mongoose.Types.ObjectId(req.user.tenantId), companyId: companyIdQuery };
     
     const result = await ShipmentLedger.aggregate([
       { $match: tenantMatch },
@@ -121,7 +123,7 @@ exports.getPnL = async (req, res) => {
 exports.getTripDetails = async (req, res) => {
   try {
     const { trackingNumber } = req.params;
-    const trip = await ShipmentLedger.findOne({ trackingNumber, tenantId: req.user.tenantId });
+    const trip = await ShipmentLedger.findOne({ trackingNumber, tenantId: req.user.tenantId, companyId: req.workspaceId });
     if (!trip) {
       return res.status(404).json({ success: false, message: 'Trip not found' });
     }

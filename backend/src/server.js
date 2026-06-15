@@ -16,7 +16,11 @@ app.set('io', io);
 
 const cors = require('cors');
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-workspace-id']
+}));
 app.use(express.json());
 
 // Log all incoming requests
@@ -48,6 +52,7 @@ const financeRoutes = require('./routes/finance');
 const exportRoutes = require('./routes/export');
 const payrollRoutes = require('./routes/payroll');
 const saasRoutes = require('./routes/saas');
+const companyRoutes = require('./routes/companyRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -59,6 +64,7 @@ app.use('/api/finance', financeRoutes);
 app.use('/api/finance/export', exportRoutes);
 app.use('/api/payroll', payrollRoutes);
 app.use('/api/saas', saasRoutes);
+app.use('/api/companies', companyRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

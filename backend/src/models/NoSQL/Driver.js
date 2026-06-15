@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const driverSchema = new mongoose.Schema(
   {
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', required: true, index: true },
+    companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company', default: null },
     name: {
       type: String,
       required: true,

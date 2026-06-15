@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const telemetryLogSchema = new mongoose.Schema({
   tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', required: true, index: true },
+  companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company', default: null },
   vehicleId: {
     type: String,
     required: true,

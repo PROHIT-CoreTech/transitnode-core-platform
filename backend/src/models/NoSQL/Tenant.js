@@ -37,6 +37,10 @@ const tenantSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    maxCompaniesAllowed: {
+      type: Number,
+      default: 1,
+    },
     brandingOptions: {
       logoUrl: {
         type: String,
@@ -52,5 +56,12 @@ const tenantSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+tenantSchema.pre('save', function (next) {
+  if (this.isNew && this.planType === 'PLATINUM') {
+    this.maxCompaniesAllowed = 3;
+  }
+  next();
+});
 
 module.exports = mongoose.model('Tenant', tenantSchema);
