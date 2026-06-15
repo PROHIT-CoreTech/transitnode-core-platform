@@ -10,6 +10,28 @@ exports.createUser = async (req, res) => {
   try {
     const { name, email, mobileNumber, password, role } = req.body;
     
+    // Fetch Tenant to check plan limits
+    const Tenant = require('../models/NoSQL/Tenant');
+    const tenant = await Tenant.findById(req.user.tenantId);
+    if (!tenant) {
+      return res.status(404).json({ message: 'Tenant not found' });
+    }
+
+    // Define limits based on planType
+    const planLimits = {
+      'TRIAL': 3,
+      'SILVER': 10,
+      'PLATINUM': 999999, // Unlimited
+      'LIFETIME': 999999 // Unlimited
+    };
+    
+    const maxUsers = planLimits[tenant.planType] || 3;
+    const currentUserCount = await User.countDocuments({ tenantId: req.user.tenantId });
+
+    if (currentUserCount >= maxUsers) {
+      return res.status(403).json({ message: `User creation limit reached! Your ${tenant.planType} plan allows a maximum of ${maxUsers} users. Please upgrade your subscription.` });
+    }
+
     // Check if user already exists
     const existingUser = await User.findOne({ $or: [{ email }, { mobileNumber: mobileNumber || '---' }], tenantId: req.user.tenantId });
     if (existingUser) {
@@ -566,5 +588,62 @@ exports.verifyEmployee = async (req, res) => {
   } catch (error) {
     console.error('Error verifying employee:', error);
     res.status(500).json({ message: 'Server error verifying employee' });
+  }
+};
+
+exports.getSubscriptionDetails = async (req, res) => {
+  try {
+    const Tenant = require('../models/NoSQL/Tenant');
+    const tenant = await Tenant.findById(req.user.tenantId);
+    if (!tenant) {
+      return res.status(404).json({ message: 'Tenant not found' });
+    }
+    const currentUserCount = await User.countDocuments({ tenantId: req.user.tenantId });
+    
+    res.status(200).json({
+      companyName: tenant.companyName,
+      planType: tenant.planType,
+      licenseExpiresAt: tenant.licenseExpiresAt,
+      currentUserCount
+    });
+  } catch (error) {
+    console.error('Error fetching subscription:', error);
+    res.status(500).json({ message: 'Server error fetching subscription details' });
+  }
+};
+
+exports.updateSubscriptionPlan = async (req, res) => {
+  try {
+    const { planType } = req.body;
+    if (!['TRIAL', 'SILVER', 'PLATINUM', 'LIFETIME'].includes(planType)) {
+      return res.status(400).json({ message: 'Invalid plan type' });
+    }
+    
+    const Tenant = require('../models/NoSQL/Tenant');
+    const tenant = await Tenant.findById(req.user.tenantId);
+    if (!tenant) {
+      return res.status(404).json({ message: 'Tenant not found' });
+    }
+
+    const licenseExpiresAt = new Date();
+    if (planType === 'LIFETIME') {
+      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 100);
+    } else if (planType === 'PLATINUM') {
+      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 5);
+    } else if (planType === 'SILVER') {
+      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 3);
+    } else {
+      licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 10); // Trial fallback
+    }
+
+    tenant.planType = planType;
+    tenant.licenseExpiresAt = licenseExpiresAt;
+    tenant.paymentStatus = 'PAID';
+    await tenant.save();
+
+    res.status(200).json({ message: 'Subscription updated successfully', planType: tenant.planType, licenseExpiresAt: tenant.licenseExpiresAt });
+  } catch (error) {
+    console.error('Error updating subscription:', error);
+    res.status(500).json({ message: 'Server error updating subscription plan' });
   }
 };

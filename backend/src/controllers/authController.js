@@ -22,7 +22,7 @@ exports.register = async (req, res) => {
       mobileNumber,
       password: hashedPassword,
       name,
-      role: role || 'RECEPTIONIST'
+      role: role || 'OPERATION'
     });
 
     res.status(201).json({ message: 'User created successfully', user: { id: newUser._id, email: newUser.email, name: newUser.name, role: newUser.role } });
@@ -34,7 +34,7 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { email, username, password } = req.body;
+    const { email, username, password, subdomain } = req.body;
 
     if (!password) {
       return res.status(400).json({ message: 'Password is required' });
@@ -53,7 +53,19 @@ exports.login = async (req, res) => {
     }
     if (username) queryConditions.push({ username });
 
-    const user = await User.findOne({ $or: queryConditions });
+    const filter = { $or: queryConditions };
+
+    // Strict Subdomain Security Check
+    if (subdomain) {
+      const Tenant = require('../models/NoSQL/Tenant');
+      const tenant = await Tenant.findOne({ customSubdomain: subdomain });
+      if (!tenant) {
+        return res.status(401).json({ message: 'Invalid company portal URL' });
+      }
+      filter.tenantId = tenant._id;
+    }
+
+    const user = await User.findOne(filter);
 
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });

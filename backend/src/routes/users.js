@@ -4,8 +4,13 @@ const userController = require('../controllers/userController');
 const verifyToken = require('../middleware/verifyToken');
 const checkRole = require('../middleware/checkRole');
 
-// Apply middleware to all user routes: Must be logged in AND have 'Admin' role
-router.use(verifyToken, checkRole('Admin'));
+const authGuard = require('../middleware/authGuard');
+
+// Special route for post-billing admin setup (uses authGuard for tenant context)
+router.post('/setup-admin', authGuard, userController.setupAdmin);
+
+// Apply middleware to all other user routes: Must be logged in AND have 'Admin' role
+router.use(verifyToken, checkRole('ADMIN')); // Ensure role is uppercase ADMIN as created in saasController
 
 // CRUD operations
 router.get('/', userController.getAllUsers);

@@ -59,6 +59,10 @@ router.put('/drivers/:driverId/assign-vehicle', adminController.assignVehicleToD
 // Compliance Vault
 router.get('/compliance/documents', adminController.getComplianceDocuments);
 
+// Subscription Management
+router.get('/subscription', adminController.getSubscriptionDetails);
+router.put('/subscription/upgrade', adminController.updateSubscriptionPlan);
+
 // Demo Simulation Toggle
 router.post('/demo/toggle', (req, res) => {
   const { active } = req.body;

@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { TenantBrandingContext } from '../context/TenantBrandingContext';
 import axios from 'axios';
@@ -11,13 +11,39 @@ const PublicTracker = React.lazy(() => import('../views/PublicTracker'));
 const AdminDashboard = React.lazy(() => import('../views/Admin/AdminDashboard'));
 const PricingPortal = React.lazy(() => import('../views/LandingPage/PricingPortal'));
 const MagicLogin = React.lazy(() => import('../views/MagicLogin'));
+const SaaSCheckout = React.lazy(() => import('../views/Checkout/SaaSCheckout'));
+const AdminSetup = React.lazy(() => import('../views/Checkout/AdminSetup'));
 import YardArrivals from '../views/GateOperations/YardArrivals';
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useContext(AuthContext);
+  const { tenantProfile } = useContext(TenantBrandingContext);
+  const location = useLocation();
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }
+
+  // Payment and Setup Routing Logic
+  if (tenantProfile && tenantProfile.planType !== 'TRIAL') {
+    if (tenantProfile.paymentStatus === 'PENDING') {
+      if (location.pathname !== '/checkout') {
+        return <Navigate to="/checkout" replace />;
+      }
+    } else if (tenantProfile.paymentStatus === 'PAID') {
+      if (!tenantProfile.adminSetupComplete) {
+        if (location.pathname !== '/setup-admin') {
+          return <Navigate to="/setup-admin" replace />;
+        }
+      } else {
+        // If they are PAID and SETUP is COMPLETE, they should NOT be on /checkout or /setup-admin
+        if (location.pathname === '/checkout' || location.pathname === '/setup-admin') {
+          return <Navigate to="/dashboard" replace />;
+        }
+      }
+    }
+  }
+
   return children;
 };
 
@@ -95,6 +121,16 @@ const AppRouter = () => {
         <Route path="/tracker/:trackingId" element={<PublicTracker />} />
         
         {/* Protected Routes */}
+        <Route path="/checkout" element={
+          <ProtectedRoute>
+            <SaaSCheckout />
+          </ProtectedRoute>
+        } />
+        <Route path="/setup-admin" element={
+          <ProtectedRoute>
+            <AdminSetup />
+          </ProtectedRoute>
+        } />
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />

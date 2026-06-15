@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const tenantContext = require('../utils/tenantContext');
 
 const authGuard = (req, res, next) => {
   try {
@@ -19,7 +20,13 @@ const authGuard = (req, res, next) => {
     // Inject decoded payload straight into req.user
     req.user = decoded;
     
-    next();
+    if (req.user.tenantId) {
+      tenantContext.run(req.user.tenantId, () => {
+        next();
+      });
+    } else {
+      next();
+    }
   } catch (error) {
     return res.status(401).json({ message: 'Access Denied. Invalid or expired authentication token.' });
   }

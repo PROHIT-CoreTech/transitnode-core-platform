@@ -1,4 +1,10 @@
 const mongoose = require('mongoose');
+const tenantPlugin = require('../models/plugins/tenantPlugin');
+const tenantGuard = require('../models/NoSQL/plugins/tenantGuard');
+
+// Apply the logical node data isolation plugins globally
+mongoose.plugin(tenantPlugin);
+mongoose.plugin(tenantGuard);
 
 const connectDB = async () => {
   try {

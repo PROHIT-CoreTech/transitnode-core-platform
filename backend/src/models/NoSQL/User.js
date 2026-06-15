@@ -32,7 +32,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['RECEPTIONIST', 'ACCOUNTANT', 'ADMIN', 'DRIVER'],
+      enum: ['OPERATION', 'ACCOUNTANT', 'ADMIN', 'DRIVER'],
       required: true,
     },
     isActive: {

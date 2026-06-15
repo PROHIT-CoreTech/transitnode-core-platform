@@ -34,6 +34,12 @@ const AdminDashboard = () => {
     paymentMethodsData: []
   });
   const [loading, setLoading] = useState(true);
+  
+  // Subscription State
+  const [subscriptionDetails, setSubscriptionDetails] = useState(null);
+  const [pendingUpgradePlan, setPendingUpgradePlan] = useState(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutTab, setCheckoutTab] = useState('card');
 
   // Map / Fleet State
   const [vehicles, setVehicles] = useState({});
@@ -44,7 +50,7 @@ const AdminDashboard = () => {
   const socketRef = useRef(null);
 
   // Forms State
-  const [userForm, setUserForm] = useState({ name: '', email: '', mobileNumber: '', password: '', role: 'RECEPTIONIST' });
+  const [userForm, setUserForm] = useState({ name: '', email: '', mobileNumber: '', password: '', role: 'OPERATION' });
   const [rateForm, setRateForm] = useState({ basePricePerKg: '', volumetricDivisor: '', fuelSurchargeRate: '' });
   const [deviceForm, setDeviceForm] = useState({ 
     vehicleNumber: '', 
@@ -63,9 +69,13 @@ const AdminDashboard = () => {
   const [employeeForm, setEmployeeForm] = useState({
     employeeId: '', employeeName: '', aadhaar: null, pan: null, addressProof: null
   });
+  const [profileForm, setProfileForm] = useState({
+    name: '', email: '', username: '', mobileNumber: '', password: ''
+  });
   
   const [drivers, setDrivers] = useState([]);
   const [fleetAssets, setFleetAssets] = useState([]);
+  const [usersList, setUsersList] = useState([]);
 
   useEffect(() => {
     if (!token || user?.role !== 'ADMIN') {
@@ -76,6 +86,8 @@ const AdminDashboard = () => {
     fetchRates();
     fetchDrivers();
     fetchFleetAssets();
+    fetchUsersList();
+    fetchSubscription();
 
     // Socket Initialization
     socketRef.current = io('http://localhost:3000');
@@ -127,6 +139,44 @@ const AdminDashboard = () => {
       fetchAnalytics();
     }
   }, [timeRange]);
+
+  useEffect(() => {
+    if (activeTab === 'PROFILE') {
+      fetchProfile();
+    }
+  }, [activeTab]);
+
+  const fetchProfile = async () => {
+    try {
+      const res = await axios.get(`http://localhost:3000/api/users/${user.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setProfileForm({
+        name: res.data.user.name || '',
+        email: res.data.user.email || '',
+        username: res.data.user.username || '',
+        mobileNumber: res.data.user.mobileNumber || '',
+        password: '' // Keep blank for security
+      });
+    } catch (error) {
+      console.error('Failed to fetch profile', error);
+    }
+  };
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = { ...profileForm };
+      if (!payload.password) delete payload.password; // Don't update if empty
+
+      await axios.put(`http://localhost:3000/api/users/${user.id}`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert('Profile updated successfully! Some changes may require re-login to take full effect.');
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to update profile');
+    }
+  };
 
   const fetchAnalytics = async () => {
     try {
@@ -180,6 +230,58 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchUsersList = async () => {
+    try {
+      const res = await axios.get('http://localhost:3000/api/users', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      // Exclude drivers from this list since they have a dedicated tab
+      const nonDrivers = (res.data.users || []).filter(u => u.role !== 'DRIVER');
+      setUsersList(nonDrivers);
+    } catch (error) {
+      console.error('Failed to fetch users', error);
+    }
+  };
+
+  const fetchSubscription = async () => {
+    try {
+      const res = await axios.get('http://localhost:3000/api/admin/subscription', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSubscriptionDetails(res.data);
+    } catch (error) {
+      console.error('Failed to fetch subscription', error);
+    }
+  };
+
+  const handleUpgradePlan = async (newPlan) => {
+    setPendingUpgradePlan(newPlan);
+  };
+
+  const processUpgradeCheckout = async (e) => {
+    e.preventDefault();
+    setCheckoutLoading(true);
+    try {
+      await axios.put('http://localhost:3000/api/admin/subscription/upgrade', { planType: pendingUpgradePlan }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert(`Payment successful! Successfully upgraded to ${pendingUpgradePlan} plan!`);
+      setPendingUpgradePlan(null);
+      fetchSubscription();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to update plan');
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const getUpgradePrice = (plan) => {
+    if (plan === 'LIFETIME') return 500000;
+    if (plan === 'PLATINUM') return 100000;
+    if (plan === 'SILVER') return 50000;
+    return 0;
+  };
+
   const handleCreateUser = async (e) => {
     e.preventDefault();
     if (!userForm.name || (!userForm.email && !userForm.mobileNumber) || !userForm.password) {
@@ -191,7 +293,8 @@ const AdminDashboard = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('User created successfully');
-      setUserForm({ name: '', email: '', mobileNumber: '', password: '', role: 'RECEPTIONIST' });
+      setUserForm({ name: '', email: '', mobileNumber: '', password: '', role: 'OPERATION' });
+      fetchUsersList();
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to create user');
     }
@@ -452,11 +555,22 @@ const AdminDashboard = () => {
             >
               Financial Engine
             </button>
+            <button 
+              onClick={() => setActiveTab('SUBSCRIPTION')}
+              className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'SUBSCRIPTION' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
+            >
+              Subscription
+            </button>
           </div>
         </nav>
         <div className="p-4 border-t border-slate-800">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold">A</div>
+          <div 
+            onClick={() => setActiveTab('PROFILE')} 
+            className="flex items-center space-x-3 mb-4 p-2 rounded-lg hover:bg-slate-800 cursor-pointer transition-colors"
+          >
+            <div className="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold">
+              {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
+            </div>
             <div>
               <p className="text-sm font-medium">{user?.name}</p>
               <p className="text-xs text-slate-400">{user?.role}</p>
@@ -508,6 +622,43 @@ const AdminDashboard = () => {
           </div>
 
           {/* Views */}
+          {activeTab === 'PROFILE' && (
+            <div className="space-y-6 max-w-2xl">
+              <h2 className="text-xl font-bold text-slate-800">My Profile</h2>
+              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                <form onSubmit={handleUpdateProfile} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+                      <input type="text" required value={profileForm.name} onChange={e => setProfileForm({...profileForm, name: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border bg-white text-slate-900" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Username</label>
+                      <input type="text" required value={profileForm.username} onChange={e => setProfileForm({...profileForm, username: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border bg-white text-slate-900" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                      <input type="email" value={profileForm.email} onChange={e => setProfileForm({...profileForm, email: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border bg-white text-slate-900" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Mobile Number</label>
+                      <input type="text" value={profileForm.mobileNumber} onChange={e => setProfileForm({...profileForm, mobileNumber: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border bg-white text-slate-900" />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-slate-700 mb-1">New Password (leave blank to keep current)</label>
+                      <input type="password" value={profileForm.password} onChange={e => setProfileForm({...profileForm, password: e.target.value})} placeholder="Enter new password" className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border bg-white text-slate-900" />
+                    </div>
+                  </div>
+                  <div className="pt-4">
+                    <button type="submit" className="w-full md:w-auto bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 transition font-medium shadow-sm">
+                      Save Profile Updates
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'ANALYTICS' && (
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -622,7 +773,7 @@ const AdminDashboard = () => {
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
                         <select value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border bg-white">
-                          <option value="RECEPTIONIST">Receptionist</option>
+                          <option value="OPERATION">Operation</option>
                           <option value="ACCOUNTANT">Accountant</option>
                           <option value="ADMIN">Admin</option>
                         </select>
@@ -681,6 +832,42 @@ const AdminDashboard = () => {
                     </form>
                   </div>
 
+                </div>
+              </div>
+              
+              {/* Users List Table */}
+              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 mt-8">
+                <h3 className="text-lg font-bold text-slate-800 mb-4">Current Users</h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-slate-200">
+                    <thead>
+                      <tr>
+                        <th className="px-6 py-3 bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Name</th>
+                        <th className="px-6 py-3 bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Role</th>
+                        <th className="px-6 py-3 bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Email</th>
+                        <th className="px-6 py-3 bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Mobile</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-200">
+                      {usersList.map((usr) => (
+                        <tr key={usr._id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{usr.name}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${usr.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' : usr.role === 'ACCOUNTANT' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
+                              {usr.role}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{usr.email || '-'}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{usr.mobileNumber || '-'}</td>
+                        </tr>
+                      ))}
+                      {usersList.length === 0 && (
+                        <tr>
+                          <td colSpan="4" className="px-6 py-4 text-center text-sm text-slate-500">No users found</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -1048,6 +1235,211 @@ const AdminDashboard = () => {
           {activeTab === 'FINANCE' && (
             <div className="w-full h-full animate-fade-in">
               <FinancialLedger />
+            </div>
+          )}
+
+          {activeTab === 'SUBSCRIPTION' && subscriptionDetails && (
+            <div className="space-y-8 max-w-5xl mx-auto">
+              <div className="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-800">Your Subscription Plan</h2>
+                  <p className="text-slate-500 mt-1">Manage your billing and access levels.</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-slate-500 uppercase tracking-wider font-bold">Current Plan</p>
+                  <span className={`inline-block px-4 py-1 mt-1 rounded-full text-sm font-bold tracking-wide shadow-sm 
+                    ${subscriptionDetails.planType === 'LIFETIME' ? 'bg-amber-500 text-white shadow-amber-500/30' :
+                      subscriptionDetails.planType === 'PLATINUM' ? 'bg-indigo-600 text-white' : 
+                      subscriptionDetails.planType === 'SILVER' ? 'bg-slate-200 text-slate-800' : 
+                      'bg-emerald-100 text-emerald-800'}`}>
+                    {subscriptionDetails.planType}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                  <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Plan Details</h3>
+                  <div className="space-y-4">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Company Name</span>
+                      <span className="font-medium text-slate-900">{subscriptionDetails.companyName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">License Expires On</span>
+                      <span className="font-medium text-slate-900">{new Date(subscriptionDetails.licenseExpiresAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Current Users</span>
+                      <span className="font-medium text-slate-900">{subscriptionDetails.currentUserCount} {subscriptionDetails.planType === 'TRIAL' ? '/ 3' : subscriptionDetails.planType === 'SILVER' ? '/ 10' : '(Unlimited)'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                  <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Included Features</h3>
+                  <ul className="space-y-3">
+                    {subscriptionDetails.planType === 'TRIAL' && (
+                      <>
+                        <li className="flex items-center text-slate-700"><span className="text-emerald-500 mr-2">✓</span> Up to 3 Administrative Users</li>
+                        <li className="flex items-center text-slate-700"><span className="text-emerald-500 mr-2">✓</span> Basic Fleet Tracking</li>
+                        <li className="flex items-center text-slate-700"><span className="text-emerald-500 mr-2">✓</span> Standard Rate Config</li>
+                        <li className="flex items-center text-slate-400"><span className="mr-2">✗</span> Payroll Management</li>
+                      </>
+                    )}
+                    {subscriptionDetails.planType === 'SILVER' && (
+                      <>
+                        <li className="flex items-center text-slate-700"><span className="text-emerald-500 mr-2">✓</span> Up to 10 Administrative Users</li>
+                        <li className="flex items-center text-slate-700"><span className="text-emerald-500 mr-2">✓</span> Advanced Fleet Tracking</li>
+                        <li className="flex items-center text-slate-700"><span className="text-emerald-500 mr-2">✓</span> Payroll & Invoicing</li>
+                        <li className="flex items-center text-slate-400"><span className="mr-2">✗</span> Dedicated Account Manager</li>
+                      </>
+                    )}
+                    {subscriptionDetails.planType === 'PLATINUM' && (
+                      <>
+                        <li className="flex items-center text-slate-700"><span className="text-indigo-600 font-bold mr-2">✦</span> Unlimited Users</li>
+                        <li className="flex items-center text-slate-700"><span className="text-indigo-600 font-bold mr-2">✦</span> Full Analytics Suite & Custom Domains</li>
+                        <li className="flex items-center text-slate-700"><span className="text-indigo-600 font-bold mr-2">✦</span> Financial Engine & Compliance Vault</li>
+                        <li className="flex items-center text-slate-700"><span className="text-indigo-600 font-bold mr-2">✦</span> 24/7 Priority Support</li>
+                      </>
+                    )}
+                    {subscriptionDetails.planType === 'LIFETIME' && (
+                      <>
+                        <li className="flex items-center text-slate-700"><span className="text-amber-500 font-bold mr-2">★</span> Infinite Users</li>
+                        <li className="flex items-center text-slate-700"><span className="text-amber-500 font-bold mr-2">★</span> No Recurring Fees Ever</li>
+                        <li className="flex items-center text-slate-700"><span className="text-amber-500 font-bold mr-2">★</span> Lifetime Platinum Features</li>
+                        <li className="flex items-center text-slate-700"><span className="text-amber-500 font-bold mr-2">★</span> VIP White-Glove Onboarding</li>
+                      </>
+                    )}
+                  </ul>
+                </div>
+              </div>
+
+              {subscriptionDetails.planType !== 'LIFETIME' ? (
+                <div className="bg-slate-900 rounded-xl shadow-lg p-8 text-center mt-8 text-white relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500 opacity-20 rounded-full blur-3xl -mr-20 -mt-20"></div>
+                  <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500 opacity-20 rounded-full blur-3xl -ml-20 -mb-20"></div>
+                  
+                  <h3 className="text-2xl font-bold mb-2 relative z-10">Ready for more?</h3>
+                  <p className="text-slate-300 mb-8 max-w-2xl mx-auto relative z-10">Upgrade your plan at any time to instantly unlock higher user limits and premium operations capabilities.</p>
+                  
+                  <div className="flex flex-col sm:flex-row justify-center gap-4 relative z-10">
+                    {/* Free Trial is Rank 1, so no upgrades to Free Trial */}
+                    
+                    {/* Upgrade to Silver (Rank 2) - Only show if current is Rank 1 (TRIAL) */}
+                    {subscriptionDetails.planType === 'TRIAL' && (
+                      <button onClick={() => handleUpgradePlan('SILVER')} className="px-6 py-3 bg-white text-slate-900 hover:bg-slate-100 font-bold rounded-lg transition-colors shadow-md">
+                        Upgrade to Silver Plan
+                      </button>
+                    )}
+
+                    {/* Upgrade to Platinum (Rank 3) - Only show if current is Rank 1 or 2 */}
+                    {(subscriptionDetails.planType === 'TRIAL' || subscriptionDetails.planType === 'SILVER') && (
+                      <button onClick={() => handleUpgradePlan('PLATINUM')} className="px-8 py-3 bg-indigo-500 hover:bg-indigo-400 text-white font-bold rounded-lg transition-colors shadow-lg shadow-indigo-500/30">
+                        Go PLATINUM (Unlimited)
+                      </button>
+                    )}
+
+                    {/* Upgrade to Lifetime (Rank 4) - Always show unless already on Lifetime */}
+                    <button onClick={() => handleUpgradePlan('LIFETIME')} className="px-8 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-bold rounded-lg transition-colors shadow-lg shadow-amber-500/30">
+                      Unlock LIFETIME
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-8 text-center mt-8 relative overflow-hidden">
+                  <h3 className="text-2xl font-bold mb-2 text-amber-600">Lifetime Member</h3>
+                  <p className="text-amber-700/80 max-w-2xl mx-auto">You have unlocked the absolute highest tier. Thank you for your infinite commitment to CoreMatrix!</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Upgrade Checkout Modal */}
+          {pendingUpgradePlan && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+              <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-200">
+                <div className="flex">
+                  {/* Left Side: Order Summary */}
+                  <div className="w-1/2 p-8 bg-slate-50 border-r border-slate-200">
+                    <h3 className="text-2xl font-bold text-slate-900 mb-6">Upgrade Order</h3>
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 mb-6">
+                      <h4 className="font-bold text-slate-800 text-lg">{pendingUpgradePlan} Plan</h4>
+                      <p className="text-slate-500 text-sm mb-4">CoreMatrix Enterprise Access</p>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-slate-600">Base Price</span>
+                        <span className="font-medium text-slate-900">₹{getUpgradePrice(pendingUpgradePlan).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                      </div>
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="text-slate-600">GST (18%)</span>
+                        <span className="font-medium text-slate-900">₹{(getUpgradePrice(pendingUpgradePlan) * 0.18).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                      </div>
+                      <div className="pt-4 border-t border-slate-100 flex justify-between items-center text-xl font-bold text-slate-900">
+                        <span>Total Payable</span>
+                        <span className="text-teal-600">₹{(getUpgradePrice(pendingUpgradePlan) * 1.18).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                      </div>
+                    </div>
+                    <ul className="space-y-3 text-sm text-slate-600">
+                      <li className="flex items-center"><span className="text-teal-500 mr-2">✓</span> Instant access to new features</li>
+                      <li className="flex items-center"><span className="text-teal-500 mr-2">✓</span> Pro-rated license extension</li>
+                      <li className="flex items-center"><span className="text-teal-500 mr-2">✓</span> Secure 256-bit encrypted transaction</li>
+                    </ul>
+                  </div>
+
+                  {/* Right Side: Payment Form */}
+                  <div className="w-1/2 p-8 relative">
+                    <button onClick={() => setPendingUpgradePlan(null)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-700">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                    <h3 className="text-xl font-bold text-slate-900 mb-6">Payment Details</h3>
+                    
+                    <div className="flex space-x-2 border-b border-slate-200 mb-6">
+                      <button type="button" onClick={() => setCheckoutTab('card')} className={`pb-3 px-4 font-semibold text-sm transition-colors relative ${checkoutTab === 'card' ? 'text-teal-600' : 'text-slate-500 hover:text-slate-700'}`}>
+                        Credit Card
+                        {checkoutTab === 'card' && <div className="absolute bottom-0 left-0 w-full h-1 bg-teal-500 rounded-t-full"></div>}
+                      </button>
+                      <button type="button" onClick={() => setCheckoutTab('upi')} className={`pb-3 px-4 font-semibold text-sm transition-colors relative ${checkoutTab === 'upi' ? 'text-teal-600' : 'text-slate-500 hover:text-slate-700'}`}>
+                        UPI
+                        {checkoutTab === 'upi' && <div className="absolute bottom-0 left-0 w-full h-1 bg-teal-500 rounded-t-full"></div>}
+                      </button>
+                    </div>
+
+                    <form onSubmit={processUpgradeCheckout}>
+                      {checkoutTab === 'card' ? (
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Cardholder Name</label>
+                            <input type="text" required className="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-teal-500 outline-none" placeholder="Jane Doe" />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Card Number</label>
+                            <input type="text" required className="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-teal-500 outline-none" placeholder="**** **** **** 4242" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-1">Expiry</label>
+                              <input type="text" autoComplete="off" maxLength="5" required className="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-teal-500 outline-none" placeholder="MM/YY" />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-1">CVV</label>
+                              <input type="text" autoComplete="off" maxLength="4" required className="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-teal-500 outline-none" placeholder="***" />
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <label className="block text-sm font-medium text-slate-700 mb-1">UPI ID</label>
+                          <input type="text" required className="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-teal-500 outline-none" placeholder="username@upi" />
+                        </div>
+                      )}
+
+                      <button type="submit" disabled={checkoutLoading} className="w-full mt-8 bg-teal-600 hover:bg-teal-500 text-white font-bold text-lg py-3 rounded-xl transition-all shadow-lg flex justify-center items-center disabled:opacity-70">
+                        {checkoutLoading ? 'Processing...' : `Pay ₹${(getUpgradePrice(pendingUpgradePlan) * 1.18).toLocaleString('en-IN', {minimumFractionDigits: 2})}`}
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 

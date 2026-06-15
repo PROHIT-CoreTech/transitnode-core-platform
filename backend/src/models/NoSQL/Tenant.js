@@ -16,14 +16,26 @@ const tenantSchema = new mongoose.Schema(
       index: true,
       required: true,
     },
+    fullLoginUrl: {
+      type: String,
+    },
     planType: {
       type: String,
-      enum: ['TRIAL', 'SILVER', 'PLATINUM'],
+      enum: ['TRIAL', 'SILVER', 'PLATINUM', 'LIFETIME'],
       default: 'TRIAL',
     },
     licenseExpiresAt: {
       type: Date,
       required: true,
+    },
+    paymentStatus: {
+      type: String,
+      enum: ['PENDING', 'PAID'],
+      default: 'PENDING',
+    },
+    adminSetupComplete: {
+      type: Boolean,
+      default: false,
     },
     brandingOptions: {
       logoUrl: {

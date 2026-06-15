@@ -18,14 +18,27 @@ const Login = () => {
     setLoading(true);
 
     try {
+      const hostname = window.location.hostname;
+      const subdomain = hostname.split('.')[0];
+      
       // Proxied request
       const response = await axios.post('/api/auth/login', {
         email,
-        password
+        password,
+        subdomain: subdomain !== 'www' && subdomain !== 'localhost' ? subdomain : undefined
       });
 
-      login(response.data.token, response.data.user);
-      navigate('/dashboard');
+      const token = response.data.token;
+      const user = response.data.user;
+
+      login(token, user);
+      
+      // Route based on role
+      if (user.role === 'ADMIN') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       if (err.response) {
         setError(`Error ${err.response.status}: ${err.response.data?.message || 'Unknown server error'}`);

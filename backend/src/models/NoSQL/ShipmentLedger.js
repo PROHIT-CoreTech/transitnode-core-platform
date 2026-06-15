@@ -2,12 +2,7 @@ const mongoose = require('mongoose');
 
 const shipmentLedgerSchema = new mongoose.Schema(
   {
-    tenantId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Tenant',
-      required: true,
-      index: true,
-    },
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', required: true, index: true },
     trackingNumber: {
       type: String,
       required: true,

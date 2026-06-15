@@ -4,7 +4,7 @@ const crypto = require('crypto');
 
 exports.registerTenant = async (req, res) => {
   try {
-    const { companyName, registeredMobile, customSubdomain } = req.body;
+    const { companyName, registeredMobile, customSubdomain, planTier } = req.body;
 
     if (!companyName || !registeredMobile || !customSubdomain) {
       return res.status(400).json({ error: 'companyName, registeredMobile, and customSubdomain are required' });
@@ -16,15 +16,19 @@ exports.registerTenant = async (req, res) => {
       return res.status(400).json({ error: 'Subdomain is already registered' });
     }
 
-    // Set 10 days expiry
+    // Set 10 days expiry for trial, or handle differently for paid
     const licenseExpiresAt = new Date();
     licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 10);
+    
+    // Generate the full login URL (adjust domain based on environment later)
+    const fullLoginUrl = `http://${customSubdomain}.localhost:3001/login`;
 
     const newTenant = new Tenant({
       companyName,
       registeredMobile,
       customSubdomain,
-      planType: 'TRIAL',
+      fullLoginUrl,
+      planType: planTier ? planTier.toUpperCase() : 'TRIAL',
       licenseExpiresAt,
     });
 
@@ -57,7 +61,7 @@ exports.registerTenant = async (req, res) => {
     console.log('MOCK EMAIL SENT TO:', `admin@${customSubdomain}.corematrix.in`);
     console.log('SUBJECT: Welcome to CoreMatrix Tech - Your Workspace is Ready');
     console.log('MAGIC LOGIN LINK:');
-    console.log(`http://${customSubdomain}.localhost:3000/magic-login/${magicToken}`);
+    console.log(`http://${customSubdomain}.localhost:3001/magic-login/${magicToken}`);
     console.log('======================================================\n');
 
     return res.status(201).json({
@@ -92,12 +96,58 @@ exports.getTenantProfile = async (req, res) => {
       companyName: tenant.companyName,
       customSubdomain: tenant.customSubdomain,
       planType: tenant.planType,
+      paymentStatus: tenant.paymentStatus,
+      adminSetupComplete: tenant.adminSetupComplete,
       // Default theme settings (can be expanded later via db)
       themeColorHex: '#0d9488', // teal-600 default
       logoAssetString: 'default_tenant_logo',
     });
   } catch (error) {
     console.error('Error in getTenantProfile:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+exports.processCheckout = async (req, res) => {
+  try {
+    const { paymentMethod, amount } = req.body;
+    // We already have req.user from authGuard
+    const tenantId = req.user.tenantId;
+
+    const tenant = await Tenant.findById(tenantId);
+    if (!tenant) {
+      return res.status(404).json({ error: 'Tenant not found' });
+    }
+
+    if (tenant.paymentStatus === 'PAID') {
+      return res.status(400).json({ error: 'Tenant is already marked as PAID' });
+    }
+
+    // Extend license based on plan Type
+    const licenseExpiresAt = new Date();
+    if (tenant.planType === 'LIFETIME') {
+      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 100);
+    } else if (tenant.planType === 'PLATINUM') {
+      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 5);
+    } else if (tenant.planType === 'SILVER') {
+      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 3);
+    } else {
+      // Default to +30 days if somehow checkout is hit for a free trial
+      licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 30);
+    }
+
+    // Update Tenant
+    tenant.paymentStatus = 'PAID';
+    tenant.licenseExpiresAt = licenseExpiresAt;
+    await tenant.save();
+
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Payment processed successfully', 
+      licenseExpiresAt 
+    });
+  } catch (error) {
+    console.error('Error in processCheckout:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 };

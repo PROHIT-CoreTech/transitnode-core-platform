@@ -32,7 +32,7 @@ const Dashboard = () => {
     switch (user?.role) {
       case 'ADMIN':
         return <Navigate to="/admin" replace />;
-      case 'RECEPTIONIST':
+      case 'OPERATION':
         return (
           <div style={{ marginTop: '24px' }}>
             <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>

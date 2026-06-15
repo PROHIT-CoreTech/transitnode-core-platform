@@ -5,7 +5,7 @@ const verifyToken = require('../middleware/verifyToken');
 const checkRole = require('../middleware/checkRole');
 
 // POST /api/shipments/create (requires Receptionist/Admin)
-router.post('/create', verifyToken, checkRole('RECEPTIONIST'), shipController.createShipment);
+router.post('/create', verifyToken, checkRole('OPERATION'), shipController.createShipment);
 
 // GET /api/shipments
 router.get('/', verifyToken, shipController.listShipments);

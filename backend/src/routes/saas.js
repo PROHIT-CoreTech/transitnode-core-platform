@@ -12,4 +12,11 @@ router.post('/register-tenant', saasController.registerTenant);
 // @access  Public
 router.get('/tenant-profile', saasController.getTenantProfile);
 
+const authGuard = require('../middleware/authGuard');
+
+// @route   POST /api/saas/checkout
+// @desc    Process SaaS payment gateway checkout
+// @access  Private
+router.post('/checkout', authGuard, saasController.processCheckout);
+
 module.exports = router;
