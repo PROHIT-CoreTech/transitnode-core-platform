@@ -573,7 +573,7 @@ const AdminDashboard = () => {
             value={activeWorkspace || 'MAIN'}
             onChange={(e) => setActiveWorkspace(e.target.value === 'MAIN' ? null : e.target.value)}
           >
-            <option value="MAIN">Primary Workspace</option>
+            <option value="MAIN">{subscriptionDetails?.companyName || 'Primary Workspace'}</option>
             {workspaces.map(ws => (
               <option key={ws._id} value={ws._id}>{ws.companyName}</option>
             ))}
@@ -1342,7 +1342,12 @@ const AdminDashboard = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-500">License Expires On</span>
-                      <span className="font-medium text-slate-900">{new Date(subscriptionDetails.licenseExpiresAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                      <span className="font-medium text-slate-900">
+                        {subscriptionDetails.planType === 'LIFETIME' 
+                          ? 'Never Expires' 
+                          : new Date(subscriptionDetails.licenseExpiresAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })
+                        }
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-500">Current Users</span>

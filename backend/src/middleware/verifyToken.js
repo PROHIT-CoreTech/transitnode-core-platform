@@ -10,6 +10,11 @@ module.exports = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
     req.user = decoded; // Contains id and role
+    
+    // Parse Workspace ID from Headers
+    const workspaceId = req.header('x-workspace-id');
+    req.workspaceId = (!workspaceId || workspaceId === 'MAIN') ? null : workspaceId;
+
     next();
   } catch (error) {
     res.status(401).json({ message: 'Token is not valid' });

@@ -7,7 +7,6 @@ const rateCardSchema = new mongoose.Schema(
     type: {
       type: String,
       default: 'GLOBAL',
-      unique: true,
       index: true,
     },
     basePricePerKg: {
