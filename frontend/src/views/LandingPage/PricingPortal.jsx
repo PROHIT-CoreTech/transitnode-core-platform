@@ -42,6 +42,44 @@ const PricingPortal = () => {
   const [formData, setFormData] = useState({ companyName: '', registeredMobile: '', customSubdomain: '' });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
+
+  const testimonials = [
+    {
+      name: "William Alex",
+      role: "Founder @LogisticsCorp",
+      image: "https://i.pravatar.cc/150?img=11",
+      text: "\"Highly recommend CoreMatrix they helped me a lot. I love their work experience and best effort, I got best product design by them and excellent solution, in future we work again them, Thankful to the agency for given such as services.\"",
+      bgColor: "bg-[#eefcf8]",
+      iconColor: "bg-teal-500 text-white",
+      iconPath: "M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"
+    },
+    {
+      name: "Madhu Mia",
+      role: "Founder @FleetMaster",
+      image: "https://i.pravatar.cc/150?img=68",
+      text: "\"The multi-language support allowed our drivers across different states to adopt the app immediately. We've seen a 40% reduction in reporting delays and complete visibility into our fleet metrics.\"",
+      bgColor: "bg-[#f8f7fc]",
+      iconColor: "bg-indigo-500 text-white",
+      iconPath: "M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"
+    },
+    {
+      name: "Sarah Jenkins",
+      role: "Operations @FastTrack",
+      image: "https://i.pravatar.cc/150?img=47",
+      text: "\"Using the direct Tally ERP export has saved our accounting team hundreds of hours each month. The compliance vault ensures we never miss a vehicle renewal date again. Absolute game changer.\"",
+      bgColor: "bg-[#fffbf0]",
+      iconColor: "bg-amber-500 text-white",
+      iconPath: "M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"
+    }
+  ];
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveTestimonial((prev) => (prev === testimonials.length - 1 ? 0 : prev + 1));
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [testimonials.length]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -114,7 +152,7 @@ const PricingPortal = () => {
       </nav>
 
       {/* Hero Segment */}
-      <header className="container mx-auto px-6 pt-16 pb-12 text-center max-w-5xl relative">
+      <header className="container mx-auto px-6 py-24 text-center max-w-5xl relative">
         <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px]"></div>
         
         <div className="inline-block mb-4 px-5 py-2 rounded-full bg-white border border-teal-100 text-teal-800 text-sm font-bold tracking-widest shadow-sm uppercase">
@@ -134,7 +172,7 @@ const PricingPortal = () => {
       </header>
 
       {/* Pricing Cards */}
-      <section className="container mx-auto px-6 pt-12 pb-20 relative z-10">
+      <section className="container mx-auto px-6 py-20 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-8 max-w-[1400px] mx-auto w-full">
           
           {/* Free Trial */}
@@ -252,7 +290,7 @@ const PricingPortal = () => {
       </section>
 
       {/* Testimonials */}
-      <section className="container mx-auto px-6 pb-32">
+      <section className="container mx-auto px-6 py-24">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-16">
@@ -273,67 +311,66 @@ const PricingPortal = () => {
           {/* Carousel Area */}
           <div className="flex items-center justify-between gap-4">
             {/* Left Arrow */}
-            <button className="hidden md:flex w-12 h-12 bg-slate-900 text-white items-center justify-center hover:bg-teal-600 transition-colors shadow-lg flex-shrink-0">
+            <button 
+              onClick={() => setActiveTestimonial(prev => prev === 0 ? testimonials.length - 1 : prev - 1)}
+              className="hidden md:flex w-12 h-12 rounded-full bg-slate-900 text-white items-center justify-center hover:bg-teal-600 transition-colors shadow-lg flex-shrink-0 z-10"
+            >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
             </button>
 
             {/* Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-0 flex-1 rounded-xl overflow-hidden shadow-2xl shadow-slate-200/50">
-              {/* Card 1 */}
-              <div className="bg-[#eefcf8] p-12 flex flex-col justify-between">
-                <div>
-                  <div className="w-12 h-12 bg-teal-500 flex items-center justify-center mb-8 rounded-sm shadow-sm">
-                    <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/></svg>
+            <div className="flex-1 rounded-xl overflow-hidden shadow-2xl shadow-slate-200/50 relative">
+              <div 
+                className="flex transition-transform duration-700 ease-in-out h-full"
+                style={{ transform: `translateX(-${activeTestimonial * 100}%)` }}
+              >
+                {testimonials.map((t, idx) => (
+                  <div key={idx} className={`min-w-full w-full flex-shrink-0 ${t.bgColor} p-12 md:p-16 flex flex-col justify-between`}>
+                    <div className="max-w-4xl mx-auto w-full">
+                      <div className={`w-14 h-14 ${t.iconColor} flex items-center justify-center mb-8 rounded-xl shadow-sm transform -rotate-6`}>
+                        <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d={t.iconPath}/></svg>
+                      </div>
+                      <p className="text-slate-700 text-xl md:text-2xl leading-relaxed mb-10 font-medium italic">
+                        {t.text}
+                      </p>
+                      <div className="flex items-center space-x-5">
+                        <div className="w-16 h-16 rounded-full bg-slate-300 overflow-hidden shadow-md ring-4 ring-white">
+                          <img src={t.image} alt="Avatar" className="w-full h-full object-cover" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-slate-900 text-lg">{t.name}</h4>
+                          <p className="text-teal-600 font-medium text-sm tracking-wide uppercase mt-1">{t.role}</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-slate-700 text-lg leading-relaxed mb-10 font-medium">
-                    "Highly recommend CoreMatrix they helped me a lot. I love their work experience and best effort, I got best product design by them and excellent solution, in future we work again them, Thankful to the agency for given such as services."
-                  </p>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 rounded-full bg-slate-300 overflow-hidden shadow-inner">
-                    <img src="https://i.pravatar.cc/150?img=11" alt="Avatar" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-slate-900">William Alex</h4>
-                    <p className="text-slate-500 text-sm">Founder @LogisticsCorp</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 2 */}
-              <div className="bg-[#f8f7fc] p-12 flex flex-col justify-between">
-                <div>
-                  <div className="w-12 h-12 bg-indigo-500 flex items-center justify-center mb-8 rounded-sm shadow-sm">
-                    <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
-                  </div>
-                  <p className="text-slate-700 text-lg leading-relaxed mb-10 font-medium">
-                    "Highly recommend CoreMatrix they helped me a lot. I love their work experience and best effort, I got best product design by them and excellent solution, in future we work again them, Thankful to the agency for given such as services."
-                  </p>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 rounded-full bg-slate-300 overflow-hidden shadow-inner">
-                    <img src="https://i.pravatar.cc/150?img=68" alt="Avatar" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-slate-900">Madhu Mia</h4>
-                    <p className="text-slate-500 text-sm">Founder @FleetMaster</p>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
 
             {/* Right Arrow */}
-            <button className="hidden md:flex w-12 h-12 bg-slate-900 text-white items-center justify-center hover:bg-teal-600 transition-colors shadow-lg flex-shrink-0">
+            <button 
+              onClick={() => setActiveTestimonial(prev => prev === testimonials.length - 1 ? 0 : prev + 1)}
+              className="hidden md:flex w-12 h-12 rounded-full bg-slate-900 text-white items-center justify-center hover:bg-teal-600 transition-colors shadow-lg flex-shrink-0 z-10"
+            >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
             </button>
           </div>
 
           {/* Dots */}
-          <div className="flex justify-center items-center space-x-2 mt-10">
-            <div className="w-6 h-2 rounded-full bg-slate-200"></div>
-            <div className="w-8 h-2 rounded-full bg-teal-500 shadow-sm"></div>
-            <div className="w-6 h-2 rounded-full bg-slate-200"></div>
-            <div className="w-6 h-2 rounded-full bg-slate-200"></div>
+          <div className="flex justify-center items-center space-x-3 mt-10">
+            {testimonials.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setActiveTestimonial(idx)}
+                className={`h-2 rounded-full transition-all duration-500 ${
+                  activeTestimonial === idx 
+                    ? 'w-10 bg-teal-500 shadow-md shadow-teal-500/40' 
+                    : 'w-2 bg-slate-300 hover:bg-slate-400'
+                }`}
+                aria-label={`Go to testimonial ${idx + 1}`}
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -398,7 +435,7 @@ const PricingPortal = () => {
       )}
 
       {/* Footer */}
-      <footer className="bg-slate-900 border-t border-slate-800 text-slate-400 py-16">
+      <footer className="bg-slate-900 border-t border-slate-800 text-slate-400 py-20">
         <div className="container mx-auto px-6 max-w-7xl">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12 border-b border-slate-800 pb-12">
             <div className="col-span-1 md:col-span-2">
