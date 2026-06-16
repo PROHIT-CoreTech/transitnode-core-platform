@@ -36,7 +36,7 @@ const PublicTracker = () => {
     if (!shipment) return;
 
     // Connect to telemetry socket
-    socketRef.current = io('http://localhost:3000');
+    socketRef.current = io(process.env.REACT_APP_API_URL || 'http://localhost:3000');
 
     socketRef.current.on('connect', () => {
       setIsMapConnected(true);

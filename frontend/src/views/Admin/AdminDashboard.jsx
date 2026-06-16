@@ -98,7 +98,7 @@ const AdminDashboard = () => {
     fetchWorkspaces();
 
     // Socket Initialization
-    socketRef.current = io('http://localhost:3000');
+    socketRef.current = io(process.env.REACT_APP_API_URL || 'http://localhost:3000');
 
     socketRef.current.on('connect', () => {
       setIsMapConnected(true);
@@ -173,7 +173,7 @@ const AdminDashboard = () => {
 
   const fetchProfile = async () => {
     try {
-      const res = await axios.get(`http://localhost:3000/api/users/${user.id}`, {
+      const res = await axios.get(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/users/${user.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setProfileForm({
@@ -194,7 +194,7 @@ const AdminDashboard = () => {
       const payload = { ...profileForm };
       if (!payload.password) delete payload.password; // Don't update if empty
 
-      await axios.put(`http://localhost:3000/api/users/${user.id}`, payload, {
+      await axios.put(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/users/${user.id}`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('Profile updated successfully! Some changes may require re-login to take full effect.');
@@ -206,7 +206,7 @@ const AdminDashboard = () => {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`http://localhost:3000/api/admin/analytics/revenue?timeRange=${timeRange}`, {
+      const res = await axios.get(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/analytics/revenue?timeRange=${timeRange}`, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'x-workspace-id': activeWorkspace || 'MAIN'
@@ -223,7 +223,7 @@ const AdminDashboard = () => {
 
   const fetchRates = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/admin/rates', {
+      const res = await axios.get(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/rates`, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'x-workspace-id': activeWorkspace || 'MAIN'
@@ -241,7 +241,7 @@ const AdminDashboard = () => {
 
   const fetchDrivers = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/admin/drivers', {
+      const res = await axios.get(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/drivers`, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'x-workspace-id': activeWorkspace || 'MAIN'
@@ -255,7 +255,7 @@ const AdminDashboard = () => {
 
   const fetchFleetAssets = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/admin/fleet', {
+      const res = await axios.get(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/fleet`, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'x-workspace-id': activeWorkspace || 'MAIN'
@@ -269,7 +269,7 @@ const AdminDashboard = () => {
 
   const fetchUsersList = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/users', {
+      const res = await axios.get(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/users`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       // Exclude drivers from this list since they have a dedicated tab
@@ -282,7 +282,7 @@ const AdminDashboard = () => {
 
   const fetchSubscription = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/admin/subscription', {
+      const res = await axios.get(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/subscription`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSubscriptionDetails(res.data);
@@ -293,7 +293,7 @@ const AdminDashboard = () => {
 
   const fetchWorkspaces = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/companies/my-workspaces', {
+      const res = await axios.get(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/companies/my-workspaces`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setWorkspaces(res.data.workspaces || []);
@@ -310,7 +310,7 @@ const AdminDashboard = () => {
     }
     setSisterCompanyLoading(true);
     try {
-      await axios.post('http://localhost:3000/api/companies/add-sister', sisterCompanyForm, {
+      await axios.post(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/companies/add-sister`, sisterCompanyForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('Sister company created successfully');
@@ -328,12 +328,12 @@ const AdminDashboard = () => {
     setEditWorkspaceLoading(true);
     try {
       if (editingWorkspace.isPrimary) {
-        await axios.put('http://localhost:3000/api/saas/tenant-profile', editWorkspaceForm, {
+        await axios.put(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/saas/tenant-profile`, editWorkspaceForm, {
           headers: { Authorization: `Bearer ${token}` }
         });
         fetchSubscription();
       } else {
-        await axios.put(`http://localhost:3000/api/companies/${editingWorkspace._id}`, editWorkspaceForm, {
+        await axios.put(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/companies/${editingWorkspace._id}`, editWorkspaceForm, {
           headers: { Authorization: `Bearer ${token}` }
         });
         fetchWorkspaces();
@@ -351,7 +351,7 @@ const AdminDashboard = () => {
     if (!window.confirm("Are you sure you want to delete this Sister Company? This action cannot be undone.")) return;
     
     try {
-      await axios.delete(`http://localhost:3000/api/companies/${workspaceId}`, {
+      await axios.delete(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/companies/${workspaceId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('Workspace deleted successfully');
@@ -370,7 +370,7 @@ const AdminDashboard = () => {
     setCheckoutLoading(true);
     try {
       const amount = getUpgradePrice(pendingUpgradePlan);
-      await axios.put('http://localhost:3000/api/admin/subscription/upgrade', { planType: pendingUpgradePlan, amount }, {
+      await axios.put(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/subscription/upgrade`, { planType: pendingUpgradePlan, amount }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert(`Payment successful! Successfully upgraded to ${pendingUpgradePlan} plan!`);
@@ -397,7 +397,7 @@ const AdminDashboard = () => {
       return;
     }
     try {
-      await axios.post('http://localhost:3000/api/admin/users/create', userForm, {
+      await axios.post(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/users/create`, userForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('User created successfully');
@@ -411,7 +411,7 @@ const AdminDashboard = () => {
   const handleUpdateRates = async (e) => {
     e.preventDefault();
     try {
-      await axios.put('http://localhost:3000/api/admin/rates/update', rateForm, {
+      await axios.put(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/rates/update`, rateForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('Rates updated successfully');
@@ -438,7 +438,7 @@ const AdminDashboard = () => {
           formData.append(key, deviceForm[key]);
         }
       });
-      await axios.post('http://localhost:3000/api/admin/fleet/register', formData, {
+      await axios.post(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/fleet/register`, formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
       alert('Fleet asset registered successfully');
@@ -471,7 +471,7 @@ const AdminDashboard = () => {
           formData.append(key, driverForm[key]);
         }
       });
-      await axios.post('http://localhost:3000/api/admin/drivers/create', formData, {
+      await axios.post(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/drivers/create`, formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
       alert('Driver created successfully');
@@ -499,7 +499,7 @@ const AdminDashboard = () => {
       formData.append('pan', employeeForm.pan);
       formData.append('addressProof', employeeForm.addressProof);
       
-      await axios.post('http://localhost:3000/api/admin/employee/verify', formData, {
+      await axios.post(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/employee/verify`, formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
       alert('Employee verified and documents uploaded successfully');
@@ -512,7 +512,7 @@ const AdminDashboard = () => {
   const handleDeleteDriver = async (id) => {
     if (!window.confirm("Are you sure you want to delete this driver and their login access?")) return;
     try {
-      await axios.delete(`http://localhost:3000/api/admin/drivers/${id}`, {
+      await axios.delete(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/drivers/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('Driver deleted successfully');
@@ -525,7 +525,7 @@ const AdminDashboard = () => {
   const handleDeleteFleet = async (id) => {
     if (!window.confirm("Are you sure you want to delete this fleet asset?")) return;
     try {
-      await axios.delete(`http://localhost:3000/api/admin/fleet/${id}`, {
+      await axios.delete(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/fleet/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('Fleet asset deleted successfully');
@@ -538,7 +538,7 @@ const AdminDashboard = () => {
 
   const handleAssignVehicle = async (driverId, vehicleRegistration) => {
     try {
-      await axios.put(`http://localhost:3000/api/admin/drivers/${driverId}/assign-vehicle`, 
+      await axios.put(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/drivers/${driverId}/assign-vehicle`, 
         { vehicleRegistration }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -553,7 +553,7 @@ const AdminDashboard = () => {
   const toggleDemoMode = async () => {
     try {
       const newState = !isDemoActive;
-      await axios.post('http://localhost:3000/api/admin/demo/toggle', { active: newState }, {
+      await axios.post(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/demo/toggle`, { active: newState }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setIsDemoActive(newState);

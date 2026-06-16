@@ -41,7 +41,7 @@ const MasterAdminDashboard = () => {
   const fetchDashboardSummary = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('http://localhost:3000/api/master-admin/dashboard-summary', {
+      const res = await axios.get(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/master-admin/dashboard-summary`, {
         headers: getHeaders()
       });
       setSummary(res.data);
@@ -63,7 +63,7 @@ const MasterAdminDashboard = () => {
     try {
       setSelectedTenantId(tenantId);
       setLoadingDetails(true);
-      const res = await axios.get(`http://localhost:3000/api/master-admin/tenant/${tenantId}`, {
+      const res = await axios.get(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/master-admin/tenant/${tenantId}`, {
         headers: getHeaders()
       });
       setTenantDetails(res.data);
@@ -89,7 +89,7 @@ const MasterAdminDashboard = () => {
     
     try {
       setIsSubmitting(true);
-      const res = await axios.post('http://localhost:3000/api/master-admin/onboard-manual', manualForm, {
+      const res = await axios.post(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/master-admin/onboard-manual`, manualForm, {
         headers: getHeaders()
       });
       setOnboardSuccess(res.data);
