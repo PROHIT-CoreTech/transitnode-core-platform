@@ -151,3 +151,35 @@ exports.processCheckout = async (req, res) => {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+exports.updateTenantProfile = async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    console.log('--- DEBUG updateTenantProfile ---');
+    console.log('req.user:', req.user);
+    console.log('tenantId:', tenantId);
+    
+    const { companyName, gstin, pan, address, state, stateCode, contactNumber } = req.body;
+
+    const tenant = await Tenant.findById(tenantId);
+    console.log('Found tenant:', tenant ? tenant._id : 'NOT FOUND');
+    if (!tenant) {
+      return res.status(404).json({ error: 'Tenant not found' });
+    }
+
+    if (companyName) tenant.companyName = companyName;
+    if (gstin !== undefined) tenant.gstin = gstin;
+    if (pan !== undefined) tenant.pan = pan;
+    if (address !== undefined) tenant.address = address;
+    if (state !== undefined) tenant.state = state;
+    if (stateCode !== undefined) tenant.stateCode = stateCode;
+    if (contactNumber !== undefined) tenant.contactNumber = contactNumber;
+
+    await tenant.save();
+
+    return res.status(200).json({ success: true, message: 'Primary Workspace updated successfully', tenant });
+  } catch (error) {
+    console.error('Error in updateTenantProfile:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};

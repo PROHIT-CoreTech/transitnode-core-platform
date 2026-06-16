@@ -3,15 +3,21 @@ const Company = require('../models/NoSQL/Company');
 const addSisterCompany = async (req, res) => {
   try {
     const tenantId = req.user?.tenantId;
-    const { companyName } = req.body;
+    const { companyName, gstin, pan, address, state, stateCode, contactNumber } = req.body;
 
-    if (!companyName) {
-      return res.status(400).json({ success: false, message: 'companyName is required' });
+    if (!companyName || !address) {
+      return res.status(400).json({ success: false, message: 'Company Name and Address are required.' });
     }
 
     const newCompany = new Company({
       tenantId,
       companyName,
+      gstin,
+      pan,
+      address,
+      state,
+      stateCode,
+      contactNumber,
       isActive: true,
     });
 
@@ -48,7 +54,55 @@ const getWorkspaces = async (req, res) => {
   }
 };
 
+const updateCompany = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tenantId = req.user?.tenantId;
+    
+    const { companyName, gstin, pan, address, state, stateCode, contactNumber } = req.body;
+
+    const company = await Company.findOne({ _id: id, tenantId });
+    if (!company) {
+      return res.status(404).json({ success: false, message: 'Company not found' });
+    }
+
+    if (companyName) company.companyName = companyName;
+    if (gstin) company.gstin = gstin;
+    if (pan !== undefined) company.pan = pan;
+    if (address) company.address = address;
+    if (state !== undefined) company.state = state;
+    if (stateCode !== undefined) company.stateCode = stateCode;
+    if (contactNumber) company.contactNumber = contactNumber;
+
+    await company.save();
+
+    res.status(200).json({ success: true, message: 'Company updated successfully', company });
+  } catch (error) {
+    console.error('Update Company Error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error while updating company' });
+  }
+};
+
+const deleteCompany = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tenantId = req.user?.tenantId;
+
+    const company = await Company.findOneAndDelete({ _id: id, tenantId });
+    if (!company) {
+      return res.status(404).json({ success: false, message: 'Company not found' });
+    }
+
+    res.status(200).json({ success: true, message: 'Company deleted successfully' });
+  } catch (error) {
+    console.error('Delete Company Error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error while deleting company' });
+  }
+};
+
 module.exports = {
   addSisterCompany,
-  getWorkspaces
+  getWorkspaces,
+  updateCompany,
+  deleteCompany
 };

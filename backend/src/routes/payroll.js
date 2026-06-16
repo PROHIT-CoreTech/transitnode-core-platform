@@ -4,7 +4,7 @@ const payrollController = require('../controllers/payrollController');
 const verifyToken = require('../middleware/verifyToken');
 
 // In production use verifyToken
-// router.use(verifyToken);
+router.use(verifyToken);
 
 router.get('/', payrollController.getPayroll);
 router.post('/calculate', payrollController.calculatePayroll);

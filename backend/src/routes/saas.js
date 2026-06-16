@@ -19,4 +19,9 @@ const authGuard = require('../middleware/authGuard');
 // @access  Private
 router.post('/checkout', authGuard, saasController.processCheckout);
 
+// @route   PUT /api/saas/tenant-profile
+// @desc    Update tenant profile details
+// @access  Private
+router.put('/tenant-profile', authGuard, saasController.updateTenantProfile);
+
 module.exports = router;

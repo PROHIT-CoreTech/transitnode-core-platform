@@ -11,6 +11,7 @@ import MapView from '../../components/MapView';
 import ComplianceVault from './ComplianceVault';
 import ShipmentTransactions from './ShipmentTransactions';
 import FinancialLedger from './FinancialLedger';
+import SupplierManagement from './SupplierManagement';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
@@ -20,6 +21,7 @@ const AdminDashboard = () => {
   const token = localStorage.getItem('token');
   
   const [activeTab, setActiveTab] = useState('ANALYTICS'); // ANALYTICS, MANAGEMENT, DRIVER_MANAGEMENT, MAP
+  const [expandedMenu, setExpandedMenu] = useState('DASHBOARD');
   const [isDemoActive, setIsDemoActive] = useState(false);
   const [timeRange, setTimeRange] = useState('daily');
   const [metrics, setMetrics] = useState({
@@ -38,8 +40,11 @@ const AdminDashboard = () => {
   // Sister Companies / Workspaces State
   const [workspaces, setWorkspaces] = useState([]);
   const [activeWorkspace, setActiveWorkspace] = useState(null);
-  const [sisterCompanyForm, setSisterCompanyForm] = useState({ companyName: '' });
+  const [sisterCompanyForm, setSisterCompanyForm] = useState({ companyName: '', gstin: '', pan: '', address: '', state: '', stateCode: '', contactNumber: '' });
   const [sisterCompanyLoading, setSisterCompanyLoading] = useState(false);
+  const [editingWorkspace, setEditingWorkspace] = useState(null);
+  const [editWorkspaceForm, setEditWorkspaceForm] = useState({ companyName: '', gstin: '', pan: '', address: '', state: '', stateCode: '', contactNumber: '' });
+  const [editWorkspaceLoading, setEditWorkspaceLoading] = useState(false);
 
   // Subscription State
   const [subscriptionDetails, setSubscriptionDetails] = useState(null);
@@ -299,8 +304,8 @@ const AdminDashboard = () => {
 
   const handleCreateSisterCompany = async (e) => {
     e.preventDefault();
-    if (!sisterCompanyForm.companyName) {
-      alert("Company Name is required.");
+    if (!sisterCompanyForm.companyName || !sisterCompanyForm.address) {
+      alert("Company Name and Address are required.");
       return;
     }
     setSisterCompanyLoading(true);
@@ -309,12 +314,50 @@ const AdminDashboard = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('Sister company created successfully');
-      setSisterCompanyForm({ companyName: '' });
+      setSisterCompanyForm({ companyName: '', gstin: '', pan: '', address: '', state: '', stateCode: '', contactNumber: '' });
       fetchWorkspaces();
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to create sister company');
     } finally {
       setSisterCompanyLoading(false);
+    }
+  };
+
+  const handleUpdateWorkspace = async (e) => {
+    e.preventDefault();
+    setEditWorkspaceLoading(true);
+    try {
+      if (editingWorkspace.isPrimary) {
+        await axios.put('http://localhost:3000/api/saas/tenant-profile', editWorkspaceForm, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        fetchSubscription();
+      } else {
+        await axios.put(`http://localhost:3000/api/companies/${editingWorkspace._id}`, editWorkspaceForm, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        fetchWorkspaces();
+      }
+      alert('Workspace updated successfully');
+      setEditingWorkspace(null);
+    } catch (error) {
+      alert(error.response?.data?.error || error.response?.data?.message || 'Failed to update workspace');
+    } finally {
+      setEditWorkspaceLoading(false);
+    }
+  };
+
+  const handleDeleteWorkspace = async (workspaceId) => {
+    if (!window.confirm("Are you sure you want to delete this Sister Company? This action cannot be undone.")) return;
+    
+    try {
+      await axios.delete(`http://localhost:3000/api/companies/${workspaceId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert('Workspace deleted successfully');
+      fetchWorkspaces();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to delete workspace');
     }
   };
 
@@ -582,60 +625,70 @@ const AdminDashboard = () => {
         
         <nav className="flex-1 mt-6">
           <div className="px-4 space-y-2">
-            <button 
-              onClick={() => setActiveTab('ANALYTICS')}
-              className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'ANALYTICS' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
-            >
-              Analytics
-            </button>
-            <button 
-              onClick={() => setActiveTab('MANAGEMENT')}
-              className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'MANAGEMENT' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
-            >
-              User & Rates
-            </button>
-            <button 
-              onClick={() => setActiveTab('DRIVER_MANAGEMENT')}
-              className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'DRIVER_MANAGEMENT' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
-            >
-              Driver Management
-            </button>
-            <button 
-              onClick={() => setActiveTab('FLEET_MANAGEMENT')}
-              className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'FLEET_MANAGEMENT' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
-            >
-              Fleet Management
-            </button>
-            <button 
-              onClick={() => setActiveTab('MAP')}
-              className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'MAP' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
-            >
-              Live Fleet Map
-            </button>
-            <button 
-              onClick={() => setActiveTab('COMPLIANCE')}
-              className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'COMPLIANCE' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
-            >
-              Compliance Vault
-            </button>
-            <button 
-              onClick={() => setActiveTab('TRANSACTIONS')}
-              className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'TRANSACTIONS' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
-            >
-              Shipment Ledger
-            </button>
-            <button 
-              onClick={() => setActiveTab('FINANCE')}
-              className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'FINANCE' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
-            >
-              Financial Engine
-            </button>
-            <button 
-              onClick={() => setActiveTab('SUBSCRIPTION')}
-              className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'SUBSCRIPTION' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
-            >
-              Subscription
-            </button>
+            {/* Dashboard */}
+            <div>
+              <button 
+                onClick={() => { setExpandedMenu('DASHBOARD'); setActiveTab('ANALYTICS'); }}
+                className={`w-full flex justify-between items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'ANALYTICS' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
+              >
+                <span>Dashboard</span>
+              </button>
+            </div>
+
+            {/* Fleet Operations */}
+            <div>
+              <button 
+                onClick={() => setExpandedMenu(expandedMenu === 'FLEET' ? '' : 'FLEET')}
+                className="w-full flex justify-between items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors text-slate-300 hover:bg-slate-800"
+              >
+                <span>Fleet Operations</span>
+                <svg className={`w-4 h-4 transform transition-transform ${expandedMenu === 'FLEET' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              </button>
+              {expandedMenu === 'FLEET' && (
+                <div className="pl-4 mt-1 space-y-1">
+                  <button onClick={() => setActiveTab('MAP')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'MAP' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Live Fleet Map</button>
+                  <button onClick={() => setActiveTab('FLEET_MANAGEMENT')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'FLEET_MANAGEMENT' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Fleet Management</button>
+                  <button onClick={() => setActiveTab('DRIVER_MANAGEMENT')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'DRIVER_MANAGEMENT' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Driver Management</button>
+                </div>
+              )}
+            </div>
+
+            {/* Finance & Ledgers */}
+            <div>
+              <button 
+                onClick={() => setExpandedMenu(expandedMenu === 'FINANCE' ? '' : 'FINANCE')}
+                className="w-full flex justify-between items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors text-slate-300 hover:bg-slate-800"
+              >
+                <span>Finance & Ledgers</span>
+                <svg className={`w-4 h-4 transform transition-transform ${expandedMenu === 'FINANCE' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              </button>
+              {expandedMenu === 'FINANCE' && (
+                <div className="pl-4 mt-1 space-y-1">
+                  <button onClick={() => setActiveTab('FINANCE')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'FINANCE' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Financial Engine</button>
+                  <button onClick={() => setActiveTab('TRANSACTIONS')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'TRANSACTIONS' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Shipment Ledger</button>
+                  <button onClick={() => setActiveTab('SUPPLIERS')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'SUPPLIERS' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Suppliers</button>
+                </div>
+              )}
+            </div>
+
+            {/* Admin & Compliance */}
+            <div>
+              <button 
+                onClick={() => setExpandedMenu(expandedMenu === 'ADMIN' ? '' : 'ADMIN')}
+                className="w-full flex justify-between items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors text-slate-300 hover:bg-slate-800"
+              >
+                <span>Admin & Compliance</span>
+                <svg className={`w-4 h-4 transform transition-transform ${expandedMenu === 'ADMIN' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              </button>
+              {expandedMenu === 'ADMIN' && (
+                <div className="pl-4 mt-1 space-y-1">
+                  <button onClick={() => setActiveTab('COMPLIANCE')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'COMPLIANCE' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Compliance Vault</button>
+                  <button onClick={() => setActiveTab('MANAGEMENT')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'MANAGEMENT' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>User & Rates</button>
+                  <button onClick={() => setActiveTab('SUBSCRIPTION')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'SUBSCRIPTION' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Subscription</button>
+                </div>
+              )}
+            </div>
+
           </div>
         </nav>
         <div className="p-4 border-t border-slate-800">
@@ -1313,6 +1366,12 @@ const AdminDashboard = () => {
             </div>
           )}
 
+          {activeTab === 'SUPPLIERS' && (
+            <div className="w-full h-full animate-fade-in">
+              <SupplierManagement />
+            </div>
+          )}
+
           {activeTab === 'SUBSCRIPTION' && subscriptionDetails && (
             <div className="space-y-8 max-w-5xl mx-auto">
               <div className="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-slate-100">
@@ -1398,27 +1457,172 @@ const AdminDashboard = () => {
               {subscriptionDetails.planType === 'LIFETIME' && (
                 <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 mt-6">
                   <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Add Sister Company (Lifetime Feature)</h3>
-                  <form onSubmit={handleCreateSisterCompany} className="flex gap-4 items-end">
-                    <div className="flex-1">
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Sister Company Name</label>
-                      <input 
-                        type="text" 
-                        required 
-                        value={sisterCompanyForm.companyName} 
-                        onChange={e => setSisterCompanyForm({companyName: e.target.value})} 
-                        className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" 
-                        placeholder="e.g. CoreMatrix Logistics Pvt Ltd"
-                      />
+                  <form onSubmit={handleCreateSisterCompany} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Sister Company Name *</label>
+                        <input type="text" required value={sisterCompanyForm.companyName} onChange={e => setSisterCompanyForm({...sisterCompanyForm, companyName: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" placeholder="e.g. CoreMatrix Logistics Pvt Ltd" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">GSTIN</label>
+                        <input type="text" value={sisterCompanyForm.gstin} onChange={e => setSisterCompanyForm({...sisterCompanyForm, gstin: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" placeholder="e.g. 27AAKFI1710K1ZE" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">PAN</label>
+                        <input type="text" value={sisterCompanyForm.pan} onChange={e => setSisterCompanyForm({...sisterCompanyForm, pan: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" placeholder="e.g. AAKFI1710K" />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Address *</label>
+                        <textarea required value={sisterCompanyForm.address} onChange={e => setSisterCompanyForm({...sisterCompanyForm, address: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" rows="2" placeholder="Full Registered Address" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">State</label>
+                        <input type="text" value={sisterCompanyForm.state} onChange={e => setSisterCompanyForm({...sisterCompanyForm, state: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" placeholder="e.g. Maharashtra" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">State Code</label>
+                        <input type="text" value={sisterCompanyForm.stateCode} onChange={e => setSisterCompanyForm({...sisterCompanyForm, stateCode: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" placeholder="e.g. 27" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Contact Number</label>
+                        <input type="text" value={sisterCompanyForm.contactNumber} onChange={e => setSisterCompanyForm({...sisterCompanyForm, contactNumber: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" placeholder="Primary Contact" />
+                      </div>
                     </div>
-                    <button 
-                      type="submit" 
-                      disabled={sisterCompanyLoading}
-                      className="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 transition font-medium disabled:opacity-50"
-                    >
-                      {sisterCompanyLoading ? 'Creating...' : 'Create Workspace'}
-                    </button>
+                    <div className="pt-2">
+                      <button type="submit" disabled={sisterCompanyLoading} className="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 transition font-medium disabled:opacity-50">
+                        {sisterCompanyLoading ? 'Creating Workspace...' : 'Create Workspace'}
+                      </button>
+                    </div>
                   </form>
                   <p className="text-xs text-slate-500 mt-2">You can register up to 3 distinct corporate workspaces under your tenant profile.</p>
+                </div>
+              )}
+
+              {/* WORKSPACE DIRECTORY */}
+              <div className="bg-white rounded-xl shadow-sm border border-slate-100 mt-6 overflow-hidden">
+                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                  <h3 className="text-lg font-bold text-slate-800">Workspace Directory</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm text-slate-600">
+                    <thead className="text-xs text-slate-500 bg-slate-50 border-b border-slate-100 uppercase font-medium">
+                      <tr>
+                        <th className="px-6 py-4">Workspace Name</th>
+                        <th className="px-6 py-4">Type</th>
+                        <th className="px-6 py-4">GSTIN</th>
+                        <th className="px-6 py-4">Contact</th>
+                        <th className="px-6 py-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {/* Primary Workspace */}
+                      <tr className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4 font-medium text-slate-900 flex items-center">
+                          <span className="w-2 h-2 rounded-full bg-indigo-500 mr-2"></span>
+                          {subscriptionDetails.companyName}
+                        </td>
+                        <td className="px-6 py-4"><span className="bg-indigo-100 text-indigo-700 text-xs font-semibold px-2 py-0.5 rounded">Primary</span></td>
+                        <td className="px-6 py-4 text-slate-500">{subscriptionDetails.gstin || '-'}</td>
+                        <td className="px-6 py-4 text-slate-500">{subscriptionDetails.contactNumber || '-'}</td>
+                        <td className="px-6 py-4 text-right">
+                          <button onClick={() => {
+                            setEditingWorkspace({...subscriptionDetails, isPrimary: true});
+                            setEditWorkspaceForm({
+                              companyName: subscriptionDetails.companyName || '',
+                              gstin: subscriptionDetails.gstin || '',
+                              pan: subscriptionDetails.pan || '',
+                              address: subscriptionDetails.address || '',
+                              state: subscriptionDetails.state || '',
+                              stateCode: subscriptionDetails.stateCode || '',
+                              contactNumber: subscriptionDetails.contactNumber || ''
+                            });
+                          }} className="text-indigo-600 hover:text-indigo-900 font-medium mr-4">Edit</button>
+                        </td>
+                      </tr>
+                      {/* Sister Companies */}
+                      {workspaces.map(ws => (
+                        <tr key={ws._id} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-6 py-4 font-medium text-slate-700 flex items-center">
+                            <span className="w-2 h-2 rounded-full bg-slate-300 mr-2"></span>
+                            {ws.companyName}
+                          </td>
+                          <td className="px-6 py-4"><span className="bg-slate-100 text-slate-600 text-xs font-semibold px-2 py-0.5 rounded">Sister</span></td>
+                          <td className="px-6 py-4 text-slate-500">{ws.gstin || '-'}</td>
+                          <td className="px-6 py-4 text-slate-500">{ws.contactNumber || '-'}</td>
+                          <td className="px-6 py-4 text-right">
+                            <button onClick={() => {
+                              setEditingWorkspace({...ws, isPrimary: false});
+                              setEditWorkspaceForm({
+                                companyName: ws.companyName || '',
+                                gstin: ws.gstin || '',
+                                pan: ws.pan || '',
+                                address: ws.address || '',
+                                state: ws.state || '',
+                                stateCode: ws.stateCode || '',
+                                contactNumber: ws.contactNumber || ''
+                              });
+                            }} className="text-indigo-600 hover:text-indigo-900 font-medium mr-4">Edit</button>
+                            <button onClick={() => handleDeleteWorkspace(ws._id)} className="text-red-600 hover:text-red-900 font-medium">Delete</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Edit Workspace Modal */}
+              {editingWorkspace && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+                  <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                    <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-800">Edit Workspace</h3>
+                        <p className="text-sm text-slate-500">Updating details for {editingWorkspace.companyName}</p>
+                      </div>
+                      <button onClick={() => setEditingWorkspace(null)} className="text-slate-400 hover:text-slate-600 text-2xl font-light">&times;</button>
+                    </div>
+                    <div className="p-6 overflow-y-auto">
+                      <form id="editWorkspaceForm" onSubmit={handleUpdateWorkspace} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Company Name *</label>
+                            <input type="text" required value={editWorkspaceForm.companyName} onChange={e => setEditWorkspaceForm({...editWorkspaceForm, companyName: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">GSTIN</label>
+                            <input type="text" value={editWorkspaceForm.gstin} onChange={e => setEditWorkspaceForm({...editWorkspaceForm, gstin: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">PAN</label>
+                            <input type="text" value={editWorkspaceForm.pan} onChange={e => setEditWorkspaceForm({...editWorkspaceForm, pan: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Address *</label>
+                            <textarea required value={editWorkspaceForm.address} onChange={e => setEditWorkspaceForm({...editWorkspaceForm, address: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" rows="2" />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">State</label>
+                            <input type="text" value={editWorkspaceForm.state} onChange={e => setEditWorkspaceForm({...editWorkspaceForm, state: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">State Code</label>
+                            <input type="text" value={editWorkspaceForm.stateCode} onChange={e => setEditWorkspaceForm({...editWorkspaceForm, stateCode: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Contact Number</label>
+                            <input type="text" value={editWorkspaceForm.contactNumber} onChange={e => setEditWorkspaceForm({...editWorkspaceForm, contactNumber: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                          </div>
+                        </div>
+                      </form>
+                    </div>
+                    <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+                      <button type="button" onClick={() => setEditingWorkspace(null)} className="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium">Cancel</button>
+                      <button type="submit" form="editWorkspaceForm" disabled={editWorkspaceLoading} className="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 transition font-medium disabled:opacity-50">
+                        {editWorkspaceLoading ? 'Saving...' : 'Save Changes'}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
 

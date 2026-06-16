@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "jetro": {
+      "type": "stdio",
+      "command": "/Users/rohitbarge/.jetro/runtime/node-darwin-arm64",
+      "args": [
+        "/Users/rohitbarge/.jetro/mcp-server/index.js"
+      ],
+      "env": {
+        "JET_WORKSPACE": "/Users/rohitbarge/Documents/New Topics/TransitNode ERP/app/transitnode-core-platform",
+        "JET_API_URL": "https://api.jetro.ai",
+        "PATH": "/Users/rohitbarge/.jetro/runtime:/Users/rohitbarge/.antigravity-ide/antigravity-ide/bin:/Users/rohitbarge/.antigravity-ide/antigravity-ide/bin:/Users/rohitbarge/.antigravity/antigravity/bin:/Users/rohitbarge/.codeium/windsurf/bin:/opt/homebrew/bin:/usr/local/bin:/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home/bin:/Users/rohitbarge/Library/Android/sdk/platform-tools:/Users/rohitbarge/Library/Android/sdk/tools:/Users/rohitbarge/Library/Android/sdk/tools/bin:/Users/rohitbarge/flutter/bin:/Users/rohitbarge/.rvm/bin:/Users/rohitbarge/.pub-cache/bin:/Users/rohitbarge/.gem/ruby/3.2.0/bin:/opt/homebrew/opt/ruby/bin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin"
+      }
+    }
+  }
+}

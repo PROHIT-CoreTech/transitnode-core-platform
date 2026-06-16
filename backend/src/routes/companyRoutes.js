@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { addSisterCompany, getWorkspaces } = require('../controllers/companyController');
+const { addSisterCompany, getWorkspaces, updateCompany, deleteCompany } = require('../controllers/companyController');
 const authGuard = require('../middleware/authGuard');
 const Company = require('../models/NoSQL/Company');
 const Tenant = require('../models/NoSQL/Tenant');
@@ -53,6 +53,18 @@ router.get(
   '/my-workspaces',
   authGuard,
   getWorkspaces
+);
+
+router.put(
+  '/:id',
+  authGuard,
+  updateCompany
+);
+
+router.delete(
+  '/:id',
+  authGuard,
+  deleteCompany
 );
 
 module.exports = router;

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
+const supplierController = require('../controllers/supplierController');
 const verifyToken = require('../middleware/verifyToken');
 const checkRole = require('../middleware/checkRole');
 
@@ -58,6 +59,10 @@ router.put('/drivers/:driverId/assign-vehicle', adminController.assignVehicleToD
 
 // Compliance Vault
 router.get('/compliance/documents', adminController.getComplianceDocuments);
+
+// Supplier Management
+router.post('/suppliers/create', supplierController.createSupplier);
+router.get('/suppliers', supplierController.getSuppliers);
 
 // Subscription Management
 router.get('/subscription', adminController.getSubscriptionDetails);

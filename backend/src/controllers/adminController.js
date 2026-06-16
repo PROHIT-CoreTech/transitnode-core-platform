@@ -605,7 +605,14 @@ exports.getSubscriptionDetails = async (req, res) => {
       companyName: tenant.companyName,
       planType: tenant.planType,
       licenseExpiresAt: tenant.licenseExpiresAt,
-      currentUserCount
+      currentUserCount,
+      customSubdomain: tenant.customSubdomain,
+      gstin: tenant.gstin,
+      pan: tenant.pan,
+      address: tenant.address,
+      state: tenant.state,
+      stateCode: tenant.stateCode,
+      contactNumber: tenant.contactNumber
     });
   } catch (error) {
     console.error('Error fetching subscription:', error);

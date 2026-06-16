@@ -16,6 +16,24 @@ const tenantSchema = new mongoose.Schema(
       index: true,
       required: true,
     },
+    gstin: {
+      type: String,
+    },
+    pan: {
+      type: String,
+    },
+    address: {
+      type: String,
+    },
+    state: {
+      type: String,
+    },
+    stateCode: {
+      type: String,
+    },
+    contactNumber: {
+      type: String,
+    },
     fullLoginUrl: {
       type: String,
     },
