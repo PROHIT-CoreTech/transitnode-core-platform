@@ -18,7 +18,7 @@ const createMasterUser = async () => {
     const companyName = 'Master Admin Corp';
     const email = 'master@transitnode.com';
     const mobileNumber = '9999999999';
-    const passwordPlain = 'transitnode2026';
+    const passwordPlain = process.env.MASTER_USER_PASSWORD || require('crypto').randomBytes(8).toString('hex');
 
     // 1. Create Tenant
     const tenant = new Tenant({

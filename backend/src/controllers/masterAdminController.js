@@ -84,7 +84,7 @@ exports.onboardAutomated = async (req, res) => {
 // POST /api/master-admin/onboard-manual
 exports.onboardManual = async (req, res) => {
   try {
-    const { companyName, registeredMobile, planType, customMaxCompanies, licenseDurationDays, amountPaid } = req.body;
+    const { companyName, registeredMobile, planType, customMaxCompanies, licenseDurationDays, amountPaid, address } = req.body;
 
     if (!companyName || !registeredMobile || !planType || !licenseDurationDays) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -111,7 +111,8 @@ exports.onboardManual = async (req, res) => {
       licenseExpiresAt,
       maxCompaniesAllowed: customMaxCompanies ? parseInt(customMaxCompanies, 10) : (uppercasePlanType === 'PLATINUM' ? 3 : 1),
       adminSetupComplete: false,
-      paymentStatus: 'PAID'
+      paymentStatus: 'PAID',
+      address: address || ''
     });
     await tenant.save();
 
@@ -119,7 +120,7 @@ exports.onboardManual = async (req, res) => {
     const company = new Company({
       tenantId: tenant._id,
       companyName,
-      address: 'Update Address',
+      address: address || 'Update Address',
       contactNumber: registeredMobile
     });
     await company.save();
