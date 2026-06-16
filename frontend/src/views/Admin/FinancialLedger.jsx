@@ -18,8 +18,8 @@ const FinancialLedger = ({ planType }) => {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       const [tbRes, pnlRes] = await Promise.all([
-        axios.get('http://localhost:3000/api/finance/ledger', { headers }),
-        axios.get('http://localhost:3000/api/finance/pnl', { headers })
+        axios.get(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/finance/ledger`, { headers }),
+        axios.get(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/finance/pnl`, { headers })
       ]);
       setTrialBalance(tbRes.data.data || []);
       setPnl(pnlRes.data.data || null);
@@ -31,7 +31,7 @@ const FinancialLedger = ({ planType }) => {
   const fetchPayroll = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:3000/api/payroll', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.get(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/payroll`, { headers: { Authorization: `Bearer ${token}` } });
       setPayrollData(res.data.data || []);
     } catch (err) {
       console.error('Failed to fetch payroll', err);
@@ -49,7 +49,7 @@ const FinancialLedger = ({ planType }) => {
   }, []);
 
   const handleExport = (format) => {
-    let url = `http://localhost:3000/api/finance/export?format=${format}`;
+    let url = `${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/finance/export?format=${format}`;
     if (exportStartDate) url += `&startDate=${exportStartDate}`;
     if (exportEndDate) url += `&endDate=${exportEndDate}`;
     
@@ -66,7 +66,7 @@ const FinancialLedger = ({ planType }) => {
     try {
       const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
       const token = localStorage.getItem('token');
-      await axios.post(`http://localhost:3000/api/payroll/calculate?month=${currentMonth}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/payroll/calculate?month=${currentMonth}`, {}, { headers: { Authorization: `Bearer ${token}` } });
       await fetchPayroll();
       alert('Payroll calculated successfully!');
     } catch (err) {
@@ -77,7 +77,7 @@ const FinancialLedger = ({ planType }) => {
   const handleDisbursePayroll = async (ids) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:3000/api/payroll/disburse', { ids }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/payroll/disburse`, { ids }, { headers: { Authorization: `Bearer ${token}` } });
       await fetchPayroll();
       alert('Payroll disbursed!');
     } catch (err) {

@@ -21,7 +21,7 @@ const ComplianceVault = () => {
   const fetchDocuments = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('http://localhost:3000/api/admin/compliance/documents', {
+      const res = await axios.get(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/compliance/documents`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setDocuments(res.data.documents || []);
@@ -61,7 +61,7 @@ const ComplianceVault = () => {
     formData.append('document', file);
 
     try {
-      await axios.post('http://localhost:3000/api/admin/compliance/upload', formData, {
+      await axios.post(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/compliance/upload`, formData, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
@@ -104,7 +104,7 @@ const ComplianceVault = () => {
     if (doc.documentType === 'FUEL_TOLL_SLIP' && doc.targetId.startsWith('TR-')) {
       setLoadingTrip(true);
       try {
-        const res = await axios.get(`http://localhost:3000/api/finance/trips/${doc.targetId}`, {
+        const res = await axios.get(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/finance/trips/${doc.targetId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setTripDetails(res.data.data);

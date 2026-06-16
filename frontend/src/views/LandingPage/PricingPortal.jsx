@@ -39,7 +39,11 @@ const PricingPortal = () => {
 
   const [showModal, setShowModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState('free');
-  const [formData, setFormData] = useState({ companyName: '', registeredMobile: '', customSubdomain: '' });
+  const [formData, setFormData] = useState({
+    companyName: '',
+    registeredMobile: '',
+    customSubdomain: ''
+  });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
@@ -85,7 +89,8 @@ const PricingPortal = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post('/api/saas/register-tenant', { ...formData, planTier: selectedPlan });
+      const apiUrl = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000';
+      const response = await axios.post(`${apiUrl}/api/saas/register-tenant`, { ...formData, planTier: selectedPlan });
       setResult({ success: true, message: response.data.message });
     } catch (err) {
       setResult({ success: false, message: err.response?.data?.error || 'Registration failed' });

@@ -18,7 +18,7 @@ const AccountantPayroll = () => {
   const fetchPayroll = async () => {
     try {
       // Re-using the same payroll endpoint the admin uses
-      const res = await axios.get('http://localhost:3000/api/payroll');
+      const res = await axios.get(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/payroll`);
       setPayrollData(res.data.data || []);
     } catch (err) {
       console.error('Failed to fetch payroll', err);
