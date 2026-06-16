@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const FinancialLedger = () => {
+const FinancialLedger = ({ planType }) => {
   const [trialBalance, setTrialBalance] = useState([]);
   const [pnl, setPnl] = useState(null);
   const [payrollData, setPayrollData] = useState([]);
@@ -167,12 +167,14 @@ const FinancialLedger = () => {
           >
             Ledger & P&L
           </button>
-          <button 
-            onClick={() => setActiveTab('PAYROLL')}
-            className={`px-6 py-2 rounded-lg font-semibold transition-all ${activeTab === 'PAYROLL' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-          >
-            Payroll Processing
-          </button>
+          {planType !== 'TRIAL' && (
+            <button 
+              onClick={() => setActiveTab('PAYROLL')}
+              className={`px-6 py-2 rounded-lg font-semibold transition-all ${activeTab === 'PAYROLL' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+            >
+              Payroll Processing
+            </button>
+          )}
         </div>
 
         {/* Ledger View */}

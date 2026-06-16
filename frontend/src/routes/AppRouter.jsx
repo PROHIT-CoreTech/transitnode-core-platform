@@ -13,6 +13,7 @@ const PricingPortal = React.lazy(() => import('../views/LandingPage/PricingPorta
 const MagicLogin = React.lazy(() => import('../views/MagicLogin'));
 const SaaSCheckout = React.lazy(() => import('../views/Checkout/SaaSCheckout'));
 const AdminSetup = React.lazy(() => import('../views/Checkout/AdminSetup'));
+const MasterAdminDashboard = React.lazy(() => import('../views/MasterAdmin/MasterAdminDashboard'));
 import YardArrivals from '../views/GateOperations/YardArrivals';
 
 const ProtectedRoute = ({ children }) => {
@@ -25,7 +26,7 @@ const ProtectedRoute = ({ children }) => {
   }
 
   // Payment and Setup Routing Logic
-  if (tenantProfile && tenantProfile.planType !== 'TRIAL') {
+  if (tenantProfile && !['TRIAL', 'LIFETIME'].includes(tenantProfile.planType)) {
     if (tenantProfile.paymentStatus === 'PENDING') {
       if (location.pathname !== '/checkout') {
         return <Navigate to="/checkout" replace />;
@@ -49,7 +50,7 @@ const ProtectedRoute = ({ children }) => {
 
 const AppRouter = () => {
   const { user, logout } = useContext(AuthContext);
-  const { tenantState, errorDetails } = useContext(TenantBrandingContext);
+  const { tenantState, tenantProfile, errorDetails } = useContext(TenantBrandingContext);
   
   React.useEffect(() => {
     const requestInterceptor = axios.interceptors.request.use(
@@ -127,9 +128,11 @@ const AppRouter = () => {
           </ProtectedRoute>
         } />
         <Route path="/setup-admin" element={
-          <ProtectedRoute>
+          tenantState === 'TENANT_RESOLVED' && tenantProfile && !tenantProfile.adminSetupComplete ? (
             <AdminSetup />
-          </ProtectedRoute>
+          ) : (
+            <Navigate to="/login" replace />
+          )
         } />
         <Route path="/dashboard" element={
           <ProtectedRoute>
@@ -139,6 +142,11 @@ const AppRouter = () => {
         <Route path="/admin" element={
           <ProtectedRoute>
             <AdminDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/master-admin" element={
+          <ProtectedRoute>
+            <MasterAdminDashboard />
           </ProtectedRoute>
         } />
         <Route path="/yard-arrivals" element={

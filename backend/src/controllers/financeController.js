@@ -36,7 +36,7 @@ exports.getTrialBalance = async (req, res) => {
     ]);
 
     if (result.length === 0) {
-      return res.status(200).json({ success: true, data: {} });
+      return res.status(200).json({ success: true, data: [] });
     }
 
     const data = result[0];
@@ -93,7 +93,7 @@ exports.getPnL = async (req, res) => {
     const totalPayroll = payrollAgg.length > 0 ? payrollAgg[0].totalBaseSalary : 0;
 
     if (result.length === 0) {
-      return res.status(200).json({ success: true, data: {} });
+      return res.status(200).json({ success: true, data: null });
     }
 
     const data = result[0];

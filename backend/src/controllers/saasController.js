@@ -1,5 +1,6 @@
 const Tenant = require('../models/NoSQL/Tenant');
 const User = require('../models/NoSQL/User');
+const SubscriptionTransaction = require('../models/NoSQL/SubscriptionTransaction');
 const crypto = require('crypto');
 
 exports.registerTenant = async (req, res) => {
@@ -33,6 +34,24 @@ exports.registerTenant = async (req, res) => {
     });
 
     await newTenant.save();
+
+    // Log the initial transaction if it's a paid plan
+    const SubscriptionTransaction = require('../models/NoSQL/SubscriptionTransaction');
+    let amount = 0;
+    const pType = newTenant.planType;
+    if (pType === 'LIFETIME') amount = 500000;
+    else if (pType === 'PLATINUM') amount = 100000;
+    else if (pType === 'SILVER') amount = 50000;
+
+    if (amount > 0) {
+      const transaction = new SubscriptionTransaction({
+        tenantId: newTenant._id,
+        planType: pType,
+        amount: amount,
+        paymentMethod: 'ONLINE_CHECKOUT'
+      });
+      await transaction.save();
+    }
 
     const bcrypt = require('bcrypt');
     const fallbackPassword = crypto.randomBytes(16).toString('hex'); // Long secure fallback
@@ -140,6 +159,15 @@ exports.processCheckout = async (req, res) => {
     tenant.paymentStatus = 'PAID';
     tenant.licenseExpiresAt = licenseExpiresAt;
     await tenant.save();
+
+    // Record Transaction
+    const transaction = new SubscriptionTransaction({
+      tenantId: tenant._id,
+      planType: tenant.planType,
+      amount: amount || 0,
+      paymentMethod: paymentMethod || 'unknown'
+    });
+    await transaction.save();
 
     return res.status(200).json({ 
       success: true, 

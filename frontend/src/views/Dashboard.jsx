@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
+import { TenantBrandingContext } from '../context/TenantBrandingContext';
 import IntakeDashboard from './Receptionist/IntakeDashboard';
 import BillingDashboard from './Accountant/BillingDashboard';
 import AccountantPayroll from './Accountant/AccountantPayroll';
@@ -9,6 +10,7 @@ import { Navigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
+  const { tenantProfile } = useContext(TenantBrandingContext);
   const [stats, setStats] = useState({ activeShipments: 0, pendingInvoices: 0 });
   const [receptionistTab, setReceptionistTab] = useState('INTAKE');
   const [accountantTab, setAccountantTab] = useState('BILLING');
@@ -31,6 +33,9 @@ const Dashboard = () => {
   const renderRoleSpecificContent = () => {
     switch (user?.role) {
       case 'ADMIN':
+        if (tenantProfile?.planType === 'LIFETIME' && tenantProfile?.customSubdomain === 'masteradmin') {
+          return <Navigate to="/master-admin" replace />;
+        }
         return <Navigate to="/admin" replace />;
       case 'OPERATION':
         return (

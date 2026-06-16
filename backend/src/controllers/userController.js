@@ -83,41 +83,79 @@ exports.deleteUser = async (req, res) => {
 // POST /api/users/setup-admin
 exports.setupAdmin = async (req, res) => {
   try {
-    const { username, password } = req.body;
-    const userId = req.user.userId; // Provided by authGuard
-
+    const { username, password, tenantId } = req.body;
+    
     if (!username || !password) {
       return res.status(400).json({ message: 'Username and password are required' });
     }
 
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: 'Admin user not found' });
-    }
-
-    if (user.role !== 'ADMIN') {
-      return res.status(403).json({ message: 'Only ADMIN can perform initial setup' });
-    }
-
-    // Check if username is already taken by another user
-    const existingUser = await User.findOne({ username, _id: { $ne: userId } });
-    if (existingUser) {
-      return res.status(400).json({ message: 'Username is already taken' });
-    }
-
-    // Hash the new password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    user.username = username;
-    user.password = hashedPassword;
-    await user.save();
-
-    // Mark Tenant as setup complete
     const Tenant = require('../models/NoSQL/Tenant');
-    await Tenant.findByIdAndUpdate(user.tenantId, { adminSetupComplete: true });
+    const jwt = require('jsonwebtoken');
 
-    res.status(200).json({ message: 'Admin credentials configured successfully' });
+    // 1. Try to authenticate via JWT (Scenario A: Online Checkout / Magic Link)
+    let userId = null;
+    const authHeader = req.header('Authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        userId = decoded.userId;
+      } catch (err) {
+        // Token invalid, fall back to Scenario B
+      }
+    }
+
+    // 2. Fallback to tenantId from body (Scenario B: Offline Manual Onboarding)
+    const workspaceId = tenantId || req.header('x-workspace-id');
+
+    if (userId) {
+      // Scenario A: Existing User logic
+      const user = await User.findById(userId);
+      if (!user) return res.status(404).json({ message: 'Admin user not found' });
+      if (user.role !== 'ADMIN') return res.status(403).json({ message: 'Only ADMIN can perform initial setup' });
+
+      const existingUser = await User.findOne({ username, _id: { $ne: userId } });
+      if (existingUser) return res.status(400).json({ message: 'Username is already taken' });
+
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(password, salt);
+      user.username = username;
+      await user.save();
+
+      await Tenant.findByIdAndUpdate(user.tenantId, { adminSetupComplete: true });
+      return res.status(200).json({ message: 'Admin credentials configured successfully' });
+
+    } else if (workspaceId && workspaceId !== 'MAIN') {
+      // Scenario B: No existing user, create from scratch
+      const tenant = await Tenant.findById(workspaceId);
+      if (!tenant) return res.status(404).json({ message: 'Tenant not found' });
+      if (tenant.adminSetupComplete) return res.status(400).json({ message: 'Setup already complete' });
+
+      const existingUser = await User.findOne({ username });
+      if (existingUser) return res.status(400).json({ message: 'Username is already taken' });
+
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+
+      const newAdmin = new User({
+        tenantId: tenant._id,
+        username,
+        email: username, 
+        password: hashedPassword,
+        name: 'Admin - ' + tenant.companyName,
+        role: 'ADMIN'
+      });
+      await newAdmin.save();
+
+      tenant.adminSetupComplete = true;
+      await tenant.save();
+
+      return res.status(200).json({ message: 'Admin credentials configured successfully' });
+
+    } else {
+      return res.status(401).json({ message: 'Access Denied. Invalid or expired authentication token.' });
+    }
+
   } catch (error) {
     console.error('Error in setupAdmin:', error);
     res.status(500).json({ message: 'Server error during admin setup' });

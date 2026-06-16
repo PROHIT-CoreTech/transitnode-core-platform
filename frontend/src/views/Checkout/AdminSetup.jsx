@@ -33,7 +33,8 @@ const AdminSetup = () => {
     try {
       await axios.post('/api/users/setup-admin', {
         username,
-        password
+        password,
+        tenantId: tenantProfile?.tenantId
       });
 
       // Setup complete. Force logout so they use their new credentials

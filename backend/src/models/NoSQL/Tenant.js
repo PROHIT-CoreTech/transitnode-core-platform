@@ -75,11 +75,6 @@ const tenantSchema = new mongoose.Schema(
   }
 );
 
-tenantSchema.pre('save', function (next) {
-  if (this.isNew && this.planType === 'PLATINUM') {
-    this.maxCompaniesAllowed = 3;
-  }
-  next();
-});
+// Hook removed as per user request
 
 module.exports = mongoose.model('Tenant', tenantSchema);
