@@ -99,7 +99,9 @@ exports.onboardManual = async (req, res) => {
     licenseExpiresAt.setDate(licenseExpiresAt.getDate() + parseInt(licenseDurationDays, 10));
 
     const customSubdomain = companyName.toLowerCase().replace(/[^a-z0-9]/g, '') + '-' + Math.floor(Math.random() * 10000);
-    const fullLoginUrl = `http://${customSubdomain}.localhost:3001/login`;
+    const frontendDomain = process.env.FRONTEND_DOMAIN || 'localhost:3001';
+    const protocol = frontendDomain.includes('localhost') ? 'http' : 'https';
+    const fullLoginUrl = `${protocol}://${customSubdomain}.${frontendDomain}/login`;
 
     // 1. Create Tenant
     const tenant = new Tenant({
@@ -137,7 +139,14 @@ exports.onboardManual = async (req, res) => {
       await transaction.save();
     }
 
-    const setupLink = `http://${customSubdomain}.localhost:3001/setup-admin`;
+    const setupLink = `${protocol}://${customSubdomain}.${frontendDomain}/setup-admin`;
+    
+    console.log('\n======================================================');
+    console.log('MOCK EMAIL SENT TO:', userEmail);
+    console.log('SUBJECT: Welcome to CoreMatrix Tech - Setup Your Admin Account');
+    console.log('SETUP LINK:');
+    console.log(setupLink);
+    console.log('======================================================\n');
 
     return res.status(201).json({
       message: 'Manual onboarding successful',

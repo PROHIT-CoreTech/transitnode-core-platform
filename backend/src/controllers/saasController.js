@@ -21,8 +21,10 @@ exports.registerTenant = async (req, res) => {
     const licenseExpiresAt = new Date();
     licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 10);
     
-    // Generate the full login URL (adjust domain based on environment later)
-    const fullLoginUrl = `http://${customSubdomain}.localhost:3001/login`;
+    // Generate the full login URL dynamically based on environment
+    const frontendDomain = process.env.FRONTEND_DOMAIN || 'localhost:3001';
+    const protocol = frontendDomain.includes('localhost') ? 'http' : 'https';
+    const fullLoginUrl = `${protocol}://${customSubdomain}.${frontendDomain}/login`;
 
     const newTenant = new Tenant({
       companyName,
@@ -79,8 +81,8 @@ exports.registerTenant = async (req, res) => {
     console.log('\n======================================================');
     console.log('MOCK EMAIL SENT TO:', `admin@${customSubdomain}.corematrix.in`);
     console.log('SUBJECT: Welcome to CoreMatrix Tech - Your Workspace is Ready');
-    console.log('MAGIC LOGIN LINK:');
-    console.log(`http://${customSubdomain}.localhost:3001/magic-login/${magicToken}`);
+    console.log(`MAGIC LOGIN LINK:`);
+    console.log(`${protocol}://${customSubdomain}.${frontendDomain}/magic-login/${magicToken}`);
     console.log('======================================================\n');
 
     return res.status(201).json({
