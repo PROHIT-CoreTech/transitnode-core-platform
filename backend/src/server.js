@@ -19,7 +19,7 @@ const cors = require('cors');
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-workspace-id']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-workspace-id', 'x-master-admin-key']
 }));
 app.use(express.json());
 
@@ -53,7 +53,7 @@ const exportRoutes = require('./routes/export');
 const payrollRoutes = require('./routes/payroll');
 const saasRoutes = require('./routes/saas');
 const companyRoutes = require('./routes/companyRoutes');
-
+const masterAdminRoutes = require('./routes/masterAdminRoutes');
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/shipments', shipmentRoutes);
@@ -65,6 +65,7 @@ app.use('/api/finance/export', exportRoutes);
 app.use('/api/payroll', payrollRoutes);
 app.use('/api/saas', saasRoutes);
 app.use('/api/companies', companyRoutes);
+app.use('/api/master-admin', masterAdminRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

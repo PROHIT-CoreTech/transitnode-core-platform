@@ -369,7 +369,8 @@ const AdminDashboard = () => {
     e.preventDefault();
     setCheckoutLoading(true);
     try {
-      await axios.put('http://localhost:3000/api/admin/subscription/upgrade', { planType: pendingUpgradePlan }, {
+      const amount = getUpgradePrice(pendingUpgradePlan);
+      await axios.put('http://localhost:3000/api/admin/subscription/upgrade', { planType: pendingUpgradePlan, amount }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert(`Payment successful! Successfully upgraded to ${pendingUpgradePlan} plan!`);
@@ -881,14 +882,14 @@ const AdminDashboard = () => {
                   {/* User Provisioning */}
                   <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
                     <h3 className="text-lg font-bold text-slate-800 mb-4">Provision New User</h3>
-                    <form onSubmit={handleCreateUser} className="space-y-4">
+                    <form onSubmit={handleCreateUser} className="space-y-4" autoComplete="off">
                       <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
                       <input type="text" required value={userForm.name} onChange={e => setUserForm({...userForm, name: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
                     </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                        <input type="email" value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                        <input type="email" autoComplete="new-email" value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Mobile Number</label>
@@ -896,7 +897,7 @@ const AdminDashboard = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-                        <input type="password" required value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                        <input type="password" required autoComplete="new-password" value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
@@ -1362,7 +1363,7 @@ const AdminDashboard = () => {
 
           {activeTab === 'FINANCE' && (
             <div className="w-full h-full animate-fade-in">
-              <FinancialLedger />
+              <FinancialLedger planType={subscriptionDetails?.planType} />
             </div>
           )}
 
@@ -1540,7 +1541,7 @@ const AdminDashboard = () => {
                         </td>
                       </tr>
                       {/* Sister Companies */}
-                      {workspaces.map(ws => (
+                      {workspaces.slice(1).map(ws => (
                         <tr key={ws._id} className="hover:bg-slate-50 transition-colors">
                           <td className="px-6 py-4 font-medium text-slate-700 flex items-center">
                             <span className="w-2 h-2 rounded-full bg-slate-300 mr-2"></span>

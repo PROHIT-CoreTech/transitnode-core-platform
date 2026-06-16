@@ -649,6 +649,18 @@ exports.updateSubscriptionPlan = async (req, res) => {
     tenant.paymentStatus = 'PAID';
     await tenant.save();
 
+    // Log the transaction so the Master Admin dashboard revenue updates!
+    const SubscriptionTransaction = require('../models/NoSQL/SubscriptionTransaction');
+    if (req.body.amount && req.body.amount > 0) {
+      const transaction = new SubscriptionTransaction({
+        tenantId: tenant._id,
+        planType: planType,
+        amount: req.body.amount,
+        paymentMethod: 'UPGRADE'
+      });
+      await transaction.save();
+    }
+
     res.status(200).json({ message: 'Subscription updated successfully', planType: tenant.planType, licenseExpiresAt: tenant.licenseExpiresAt });
   } catch (error) {
     console.error('Error updating subscription:', error);

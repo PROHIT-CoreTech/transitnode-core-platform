@@ -19,13 +19,17 @@ const SaaSCheckout = () => {
   let planName = '';
 
   if (planType === 'PLATINUM') {
-    price = 34999;
+    price = 100000;
     duration = '60 Months (5 Years)';
-    planName = '5-Year Enterprise Control Tower';
+    planName = '5-Year Control Tower';
+  } else if (planType === 'LIFETIME') {
+    price = 500000;
+    duration = 'Lifetime';
+    planName = 'Lifetime Ownership';
   } else if (planType === 'SILVER') {
-    price = 14999;
-    duration = '24 Months (2 Years)';
-    planName = '2-Year Logistics Acceleration';
+    price = 50000;
+    duration = '36 Months (3 Years)';
+    planName = '3-Year Acceleration';
   } else {
     // Edge case if they are somehow here on a Trial
     price = 0;
@@ -64,7 +68,7 @@ const SaaSCheckout = () => {
             </svg>
           </div>
           <h2 className="text-3xl font-extrabold text-slate-900 mb-2">Payment Successful!</h2>
-          <p className="text-slate-600 mb-6">Thank you for subscribing to the <span className="font-bold">{planName}</span>. Your transaction of <span className="font-bold text-slate-900">₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span> has been securely processed.</p>
+          <p className="text-slate-600 mb-6">Thank you for subscribing to the <span className="font-bold">{planName}</span>. Your transaction of <span className="font-bold text-slate-900">₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> has been securely processed.</p>
           
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-8 text-sm text-left">
             <div className="flex justify-between mb-2">
@@ -105,7 +109,7 @@ const SaaSCheckout = () => {
             
             <div className="flex justify-between items-center mb-2">
               <span className="text-slate-600">Price</span>
-              <span className="font-medium text-slate-900">₹{price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+              <span className="font-medium text-slate-900">₹{price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div className="flex justify-between items-center mb-6">
               <span className="text-slate-600">Duration</span>
@@ -115,15 +119,15 @@ const SaaSCheckout = () => {
             <div className="border-t border-slate-200 pt-4 mb-4">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-slate-600">Subtotal</span>
-                <span className="font-medium text-slate-900">₹{price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span className="font-medium text-slate-900">₹{price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between items-center mb-4">
                 <span className="text-slate-600">Tax (8.25%)</span>
-                <span className="text-slate-900">₹{taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span className="text-slate-900">₹{taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between items-center text-xl font-bold text-slate-900">
                 <span>Total</span>
-                <span>₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span>₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             </div>
           </div>
@@ -140,7 +144,7 @@ const SaaSCheckout = () => {
             </div>
             <div className="flex justify-between items-center pt-4 border-t border-slate-200 font-bold">
               <span>Total</span>
-              <span>₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })} INR</span>
+              <span>₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} INR</span>
             </div>
           </div>
         </div>
@@ -148,7 +152,7 @@ const SaaSCheckout = () => {
         {/* Right Panel - Payment Form */}
         <div>
           <h2 className="text-3xl font-extrabold text-slate-900 mb-2">Complete Your Purchase</h2>
-          <p className="text-lg text-slate-600 mb-8">Total Amount: <span className="font-bold text-slate-900">₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></p>
+          <p className="text-lg text-slate-600 mb-8">Total Amount: <span className="font-bold text-slate-900">₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></p>
 
           <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden p-8">
             {/* Tabs */}
@@ -222,7 +226,7 @@ const SaaSCheckout = () => {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                 ) : (
-                  `Pay ₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+                  `Pay ₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                 )}
               </button>
             </form>

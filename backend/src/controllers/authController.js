@@ -50,6 +50,7 @@ exports.login = async (req, res) => {
     if (email) {
       queryConditions.push({ email });
       queryConditions.push({ mobileNumber: email });
+      queryConditions.push({ username: email });
     }
     if (username) queryConditions.push({ username });
 
