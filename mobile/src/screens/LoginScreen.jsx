@@ -7,11 +7,12 @@ const LoginScreen = () => {
   const { setDriverToken, setDriverData } = useContext(DriverAuthContext);
   
   const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState('');
+  const [step, setStep] = useState(1); // 1 = Phone, 2 = OTP
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e) => {
+  const handleSendOtp = async (e) => {
     e.preventDefault();
     setError('');
     
@@ -23,9 +24,35 @@ const LoginScreen = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post('http://192.168.29.237:3000/api/auth/login', {
-        email: `${phone}@transitnode.demo`, // Mock email mapping if needed, or backend auth takes phone
-        password: password
+      await axios.post('http://192.168.29.237:3000/api/auth/send-otp', {
+        mobileNumber: phone
+      });
+      setStep(2);
+    } catch (err) {
+      if (err.response) {
+        setError(err.response.data?.message || 'Server Error');
+      } else {
+        setError('Network Error. Is the backend running?');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setError('');
+    
+    if (otp.length !== 4) {
+      setError('Please enter a valid 4-digit OTP');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.post('http://192.168.29.237:3000/api/auth/verify-otp', {
+        mobileNumber: phone,
+        otp: otp
       });
       
       if (response.data.token) {
@@ -36,22 +63,15 @@ const LoginScreen = () => {
       }
     } catch (err) {
       if (err.response) {
-        // The server responded with a status code that falls out of the range of 2xx
-        setError(`Server Error [${err.response.status}]: ${err.response.data?.message || JSON.stringify(err.response.data)}`);
-        console.error("Login Server Error:", err.response.data);
-      } else if (err.request) {
-        // The request was made but no response was received
-        setError(`Network Error: Cannot reach backend. ${err.message}`);
-        console.error("Login Network Error:", err.message);
+        setError(err.response.data?.message || 'Invalid OTP');
       } else {
-        // Something happened in setting up the request that triggered an Error
-        setError(`App Error: ${err.message}`);
-        console.error("Login App Error:", err.message);
+        setError('Network Error.');
       }
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="flex flex-col min-h-screen px-6 py-12 justify-center relative z-10">
@@ -92,36 +112,48 @@ const LoginScreen = () => {
           {t('login_title')}
         </h1>
 
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div>
-            <label className="block text-sm font-semibold text-gray-300 mb-2 tracking-wide">
-              {t('username_label')}
-            </label>
-            <div className="relative">
+        <form onSubmit={step === 1 ? handleSendOtp : handleVerifyOtp} className="space-y-6">
+          
+          {step === 1 && (
+            <div className="animate-fade-in">
+              <label className="block text-sm font-semibold text-gray-300 mb-2 tracking-wide">
+                {t('username_label')} (Mobile Number)
+              </label>
+              <div className="relative">
+                <input 
+                  type="tel" 
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-white text-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all placeholder-gray-600"
+                  placeholder="9876543210"
+                  required
+                />
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="animate-fade-in">
+              <label className="block text-sm font-semibold text-gray-300 mb-2 tracking-wide">
+                Enter 4-digit OTP
+              </label>
               <input 
-                type="tel" 
-                value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-white text-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all placeholder-gray-600"
-                placeholder="9876543210"
+                type="text" 
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-white text-lg tracking-[0.5em] text-center focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all placeholder-gray-600"
+                placeholder="••••"
                 required
               />
+              <button 
+                type="button"
+                onClick={() => setStep(1)}
+                className="text-indigo-400 text-xs font-bold mt-3 text-center w-full hover:text-indigo-300"
+              >
+                Change Phone Number
+              </button>
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-300 mb-2 tracking-wide">
-              {t('password_label')}
-            </label>
-            <input 
-              type="password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-white text-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all placeholder-gray-600"
-              placeholder="••••••••"
-              required
-            />
-          </div>
+          )}
 
           {error && <div className="bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl text-rose-400 text-sm text-center font-medium backdrop-blur-sm">{error}</div>}
 
@@ -134,7 +166,7 @@ const LoginScreen = () => {
             <span className="relative z-10 flex items-center">
               {loading ? (
                 <svg className="animate-spin h-6 w-6 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-              ) : 'Secure Login'}
+              ) : step === 1 ? 'Send OTP' : 'Verify & Login'}
             </span>
           </button>
         </form>
