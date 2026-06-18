@@ -74,8 +74,7 @@ const AdminDashboard = () => {
     document: null
   });
   const [driverForm, setDriverForm] = useState({ 
-    name: '', phone: '', licenseNumber: '', licenseExpiryDate: '', status: 'AVAILABLE', assignedVehicle: '',
-    username: '', password: '', document: null
+    name: '', phone: '', licenseNumber: '', licenseExpiryDate: '', status: 'AVAILABLE', assignedVehicle: '', document: null
   });
   const [employeeForm, setEmployeeForm] = useState({
     employeeId: '', employeeName: '', aadhaar: null, pan: null, addressProof: null
@@ -452,12 +451,8 @@ const AdminDashboard = () => {
 
   const handleCreateDriver = async (e) => {
     e.preventDefault();
-    if (!driverForm.name || !driverForm.phone || !driverForm.licenseNumber || !driverForm.username || !driverForm.password) {
-      alert("All fields including Username and Password are required for Driver Onboarding.");
-      return;
-    }
-    if (driverForm.password.length < 6) {
-      alert("Password must be at least 6 characters.");
+    if (!driverForm.name || !driverForm.phone || !driverForm.licenseNumber) {
+      alert("All fields are required for Driver Onboarding.");
       return;
     }
     if (!/^[A-Z]{2}[0-9]{2}[0-9]{4}[0-9]{7}$/.test(driverForm.licenseNumber)) {
@@ -476,8 +471,7 @@ const AdminDashboard = () => {
       });
       alert('Driver created successfully');
       setDriverForm({ 
-        name: '', phone: '', licenseNumber: '', licenseExpiryDate: '', status: 'AVAILABLE', assignedVehicle: '',
-        username: '', password: '', document: null
+        name: '', phone: '', licenseNumber: '', licenseExpiryDate: '', status: 'AVAILABLE', assignedVehicle: '', document: null
       });
       fetchDrivers();
     } catch (error) {
@@ -1173,14 +1167,7 @@ const AdminDashboard = () => {
                         className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" 
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Username</label>
-                      <input type="text" required value={driverForm.username} onChange={e => setDriverForm({...driverForm, username: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-                      <input type="password" required value={driverForm.password} onChange={e => setDriverForm({...driverForm, password: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
-                    </div>
+
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Driver Document (e.g. License)</label>
                       <input type="file" onChange={e => setDriverForm({...driverForm, document: e.target.files[0]})} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />

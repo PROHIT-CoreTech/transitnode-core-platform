@@ -50,6 +50,7 @@ const shipmentLedgerSchema = new mongoose.Schema(
     },
     accounting: {
       accountantId: { type: String },
+      billingCycle: { type: String, enum: ['DAILY', 'MONTHLY'], default: 'DAILY' },
       baseRateApplied: { type: Number, min: 0 },
       driverAdvanceCash: { type: Number, min: 0, default: 0 },
       fuelVoucherAmount: { type: Number, min: 0, default: 0 },
@@ -69,6 +70,7 @@ const shipmentLedgerSchema = new mongoose.Schema(
       paymentMethod: { type: String },
       invoiceGeneratedAt: { type: Date },
       generatedDeliveryOtp: { type: String },
+      consolidatedInvoiceId: { type: mongoose.Schema.Types.ObjectId, ref: 'ConsolidatedInvoice' },
     },
   },
   {

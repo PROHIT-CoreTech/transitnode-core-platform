@@ -8,6 +8,8 @@ const IntakeDashboard = () => {
   const [recentShipments, setRecentShipments] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [fleet, setFleet] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [workspaces, setWorkspaces] = useState([]);
   const [generatedShipment, setGeneratedShipment] = useState(null);
   const [focusedField, setFocusedField] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -25,6 +27,8 @@ const IntakeDashboard = () => {
     fetchRecentShipments();
     fetchDrivers();
     fetchFleet();
+    fetchSuppliers();
+    fetchWorkspaces();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -58,6 +62,28 @@ const IntakeDashboard = () => {
       setFleet(response.data.fleet?.filter(v => v.status === 'YARD') || []);
     } catch (err) {
       console.error("Error fetching fleet", err);
+    }
+  };
+
+  const fetchSuppliers = async () => {
+    try {
+      const response = await axios.get('/api/admin/suppliers', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setSuppliers(response.data || []);
+    } catch (err) {
+      console.error("Error fetching suppliers", err);
+    }
+  };
+
+  const fetchWorkspaces = async () => {
+    try {
+      const response = await axios.get('/api/companies/my-workspaces', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setWorkspaces(response.data.workspaces || []);
+    } catch (err) {
+      console.error("Error fetching workspaces", err);
     }
   };
 
@@ -231,15 +257,17 @@ const IntakeDashboard = () => {
                     <div className="p-1.5 bg-cyan-500 bg-opacity-20 rounded-md text-cyan-400">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                     </div>
-                    <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest">Sender Profile</h3>
+                    <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest">Branch Profile</h3>
                   </div>
-                  <div>
-                    <input type="text" name="senderName" placeholder="Full Name" value={formData.senderName} onChange={handleChange} required 
-                      className={inputClasses('senderName')} onFocus={() => setFocusedField('senderName')} onBlur={() => setFocusedField(null)} />
-                  </div>
-                  <div>
-                    <input type="text" name="senderPhone" placeholder="Phone Number" value={formData.senderPhone} onChange={handleChange} required 
-                      className={inputClasses('senderPhone')} onFocus={() => setFocusedField('senderPhone')} onBlur={() => setFocusedField(null)} />
+                  <div className="relative mt-2">
+                    <label className="absolute -top-3 left-4 bg-gray-800 px-2 text-xs font-bold text-cyan-400">Branch / Company Name</label>
+                    <select name="senderName" value={formData.senderName} onChange={handleChange} required 
+                      className={inputClasses('senderName')} onFocus={() => setFocusedField('senderName')} onBlur={() => setFocusedField(null)}>
+                      <option value="">-- Select Branch --</option>
+                      {workspaces.map(w => (
+                        <option key={w._id} value={w.companyName}>{w.companyName} {w.state ? `(${w.state})` : ''}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
@@ -249,15 +277,17 @@ const IntakeDashboard = () => {
                     <div className="p-1.5 bg-purple-500 bg-opacity-20 rounded-md text-purple-400">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                     </div>
-                    <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest">Receiver Profile</h3>
+                    <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest">Supplier / Receiver</h3>
                   </div>
-                  <div>
-                    <input type="text" name="receiverName" placeholder="Full Name" value={formData.receiverName} onChange={handleChange} required 
-                      className={inputClasses('receiverName')} onFocus={() => setFocusedField('receiverName')} onBlur={() => setFocusedField(null)} />
-                  </div>
-                  <div>
-                    <input type="text" name="receiverPhone" placeholder="Phone Number" value={formData.receiverPhone} onChange={handleChange} required 
-                      className={inputClasses('receiverPhone')} onFocus={() => setFocusedField('receiverPhone')} onBlur={() => setFocusedField(null)} />
+                  <div className="relative mt-2">
+                    <label className="absolute -top-3 left-4 bg-gray-800 px-2 text-xs font-bold text-purple-400">Supplier Name</label>
+                    <select name="receiverName" value={formData.receiverName} onChange={handleChange} required 
+                      className={inputClasses('receiverName')} onFocus={() => setFocusedField('receiverName')} onBlur={() => setFocusedField(null)}>
+                      <option value="">-- Select Supplier --</option>
+                      {suppliers.map(s => (
+                        <option key={s._id} value={s.supplierName}>{s.supplierName} {s.state ? `(${s.state})` : ''}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </div>

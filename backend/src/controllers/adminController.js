@@ -365,10 +365,10 @@ exports.deleteFleetAsset = async (req, res) => {
 
 exports.createDriver = async (req, res) => {
   try {
-    const { name, phone, licenseNumber, status, assignedVehicle, username, password } = req.body;
+    const { name, phone, licenseNumber, licenseExpiryDate, status, assignedVehicle } = req.body;
 
-    if (!name || !phone || !licenseNumber || !username || !password) {
-      return res.status(400).json({ message: 'Name, Phone, License Number, Username, and Password are required' });
+    if (!name || !phone || !licenseNumber) {
+      return res.status(400).json({ message: 'Name, Phone, and License Number are required' });
     }
 
     const existingDriver = await Driver.findOne({ $or: [{ phone }, { licenseNumber }], tenantId: req.user.tenantId, companyId: req.workspaceId });
@@ -381,6 +381,7 @@ exports.createDriver = async (req, res) => {
       name,
       phone,
       licenseNumber,
+      licenseExpiryDate,
       status: status || 'AVAILABLE',
       assignedVehicle: assignedVehicle || null
     });
@@ -407,16 +408,17 @@ exports.createDriver = async (req, res) => {
       });
     }
 
-    // Also create a User account for the Driver
-    const existingUser = await User.findOne({ username });
+    // Also proactively create a User account for the Driver using their phone number
+    const existingUser = await User.findOne({ $or: [{ username: phone }, { mobileNumber: phone }] });
     if (!existingUser) {
       const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
+      const randomPassword = Math.random().toString(36).slice(-10);
+      const hashedPassword = await bcrypt.hash(randomPassword, salt);
 
       const newUser = new User({
         tenantId: req.user.tenantId,
-        username: username,
-        email: `${username}@transitnode.demo`,
+        username: phone,
+        email: `${phone}@transitnode.demo`,
         mobileNumber: phone,
         password: hashedPassword,
         name: name,
@@ -477,14 +479,15 @@ exports.assignVehicleToDriver = async (req, res) => {
     const { driverId } = req.params;
     const { vehicleRegistration } = req.body;
 
-    const driver = await Driver.findById(driverId);
+    const driver = await Driver.findByIdAndUpdate(
+      driverId,
+      { assignedVehicle: vehicleRegistration },
+      { new: true, runValidators: false }
+    );
+    
     if (!driver) {
       return res.status(404).json({ message: 'Driver not found' });
     }
-
-    // Optional: update the old vehicle's driverName if necessary, but here we just update Driver and new Device
-    driver.assignedVehicle = vehicleRegistration;
-    await driver.save();
 
     // Also update the Device collection to reflect the assignment
     if (vehicleRegistration) {

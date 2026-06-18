@@ -120,7 +120,19 @@ const Dashboard = () => {
       {/* Header */}
       <div className="glass-panel" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
-          <h2>Welcome, {user?.name || 'User'}</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <h2 style={{ margin: 0 }}>Welcome, {user?.name || 'User'}</h2>
+            {tenantProfile?.planType && (
+              <span className={`px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase shadow-sm ${
+                tenantProfile.planType === 'LIFETIME' ? 'bg-amber-500 text-white shadow-amber-500/30' :
+                tenantProfile.planType === 'PLATINUM' ? 'bg-indigo-600 text-white' : 
+                tenantProfile.planType === 'SILVER' ? 'bg-slate-200 text-slate-800' : 
+                'bg-teal-500 text-white'
+              }`}>
+                {tenantProfile.planType} PLAN
+              </span>
+            )}
+          </div>
           <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
             Role: <span style={{ color: 'var(--accent-cyan)', fontWeight: 'bold' }}>{user?.role}</span>
           </p>

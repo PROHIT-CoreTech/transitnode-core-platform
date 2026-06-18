@@ -1,4 +1,5 @@
 const Company = require('../models/NoSQL/Company');
+const Tenant = require('../models/NoSQL/Tenant');
 
 const addSisterCompany = async (req, res) => {
   try {
@@ -42,7 +43,22 @@ const getWorkspaces = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Unauthorized: Missing tenant ID' });
     }
 
-    const workspaces = await Company.find({ tenantId });
+    const tenant = await Tenant.findById(tenantId);
+    let workspaces = await Company.find({ tenantId });
+    
+    // Convert Mongoose docs to objects
+    workspaces = workspaces.map(w => w.toObject());
+
+    if (tenant) {
+      // Prepend Main HQ to the list
+      workspaces.unshift({
+        _id: tenant._id,
+        companyName: `${tenant.companyName} (Main HQ)`,
+        address: tenant.address,
+        state: tenant.state,
+        isMainTenant: true
+      });
+    }
     
     res.status(200).json({
       success: true,

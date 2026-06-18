@@ -23,6 +23,11 @@ const upload = multer({ storage: storage });
 // Open to drivers for uploading receipts
 router.post('/compliance/upload', upload.single('document'), adminController.uploadComplianceDocument);
 
+// Open to all tenant users for dropdowns (including OPERATION)
+router.get('/suppliers', supplierController.getSuppliers);
+router.get('/drivers', adminController.getDrivers);
+router.get('/fleet', adminController.getFleetAssets);
+
 // Require ADMIN role for the rest
 router.use(checkRole(['ADMIN']));
 
@@ -33,7 +38,6 @@ router.post('/users/create', adminController.createUser);
 
 // Driver Management
 router.post('/drivers/create', upload.single('document'), adminController.createDriver);
-router.get('/drivers', adminController.getDrivers);
 router.delete('/drivers/:id', adminController.deleteDriver);
 
 // Employee Management
@@ -53,7 +57,6 @@ router.put('/rates/update', adminController.updateRates);
 // Live Hardware Tracking
 router.post('/devices/map', adminController.mapDevice);
 router.post('/fleet/register', upload.single('document'), adminController.registerFleetAsset);
-router.get('/fleet', adminController.getFleetAssets);
 router.delete('/fleet/:id', adminController.deleteFleetAsset);
 router.put('/drivers/:driverId/assign-vehicle', adminController.assignVehicleToDriver);
 
@@ -62,7 +65,6 @@ router.get('/compliance/documents', adminController.getComplianceDocuments);
 
 // Supplier Management
 router.post('/suppliers/create', supplierController.createSupplier);
-router.get('/suppliers', supplierController.getSuppliers);
 
 // Subscription Management
 router.get('/subscription', adminController.getSubscriptionDetails);

@@ -23,18 +23,21 @@ router.get('/active-trip', verifyToken, async (req, res) => {
     const ShipmentLedger = require('../models/NoSQL/ShipmentLedger');
     
     // Get the driver's user document to find their phone number
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.userId || req.user.id);
     if (!user || user.role !== 'DRIVER') {
       return res.status(403).json({ message: 'Only drivers can access this' });
     }
 
-    const driverPhone = user.username; // Or user.driverProfile.phoneNumber
+    const driverPhone = user.mobileNumber || user.username;
+    console.log('[DEBUG] active-trip requested for driverPhone:', driverPhone);
 
     // Find the most recent active trip for this driver
     const activeShipment = await ShipmentLedger.findOne({
       'logistics.transport.driverPhone': driverPhone,
       status: { $in: ['READY_FOR_DISPATCH', 'IN_TRANSIT', 'ARRIVED'] }
-    }).sort({ createdAt: -1 });
+    }).sort({ 'metadata.createdAt': -1 });
+
+    console.log('[DEBUG] activeShipment found:', !!activeShipment);
 
     if (!activeShipment) {
       return res.status(404).json({ message: 'No active trip found' });

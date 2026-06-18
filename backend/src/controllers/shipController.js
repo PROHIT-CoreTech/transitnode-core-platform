@@ -17,7 +17,7 @@ exports.createShipment = async (req, res) => {
     const newShipment = await ShipmentLedger.create({
       tenantId: req.user.tenantId, companyId: req.workspaceId,
       trackingNumber,
-      status: 'PENDING',
+      status: 'READY_FOR_DISPATCH',
       metadata: {
         receptionistId: req.user?.id
       },

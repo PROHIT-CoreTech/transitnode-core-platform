@@ -61,6 +61,12 @@ const userSchema = new mongoose.Schema(
     },
     magicLinkExpires: {
       type: Date,
+    },
+    otpCode: {
+      type: String,
+    },
+    otpExpires: {
+      type: Date,
     }
   },
   {
