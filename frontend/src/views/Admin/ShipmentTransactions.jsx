@@ -6,41 +6,18 @@ const ShipmentTransactions = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [timeRange, setTimeRange] = useState('day');
+  const [billingCycle, setBillingCycle] = useState('ALL');
 
   const fetchShipments = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`/api/shipments?timeRange=${timeRange}`, {
+      const res = await axios.get(`/api/shipments?timeRange=${timeRange}&billingCycle=${billingCycle}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const fetchedShipments = res.data.shipments || [];
       
-      // Inject Demo Shipments for Client Demo
-      const demoShipments = [
-        {
-          _id: 'demo1', trackingNumber: 'TR-DEMO-10001', status: 'PENDING',
-          logistics: { transport: { origin: 'Mumbai', destination: 'Pune', vehicleNumber: 'MH 12 AB 1234', driverName: 'Rajesh Kumar' }, sender: { name: 'Acme Corp' }, receiver: { name: 'Beta Logistics' } },
-          accounting: { grandTotal: 15400, paymentStatus: 'PENDING' }, metadata: { createdAt: new Date().toISOString() }
-        },
-        {
-          _id: 'demo2', trackingNumber: 'TR-DEMO-10002', status: 'READY_FOR_DISPATCH',
-          logistics: { transport: { origin: 'Delhi', destination: 'Jaipur', vehicleNumber: 'DL 1C 4567', driverName: 'Suresh Singh' }, sender: { name: 'Global Traders' }, receiver: { name: 'City Mart' } },
-          accounting: { grandTotal: 28500, paymentStatus: 'PAID' }, metadata: { createdAt: new Date(Date.now() - 86400000).toISOString() }
-        },
-        {
-          _id: 'demo3', trackingNumber: 'TR-DEMO-10003', status: 'IN_TRANSIT',
-          logistics: { transport: { origin: 'Bangalore', destination: 'Chennai', vehicleNumber: 'KA 01 XY 9876', driverName: 'Ramesh Patel' }, sender: { name: 'Tech Solutions' }, receiver: { name: 'Electro Hub' } },
-          accounting: { grandTotal: 42000, paymentStatus: 'PAID' }, metadata: { createdAt: new Date(Date.now() - 172800000).toISOString() }
-        },
-        {
-          _id: 'demo4', trackingNumber: 'TR-DEMO-10004', status: 'DELIVERED',
-          logistics: { transport: { origin: 'Kochi', destination: 'Trivandrum', vehicleNumber: 'KL 01 EF 5555', driverName: 'Mohan Das' }, sender: { name: 'Spice Exports' }, receiver: { name: 'Port Authority' } },
-          accounting: { grandTotal: 18250, paymentStatus: 'PAID' }, metadata: { createdAt: new Date(Date.now() - 432000000).toISOString() }
-        }
-      ];
-
-      setShipments([...demoShipments, ...fetchedShipments]);
+      setShipments(fetchedShipments);
       setError('');
     } catch (err) {
       console.error('Failed to load shipments:', err);
@@ -52,22 +29,7 @@ const ShipmentTransactions = () => {
 
   useEffect(() => {
     fetchShipments();
-  }, [timeRange]);
-
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'PENDING':
-        return <span className="bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 px-2 py-1 rounded-md text-xs font-bold">PENDING</span>;
-      case 'READY_FOR_DISPATCH':
-        return <span className="bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-1 rounded-md text-xs font-bold">DISPATCH READY</span>;
-      case 'IN_TRANSIT':
-        return <span className="bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2 py-1 rounded-md text-xs font-bold">IN TRANSIT</span>;
-      case 'DELIVERED':
-        return <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-1 rounded-md text-xs font-bold">DELIVERED</span>;
-      default:
-        return <span className="bg-gray-500/20 text-gray-400 border border-gray-500/30 px-2 py-1 rounded-md text-xs font-bold">{status}</span>;
-    }
-  };
+  }, [timeRange, billingCycle]);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mt-6">
@@ -77,6 +39,22 @@ const ShipmentTransactions = () => {
           <p className="text-sm text-slate-500 mt-1">Real-time view of all generated trips, transport statuses, and billing values.</p>
         </div>
         <div className="flex items-center gap-4">
+          <div className="relative">
+            <select
+              value={billingCycle}
+              onChange={(e) => setBillingCycle(e.target.value)}
+              className="appearance-none bg-indigo-50 text-indigo-700 border border-indigo-200 py-2 pl-4 pr-10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm font-bold tracking-wide transition-all cursor-pointer"
+            >
+              <option value="ALL">All Ledgers</option>
+              <option value="DAILY">Daily / Cash Trips</option>
+              <option value="MONTHLY">Monthly Billing Trips</option>
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-indigo-500">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
           <div className="relative">
             <select
               value={timeRange}
@@ -118,18 +96,17 @@ const ShipmentTransactions = () => {
               <th className="p-4">Route Details</th>
               <th className="p-4">Vehicle & Driver</th>
               <th className="p-4">Financials</th>
-              <th className="p-4">Status</th>
               <th className="p-4">Created Date</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 bg-white">
             {loading ? (
               <tr>
-                <td colSpan="6" className="p-8 text-center text-slate-400 animate-pulse">Loading transaction records...</td>
+                <td colSpan="5" className="p-8 text-center text-slate-400 animate-pulse">Loading transaction records...</td>
               </tr>
             ) : shipments.length === 0 ? (
               <tr>
-                <td colSpan="6" className="p-8 text-center text-slate-500">No shipments found in the ledger.</td>
+                <td colSpan="5" className="p-8 text-center text-slate-500">No shipments found in the ledger.</td>
               </tr>
             ) : (
               shipments.map(ship => (
@@ -154,12 +131,14 @@ const ShipmentTransactions = () => {
                     <div className="font-bold font-mono text-slate-800">
                       ₹{(ship.accounting?.grandTotal || ship.accounting?.subtotal || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                     </div>
-                    <div className={`text-xs mt-1 font-bold ${ship.accounting?.paymentStatus === 'PAID' ? 'text-emerald-500' : 'text-amber-500'}`}>
-                      {ship.accounting?.paymentStatus || 'UNPAID'}
+                    <div className="flex gap-2 mt-1">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${ship.accounting?.billingCycle === 'MONTHLY' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-700'}`}>
+                        {ship.accounting?.billingCycle === 'MONTHLY' ? 'MONTHLY' : 'DAILY'}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${ship.accounting?.paymentStatus === 'PAID' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                        {ship.accounting?.paymentStatus || 'UNPAID'}
+                      </span>
                     </div>
-                  </td>
-                  <td className="p-4 align-top">
-                    {getStatusBadge(ship.status)}
                   </td>
                   <td className="p-4 align-top text-sm text-slate-500 font-mono">
                     {new Date(ship.metadata?.createdAt).toLocaleDateString('en-IN')}

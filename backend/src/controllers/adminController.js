@@ -97,31 +97,58 @@ exports.getAnalytics = async (req, res) => {
 
     // Top Level Metrics
     // 1. Gross Trip Revenue
-    const companyIdQuery = req.workspaceId ? new mongoose.Types.ObjectId(req.workspaceId) : null;
-    const tenantMatch = { tenantId: new mongoose.Types.ObjectId(req.user.tenantId), companyId: companyIdQuery };
+    const tenantMatch = { tenantId: new mongoose.Types.ObjectId(req.user.tenantId) };
+    if (req.workspaceId) {
+      tenantMatch.companyId = new mongoose.Types.ObjectId(req.workspaceId);
+    }
     const revenueAgg = await ShipmentLedger.aggregate([
       { $match: { 'accounting.paymentStatus': 'PAID', ...dateMatch, ...tenantMatch } },
       { $group: { 
           _id: null, 
-          grossTotal: { $sum: '$accounting.grandTotal' },
+          grossTotal: { $sum: { $ifNull: ['$accounting.grandTotal', '$accounting.subtotal'] } },
+          dailyTotal: { 
+            $sum: { 
+              $cond: [
+                { $ne: ['$accounting.billingCycle', 'MONTHLY'] }, 
+                { $ifNull: ['$accounting.grandTotal', '$accounting.subtotal'] }, 
+                0
+              ] 
+            } 
+          },
+          monthlyTotal: { 
+            $sum: { 
+              $cond: [
+                { $eq: ['$accounting.billingCycle', 'MONTHLY'] }, 
+                { $ifNull: ['$accounting.grandTotal', '$accounting.subtotal'] }, 
+                0
+              ] 
+            } 
+          },
           advances: { $sum: '$accounting.driverAdvanceCash' },
           fuel: { $sum: '$accounting.fuelVoucherAmount' },
           tolls: { $sum: '$accounting.tollAllowance' }
       } }
     ]);
     const totalRevenue = revenueAgg.length > 0 ? revenueAgg[0].grossTotal : 0;
+    const dailyRevenue = revenueAgg.length > 0 ? revenueAgg[0].dailyTotal : 0;
+    const monthlyRevenue = revenueAgg.length > 0 ? revenueAgg[0].monthlyTotal : 0;
     const totalExpenses = revenueAgg.length > 0 ? (revenueAgg[0].advances + revenueAgg[0].fuel + revenueAgg[0].tolls) : 0;
     const netProfit = totalRevenue - totalExpenses;
     const netFleetMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(2) : 0;
 
+    const baseQuery = { tenantId: req.user.tenantId };
+    if (req.workspaceId) {
+      baseQuery.companyId = req.workspaceId;
+    }
+
     // 2. Active Fleet on Road
-    const activeFleet = await Device.countDocuments({ status: 'ON_TRIP', tenantId: req.user.tenantId, companyId: req.workspaceId });
+    const activeFleet = await Device.countDocuments({ status: 'ON_TRIP', ...baseQuery });
 
     // 3. Trucks in Maintenance
-    const maintenanceFleet = await Device.countDocuments({ status: 'MAINTENANCE', tenantId: req.user.tenantId, companyId: req.workspaceId });
+    const maintenanceFleet = await Device.countDocuments({ status: 'MAINTENANCE', ...baseQuery });
 
     // 4. Total Registered Fleet
-    const totalFleet = await Device.countDocuments({ tenantId: req.user.tenantId, companyId: req.workspaceId });
+    const totalFleet = await Device.countDocuments(baseQuery);
 
     // Charts Data
     // A. Fleet Utilization Bar Chart
@@ -149,7 +176,7 @@ exports.getAnalytics = async (req, res) => {
             origin: '$logistics.transport.origin', 
             destination: '$logistics.transport.destination' 
           }, 
-          gross: { $sum: '$accounting.grandTotal' },
+          gross: { $sum: { $ifNull: ['$accounting.grandTotal', '$accounting.subtotal'] } },
           advances: { $sum: '$accounting.driverAdvanceCash' },
           fuel: { $sum: '$accounting.fuelVoucherAmount' }
         } 
@@ -169,26 +196,13 @@ exports.getAnalytics = async (req, res) => {
       };
     });
 
-    // Fallback Dummy Data if empty
-    if (routeProfitability.length === 0) {
-      routeProfitability = [
-        { name: 'Thane-Kochi', revenue: 45000 },
-        { name: 'Mumbai-Delhi', revenue: 62000 },
-        { name: 'Pune-Bangalore', revenue: 38000 },
-        { name: 'Surat-Chennai', revenue: 51000 }
-      ];
-    }
-    if (paymentMethodsData.length === 0) {
-      paymentMethodsData.push(
-        { name: 'UPI', value: 400 },
-        { name: 'Cash', value: 300 },
-        { name: 'Corporate Account', value: 300 }
-      );
-    }
+
 
     res.status(200).json({
       metrics: {
         totalRevenue,
+        dailyRevenue,
+        monthlyRevenue,
         netFleetMargin,
         activeFleet,
         maintenanceFleet

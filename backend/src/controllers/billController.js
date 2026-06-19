@@ -347,10 +347,30 @@ exports.generatePdf = async (req, res) => {
       generatedBy: req.user.userId
     });
 
-    await ShipmentLedger.updateMany(
-      { _id: { $in: shipments.map(s => s._id) } },
-      { $set: { 'accounting.consolidatedInvoiceId': newInvoice._id } }
-    );
+    let sumOfOriginalSubtotals = 0;
+    for (const s of shipments) {
+      sumOfOriginalSubtotals += (s.accounting.subtotal || s.accounting.baseRateApplied || 0);
+    }
+    const proRataFactor = sumOfOriginalSubtotals > 0 ? (grandTotal / sumOfOriginalSubtotals) : 0;
+
+    const bulkOps = shipments.map(s => {
+      const origSub = s.accounting.subtotal || s.accounting.baseRateApplied || 0;
+      return {
+        updateOne: {
+          filter: { _id: s._id },
+          update: { 
+            $set: { 
+              'accounting.consolidatedInvoiceId': newInvoice._id,
+              'accounting.grandTotal': origSub * proRataFactor 
+            } 
+          }
+        }
+      };
+    });
+    
+    if (bulkOps.length > 0) {
+      await ShipmentLedger.bulkWrite(bulkOps);
+    }
 
     res.status(201).json({ message: 'Consolidated Invoice generated', invoice: newInvoice });
   } catch (error) {

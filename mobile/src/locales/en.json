@@ -22,5 +22,6 @@
   "good_afternoon": "Good Afternoon",
   "good_evening": "Good Evening",
   "trip_completed": "Trip Completed!",
-  "trip_completed_desc": "You have successfully delivered the cargo. Please wait for the dispatcher to assign your next route."
+  "trip_completed_desc": "You have successfully delivered the cargo. Please wait for the dispatcher to assign your next route.",
+  "start_trip": "Start Trip"
 }

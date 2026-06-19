@@ -61,7 +61,7 @@ exports.createShipment = async (req, res) => {
 
 exports.listShipments = async (req, res) => {
   try {
-    const { timeRange } = req.query;
+    const { timeRange, billingCycle } = req.query;
     let query = {};
     const now = new Date();
 
@@ -81,9 +81,19 @@ exports.listShipments = async (req, res) => {
       query['metadata.createdAt'] = { $gte: startDate };
     }
 
+    if (billingCycle && billingCycle !== 'ALL') {
+      if (billingCycle === 'DAILY') {
+        query['accounting.billingCycle'] = { $ne: 'MONTHLY' };
+      } else if (billingCycle === 'MONTHLY') {
+        query['accounting.billingCycle'] = 'MONTHLY';
+      }
+    }
+
     const limitCount = timeRange === 'all' ? 100 : 500;
     query.tenantId = req.user.tenantId;
-    query.companyId = req.workspaceId;
+    if (req.workspaceId) {
+      query.companyId = req.workspaceId;
+    }
     const shipments = await ShipmentLedger.find(query).sort({ 'metadata.createdAt': -1 }).limit(limitCount);
     res.status(200).json({ shipments });
   } catch (error) {

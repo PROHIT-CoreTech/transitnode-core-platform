@@ -4,7 +4,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
 import {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import MapView from '../../components/MapView';
@@ -765,7 +765,11 @@ const AdminDashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col transition-all hover:shadow-md">
               <span className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">Gross Trip Revenue</span>
-              <span className="text-3xl font-bold text-slate-900">₹{metrics.totalRevenue.toLocaleString('en-IN')}</span>
+              <span className="text-3xl font-bold text-slate-900">₹{metrics.totalRevenue?.toLocaleString('en-IN') || 0}</span>
+              <div className="mt-3 text-xs font-medium text-slate-400 flex justify-between border-t border-slate-100 pt-2">
+                <span>Daily/Cash: <span className="text-slate-600 font-bold">₹{metrics.dailyRevenue?.toLocaleString('en-IN') || 0}</span></span>
+                <span>Monthly: <span className="text-indigo-600 font-bold">₹{metrics.monthlyRevenue?.toLocaleString('en-IN') || 0}</span></span>
+              </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col transition-all hover:shadow-md">
               <span className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">Net Fleet Margin</span>
@@ -837,66 +841,104 @@ const AdminDashboard = () => {
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
-                {/* Line Chart */}
-                <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-                  <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wider">Net Profitability by Route</h3>
-                  <div className="h-96">
+                {/* Area Chart - Full Width Top Row */}
+                <div className="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative overflow-hidden group hover:shadow-md transition-shadow">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+                  <h3 className="text-sm font-bold text-slate-700 mb-6 uppercase tracking-wider flex items-center">
+                    <span className="w-2 h-2 rounded-full bg-indigo-500 mr-2"></span>
+                    Net Profitability by Route
+                  </h3>
+                  <div className="h-72">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={charts.revenueOverTime} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                      <AreaChart data={charts.revenueOverTime} margin={{ top: 10, right: 30, left: 20, bottom: 40 }}>
+                        <defs>
+                          <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="#4F46E5" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                         <XAxis 
                           dataKey="name" 
                           axisLine={false} 
                           tickLine={false} 
-                          tick={{fill: '#64748B', fontSize: 12}} 
-                          angle={-45} 
+                          tick={{fill: '#64748B', fontSize: 11, fontWeight: 600}} 
+                          angle={-25} 
                           textAnchor="end"
-                          interval={0}
+                          dy={15}
                         />
-                        <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748B', fontSize: 12}} tickFormatter={(value) => `₹${value}`} />
+                        <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748B', fontSize: 11, fontWeight: 600}} tickFormatter={(value) => `₹${value/1000}k`} />
                         <Tooltip 
-                          formatter={(value) => `₹${Number(value).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} 
+                          cursor={{stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '3 3'}}
+                          content={({ active, payload, label }) => {
+                            if (active && payload && payload.length) {
+                              return (
+                                <div className="bg-white/80 backdrop-blur-md border border-white/50 p-4 rounded-xl shadow-lg ring-1 ring-slate-900/5">
+                                  <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">{label}</p>
+                                  <p className="text-indigo-600 text-lg font-black">
+                                    ₹{Number(payload[0].value).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                  </p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
                         />
-                        <Line type="monotone" dataKey="revenue" stroke="#4F46E5" strokeWidth={3} dot={{r: 4, strokeWidth: 2}} activeDot={{r: 6}} />
-                      </LineChart>
+                        <Area type="monotone" dataKey="revenue" stroke="#4F46E5" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" activeDot={{r: 6, strokeWidth: 0, fill: '#4F46E5'}} />
+                      </AreaChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
 
-                {/* Donut Chart */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-                  <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wider">Payment Methods</h3>
-                  <div className="h-72">
-                    <PieChart width={300} height={250}>
-                      <Pie
-                        data={charts.paymentMethodsData}
-                        innerRadius={60}
-                        outerRadius={90}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {charts.paymentMethodsData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend verticalAlign="bottom" height={36}/>
-                    </PieChart>
+                {/* Bar Chart - Bottom Left */}
+                <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative overflow-hidden hover:shadow-md transition-shadow">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-sky-400 to-blue-500"></div>
+                  <h3 className="text-sm font-bold text-slate-700 mb-6 uppercase tracking-wider flex items-center">
+                    <span className="w-2 h-2 rounded-full bg-sky-500 mr-2"></span>
+                    Fleet Utilization
+                  </h3>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={charts.statusData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748B', fontSize: 11, fontWeight: 600}} dy={10} />
+                        <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748B', fontSize: 11}} />
+                        <Tooltip 
+                          cursor={{fill: '#F8FAFC'}}
+                          contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' }}
+                        />
+                        <Bar dataKey="count" fill="#0EA5E9" radius={[6, 6, 0, 0]} barSize={40} />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
 
-                {/* Bar Chart */}
-                <div className="lg:col-span-3 bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-                  <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wider">Fleet Utilization</h3>
-                  <div className="h-72">
-                    <BarChart width={900} height={250} data={charts.statusData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748B'}} />
-                      <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748B'}} />
-                      <Tooltip cursor={{fill: '#F1F5F9'}} />
-                      <Bar dataKey="count" fill="#0EA5E9" radius={[4, 4, 0, 0]} />
-                    </BarChart>
+                {/* Donut Chart - Bottom Right */}
+                <div className="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative overflow-hidden flex flex-col justify-center items-center hover:shadow-md transition-shadow">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
+                  <h3 className="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider w-full flex items-center">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+                    Payment Methods
+                  </h3>
+                  <div className="h-64 w-full flex justify-center items-center">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={charts.paymentMethodsData}
+                          innerRadius={55}
+                          outerRadius={80}
+                          paddingAngle={5}
+                          dataKey="value"
+                          stroke="none"
+                        >
+                          {charts.paymentMethodsData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={['#10B981', '#F59E0B', '#3B82F6', '#8B5CF6'][index % 4]} />
+                          ))}
+                        </Pie>
+                        <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                        <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 600, color: '#64748B' }}/>
+                      </PieChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
               </div>
