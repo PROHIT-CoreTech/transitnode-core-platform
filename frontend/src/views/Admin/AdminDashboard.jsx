@@ -40,7 +40,7 @@ const AdminDashboard = () => {
   // Sister Companies / Workspaces State
   const [workspaces, setWorkspaces] = useState([]);
   const [activeWorkspace, setActiveWorkspace] = useState(null);
-  const [sisterCompanyForm, setSisterCompanyForm] = useState({ companyName: '', gstin: '', pan: '', address: '', state: '', stateCode: '', contactNumber: '' });
+  const [sisterCompanyForm, setSisterCompanyForm] = useState({ companyName: '', gstin: '', pan: '', address: '', state: '', stateCode: '', contactNumber: '', invoiceTemplate: null });
   const [sisterCompanyLoading, setSisterCompanyLoading] = useState(false);
   const [editingWorkspace, setEditingWorkspace] = useState(null);
   const [editWorkspaceForm, setEditWorkspaceForm] = useState({ companyName: '', gstin: '', pan: '', address: '', state: '', stateCode: '', contactNumber: '' });
@@ -309,16 +309,53 @@ const AdminDashboard = () => {
     }
     setSisterCompanyLoading(true);
     try {
-      await axios.post(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/companies/add-sister`, sisterCompanyForm, {
-        headers: { Authorization: `Bearer ${token}` }
+      const formData = new FormData();
+      Object.keys(sisterCompanyForm).forEach(key => {
+        if (key !== 'invoiceTemplate' && sisterCompanyForm[key]) {
+          formData.append(key, sisterCompanyForm[key]);
+        }
+      });
+      if (sisterCompanyForm.invoiceTemplate) {
+        formData.append('invoiceTemplate', sisterCompanyForm.invoiceTemplate);
+      }
+
+      await axios.post(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/companies/add-sister`, formData, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
       });
       alert('Sister company created successfully');
-      setSisterCompanyForm({ companyName: '', gstin: '', pan: '', address: '', state: '', stateCode: '', contactNumber: '' });
+      setSisterCompanyForm({ companyName: '', gstin: '', pan: '', address: '', state: '', stateCode: '', contactNumber: '', invoiceTemplate: null });
       fetchWorkspaces();
+      const fileInput = document.getElementById('sisterInvoiceTemplate');
+      if (fileInput) fileInput.value = '';
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to create sister company');
     } finally {
       setSisterCompanyLoading(false);
+    }
+  };
+
+  const handleUpdateInvoiceFormat = async (workspaceId, file, isPrimary) => {
+    if (!file) return;
+    try {
+      const formData = new FormData();
+      formData.append('invoiceTemplate', file);
+      const url = isPrimary 
+        ? `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/saas/tenant-profile/invoice-format`
+        : `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/companies/workspace/${workspaceId}/invoice-format`;
+        
+      await axios.put(url, formData, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      alert('Invoice format updated successfully');
+      fetchWorkspaces();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to update invoice format');
     }
   };
 
@@ -1475,6 +1512,10 @@ const AdminDashboard = () => {
                         <label className="block text-sm font-medium text-slate-700 mb-1">Contact Number</label>
                         <input type="text" value={sisterCompanyForm.contactNumber} onChange={e => setSisterCompanyForm({...sisterCompanyForm, contactNumber: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" placeholder="Primary Contact" />
                       </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Custom Invoice Template (PDF) - Optional</label>
+                        <input type="file" id="sisterInvoiceTemplate" accept=".pdf" onChange={e => setSisterCompanyForm({...sisterCompanyForm, invoiceTemplate: e.target.files[0]})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-1.5 border bg-white" />
+                      </div>
                     </div>
                     <div className="pt-2">
                       <button type="submit" disabled={sisterCompanyLoading} className="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 transition font-medium disabled:opacity-50">
@@ -1602,6 +1643,21 @@ const AdminDashboard = () => {
                             <input type="text" value={editWorkspaceForm.contactNumber} onChange={e => setEditWorkspaceForm({...editWorkspaceForm, contactNumber: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
                           </div>
                         </div>
+                        {subscriptionDetails.planType === 'LIFETIME' && (
+                          <div className="mt-4 pt-4 border-t border-slate-200">
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Custom Invoice Template (PDF)</label>
+                            <div className="flex gap-2 items-center">
+                              <input type="file" accept=".pdf" onChange={e => {
+                                if (e.target.files[0]) {
+                                  handleUpdateInvoiceFormat(editingWorkspace._id, e.target.files[0], editingWorkspace.isPrimary);
+                                }
+                              }} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-1.5 border" />
+                            </div>
+                            {editingWorkspace.customInvoiceTemplateUrl && (
+                              <p className="text-xs text-green-600 mt-1">A custom template is currently active.</p>
+                            )}
+                          </div>
+                        )}
                       </form>
                     </div>
                     <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">

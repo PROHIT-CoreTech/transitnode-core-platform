@@ -213,3 +213,26 @@ exports.updateTenantProfile = async (req, res) => {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+exports.updateInvoiceFormat = async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded. Please upload a valid PDF template.' });
+    }
+
+    const tenant = await Tenant.findById(tenantId);
+    if (!tenant) {
+      return res.status(404).json({ success: false, message: 'Tenant not found' });
+    }
+
+    tenant.customInvoiceTemplateUrl = `/uploads/${req.file.filename}`;
+    await tenant.save();
+
+    return res.status(200).json({ success: true, message: 'Invoice template updated successfully', customInvoiceTemplateUrl: tenant.customInvoiceTemplateUrl });
+  } catch (error) {
+    console.error('Update Tenant Invoice Format Error:', error);
+    return res.status(500).json({ success: false, message: 'Internal server error while updating invoice format' });
+  }
+};

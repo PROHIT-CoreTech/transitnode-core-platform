@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import InvoiceModal from '../../components/InvoiceModal';
 import ConsolidatedInvoiceModal from '../../components/ConsolidatedInvoiceModal';
+import AccountantInvoiceForm from '../../components/AccountantInvoiceForm';
+import AccountantMasterInvoiceForm from '../../components/AccountantMasterInvoiceForm';
 
 const BillingDashboard = () => {
   const [invoices, setInvoices] = useState([]);
@@ -27,6 +29,7 @@ const BillingDashboard = () => {
   const [monthlySuppliers, setMonthlySuppliers] = useState([]);
   const [selectedMonthlySupplier, setSelectedMonthlySupplier] = useState(null);
   const [taxPercentage, setTaxPercentage] = useState(18);
+  const [masterBaseRate, setMasterBaseRate] = useState(0);
 
   const [consolidatedInvoices, setConsolidatedInvoices] = useState([]);
   const [selectedConsolidated, setSelectedConsolidated] = useState(null);
@@ -91,7 +94,12 @@ const BillingDashboard = () => {
 
   // B2B Freight Calculation Utility
   const baseRate = Number(baseFreightRate) || 0;
-  const gstRate = rcmApplied ? 0.05 : 0.18;
+  const templateType = selectedInvoice?.companyId?.invoiceTemplateType;
+  const hasExplicitCompany = !!selectedInvoice?.companyId;
+  const hasGstin = selectedInvoice?.companyId?.gstin && selectedInvoice.companyId.gstin.trim() !== "";
+  const isNonGst = templateType === 'BILL_OF_SUPPLY' || templateType === 'SIMPLIFIED_3_COL' || (hasExplicitCompany && !hasGstin);
+
+  const gstRate = isNonGst ? 0 : (rcmApplied ? 0.05 : 0.18);
   const gstAmount = baseRate * gstRate;
   const cgst = gstAmount / 2;
   const sgst = gstAmount / 2;
@@ -149,7 +157,9 @@ const BillingDashboard = () => {
     setProcessing(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`/api/invoices/monthly/${selectedInvoice.trackingNumber}`, {}, {
+      await axios.patch(`/api/invoices/monthly/${selectedInvoice.trackingNumber}`, {
+        baseRateApplied: baseRate
+      }, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       fetchInvoices();
@@ -171,7 +181,9 @@ const BillingDashboard = () => {
       const token = localStorage.getItem('token');
       await axios.post('/api/invoices/consolidated', {
         supplierName: selectedMonthlySupplier.supplierName,
-        taxPercentage: taxPercentage
+        companyId: selectedMonthlySupplier.company?._id,
+        taxPercentage: taxPercentage,
+        overrideSubtotal: masterBaseRate
       }, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -305,7 +317,18 @@ const BillingDashboard = () => {
               monthlySuppliers.map((sup, idx) => (
                 <div 
                   key={idx}
-                  onClick={() => setSelectedMonthlySupplier(sup)}
+                  onClick={() => {
+                    setSelectedMonthlySupplier(sup);
+                    setMasterBaseRate(sup.estimatedSubtotal);
+                    const tType = sup.company?.invoiceTemplateType;
+                    const hasExplicitCompany = !!sup.company;
+                    const hasGst = sup.company?.gstin && sup.company.gstin.trim() !== "";
+                    if (tType === 'BILL_OF_SUPPLY' || tType === 'SIMPLIFIED_3_COL' || (hasExplicitCompany && !hasGst)) {
+                      setTaxPercentage(0);
+                    } else {
+                      setTaxPercentage(18);
+                    }
+                  }}
                   className={`p-4 rounded-xl border cursor-pointer transition-all duration-200 ${
                     selectedMonthlySupplier?.supplierName === sup.supplierName 
                     ? 'bg-yellow-900/40 border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]' 
@@ -315,7 +338,8 @@ const BillingDashboard = () => {
                   <div className="flex justify-between items-center mb-1">
                     <span className="font-bold text-yellow-400">{sup.supplierName}</span>
                   </div>
-                  <div className="text-xs text-gray-300">Pending Shipments: <span className="font-bold">{sup.shipmentCount}</span></div>
+                  <div className="text-[10px] text-gray-400 font-bold mb-1 border-b border-gray-700/50 pb-1">via {sup.company?.companyName || 'UNKNOWN COMPANY'}</div>
+                  <div className="text-xs text-gray-300 mt-2">Pending Shipments: <span className="font-bold">{sup.shipmentCount}</span></div>
                   <div className="text-[10px] text-gray-400 mt-1">Est. Subtotal: ₹{sup.estimatedSubtotal.toLocaleString('en-IN')}</div>
                 </div>
               ))
@@ -360,8 +384,8 @@ const BillingDashboard = () => {
               <p>Select a single shipment to bill immediately, or select multiple checkboxes to generate a Master Invoice.</p>
             </div>
           ) : (
-          <div className="space-y-6 animate-fade-in">
-            <div className="flex justify-between items-start border-b border-gray-700/50 pb-4">
+          <div className="space-y-6 animate-fade-in print:bg-white print:p-0">
+            <div className="flex justify-between items-start border-b border-gray-700/50 pb-4 no-print">
               <div>
                 <h3 className="text-2xl font-bold text-white">Invoice Engine</h3>
                 <p className="text-blue-400 font-mono mt-1">{selectedInvoice.trackingNumber}</p>
@@ -394,104 +418,28 @@ const BillingDashboard = () => {
               </div>
             </div>
 
-            {/* Metrics Breakdown */}
-            <div className="grid grid-cols-2 gap-6">
-              
-              {/* Freight Financials */}
-              <div className="bg-gray-800/30 p-4 rounded-xl border border-gray-700/50 space-y-4">
-                <div className="flex justify-between items-center">
-                  <h4 className="text-sm font-bold text-gray-400 tracking-wider">FREIGHT FINANCIALS</h4>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-gray-500">RCM APPLIED (5%)</span>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" checked={rcmApplied} onChange={() => setRcmApplied(!rcmApplied)} className="sr-only peer" />
-                      <div className="w-9 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
-                    </label>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-500 font-bold">Base Freight Rate (₹)</span>
-                  <input 
-                    type="number" 
-                    value={baseFreightRate}
-                    onChange={e => setBaseFreightRate(e.target.value)}
-                    className="w-32 bg-gray-900 border border-gray-600 rounded px-2 py-1 text-right focus:border-blue-500 focus:outline-none font-mono text-white text-lg font-bold"
-                  />
-                </div>
-              </div>
-
-              {/* Expense Editor */}
-              <div className="bg-gray-800/30 p-4 rounded-xl border border-gray-700/50 space-y-4">
-                <h4 className="text-sm font-bold text-gray-400 tracking-wider">TRIP EXPENSES (DRIVER ALLOCATION)</h4>
-                
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-500">Driver Advance Cash (₹)</span>
-                  <input 
-                    type="number" 
-                    value={driverAdvanceCash}
-                    onChange={e => setDriverAdvanceCash(e.target.value)}
-                    className="w-24 bg-gray-900 border border-gray-600 rounded px-2 py-1 text-right focus:border-blue-500 focus:outline-none font-mono text-white"
-                  />
-                </div>
-                
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-500">Fuel Voucher Amount (₹)</span>
-                  <input 
-                    type="number" 
-                    value={fuelVoucherAmount}
-                    onChange={e => setFuelVoucherAmount(e.target.value)}
-                    className="w-24 bg-gray-900 border border-gray-600 rounded px-2 py-1 text-right focus:border-blue-500 focus:outline-none font-mono text-white"
-                  />
-                </div>
-                
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-500">Toll Allocation (₹)</span>
-                  <input 
-                    type="number" 
-                    value={tollAllowance}
-                    onChange={e => setTollAllowance(e.target.value)}
-                    className="w-24 bg-gray-900 border border-gray-600 rounded px-2 py-1 text-right focus:border-blue-500 focus:outline-none font-mono text-white"
-                  />
-                </div>
-              </div>
+            <div className="p-4 bg-white text-black shadow-lg rounded-md overflow-x-auto min-w-[700px]">
+              <AccountantInvoiceForm 
+                invoice={selectedInvoice}
+                baseFreightRate={baseFreightRate}
+                setBaseFreightRate={setBaseFreightRate}
+                rcmApplied={rcmApplied}
+                setRcmApplied={setRcmApplied}
+                cgst={cgst}
+                sgst={sgst}
+                grandTotal={grandTotal}
+                companyName={selectedInvoice?.companyId?.companyName || undefined}
+                companyAddress={selectedInvoice?.companyId ? (selectedInvoice.companyId.address || "N/A") : undefined}
+                companyGstin={selectedInvoice?.companyId ? (selectedInvoice.companyId.gstin || "N/A") : undefined}
+                companyPan={selectedInvoice?.companyId ? (selectedInvoice.companyId.pan || "N/A") : undefined}
+                receiverAddress={selectedInvoice?.supplierDetails?.address || selectedInvoice?.logistics?.receiver?.address || undefined}
+                receiverGstin={selectedInvoice?.supplierDetails?.gstin || undefined}
+                receiverPan={selectedInvoice?.supplierDetails?.pan || undefined}
+                templateType={selectedInvoice?.companyId?.invoiceTemplateType}
+              />
             </div>
 
-            {/* Grand Total Breakdown */}
-            <div className="bg-[#0B0E14] p-5 rounded-xl border border-gray-700 shadow-inner space-y-3">
-              <div className="flex justify-between text-sm text-gray-400">
-                <span>Taxable Amount (Base Freight)</span>
-                <span className="font-mono">₹{baseRate.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-              </div>
-              <div className="flex justify-between text-sm text-gray-400">
-                <span>CGST ({rcmApplied ? '2.5%' : '9%'})</span>
-                <span className="font-mono">+ ₹{cgst.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-              </div>
-              <div className="flex justify-between text-sm text-gray-400">
-                <span>SGST ({rcmApplied ? '2.5%' : '9%'})</span>
-                <span className="font-mono">+ ₹{sgst.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-              </div>
-              <div className="border-t border-gray-700 pt-3 flex justify-between items-end">
-                <span className="text-lg font-bold text-white">Grand Total</span>
-                <span className="text-3xl font-mono font-bold text-green-400">₹{grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-              </div>
-            </div>
 
-            {/* Payment Method Selector */}
-            <div className="bg-gray-800/30 p-4 rounded-xl border border-gray-700/50 flex justify-between items-center">
-              <span className="text-sm font-bold text-gray-400 tracking-wider">PAYMENT METHOD</span>
-              <select 
-                value={paymentMethod}
-                onChange={e => setPaymentMethod(e.target.value)}
-                className="bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:border-blue-500 focus:outline-none"
-              >
-                <option value="CASH">Cash</option>
-                <option value="UPI">UPI</option>
-                <option value="CREDIT_CARD">Credit Card</option>
-                <option value="NET_BANKING">Net Banking</option>
-                <option value="CORPORATE_ACCOUNT">Corporate Account</option>
-              </select>
-            </div>
 
 
           </div>
@@ -502,44 +450,48 @@ const BillingDashboard = () => {
               <p>Select a Supplier to generate their Master Invoice</p>
             </div>
           ) : (
-            <div className="space-y-6 animate-fade-in">
-              <div className="border-b border-gray-700/50 pb-4">
-                <h3 className="text-2xl font-bold text-white">Generate Master Invoice</h3>
-                <p className="text-yellow-400 font-bold mt-1 text-xl">{selectedMonthlySupplier.supplierName}</p>
-                <p className="text-gray-400 text-sm mt-1">Unbilled Monthly Shipments: <span className="font-bold text-white">{selectedMonthlySupplier.shipmentCount}</span></p>
-              </div>
-
-              <div className="bg-[#0B0E14] p-5 rounded-xl border border-gray-700 shadow-inner space-y-3">
-                <div className="flex justify-between text-sm text-gray-400">
-                  <span>Estimated Total Base Freight</span>
-                  <span className="font-mono text-white font-bold">₹{selectedMonthlySupplier.estimatedSubtotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+            <div className="space-y-6 animate-fade-in print:bg-white print:p-0">
+              <div className="border-b border-gray-700/50 pb-4 no-print flex justify-between items-center">
+                <div>
+                  <h3 className="text-2xl font-bold text-white">Generate Master Invoice</h3>
+                  <p className="text-yellow-400 font-bold mt-1 text-xl">{selectedMonthlySupplier.supplierName}</p>
                 </div>
-              </div>
-
-              <div className="bg-gray-800/30 p-4 rounded-xl border border-gray-700/50 flex justify-between items-center">
-                <span className="text-sm font-bold text-gray-400 tracking-wider">APPLY TAX</span>
-                <select 
-                  value={taxPercentage}
-                  onChange={e => setTaxPercentage(Number(e.target.value))}
-                  className="bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:border-blue-500 focus:outline-none"
+                <button 
+                  onClick={handleGenerateConsolidated}
+                  disabled={processing}
+                  className={`px-8 py-3 rounded-xl font-bold text-white transition-all duration-300 flex justify-center items-center gap-2 ${
+                    processing 
+                    ? 'bg-purple-600/50 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 shadow-[0_0_20px_rgba(147,51,234,0.4)]'
+                  }`}
                 >
-                  <option value={18}>18% GST</option>
-                  <option value={5}>5% GST (RCM)</option>
-                  <option value={0}>0% GST (Exempt)</option>
-                </select>
+                  {processing ? 'Generating...' : `Create Master Invoice`}
+                </button>
               </div>
 
-              <button 
-                onClick={handleGenerateConsolidated}
-                disabled={processing}
-                className={`w-full py-4 rounded-xl font-bold text-white transition-all duration-300 flex justify-center items-center gap-2 ${
-                  processing 
-                  ? 'bg-purple-600/50 cursor-not-allowed' 
-                  : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 shadow-[0_0_20px_rgba(147,51,234,0.4)]'
-                }`}
-              >
-                {processing ? 'Generating...' : `Create Master Invoice for ${selectedMonthlySupplier.supplierName}`}
-              </button>
+              <div className="p-4 bg-white text-black shadow-lg rounded-md overflow-x-auto min-w-[700px]">
+                <AccountantMasterInvoiceForm 
+                  masterInvoiceId="PENDING GENERATION"
+                  companyName={selectedMonthlySupplier.company?.companyName || undefined}
+                  companyAddress={selectedMonthlySupplier.company ? (selectedMonthlySupplier.company.address || "N/A") : undefined}
+                  companyGstin={selectedMonthlySupplier.company ? (selectedMonthlySupplier.company.gstin || "N/A") : undefined}
+                  companyPan={selectedMonthlySupplier.company ? (selectedMonthlySupplier.company.pan || "N/A") : undefined}
+                  templateType={selectedMonthlySupplier.company?.invoiceTemplateType || 'TAX_INVOICE'}
+                  supplierName={selectedMonthlySupplier.supplierName}
+                  receiverAddress={selectedMonthlySupplier.address || "Address Not Available"}
+                  receiverGstin={selectedMonthlySupplier.gstin || "N/A"}
+                  receiverPan={selectedMonthlySupplier.pan || "N/A"}
+                  shipmentCount={selectedMonthlySupplier.shipmentCount}
+                  baseRate={masterBaseRate}
+                  rcmApplied={taxPercentage === 5}
+                  setRcmApplied={(val) => setTaxPercentage(val ? 5 : 18)}
+                  cgst={(masterBaseRate * (taxPercentage / 100)) / 2}
+                  sgst={(masterBaseRate * (taxPercentage / 100)) / 2}
+                  grandTotal={masterBaseRate + (masterBaseRate * (taxPercentage / 100))}
+                  isEditable={false}
+                />
+              </div>
+
             </div>
           )
         ) : (
@@ -548,13 +500,11 @@ const BillingDashboard = () => {
               <p>Select a Master Invoice from the queue</p>
             </div>
           ) : (
-            <div className="space-y-6 animate-fade-in">
-              <div className="border-b border-gray-700/50 pb-4 flex justify-between items-start">
+            <div className="space-y-6 animate-fade-in print:bg-white print:p-0">
+              <div className="flex justify-between items-start border-b border-gray-700/50 pb-4 no-print">
                 <div>
                   <h3 className="text-2xl font-bold text-white">Master Invoice</h3>
                   <p className="text-purple-400 font-mono mt-1">{selectedConsolidated.invoiceId}</p>
-                  <p className="text-gray-400 text-sm mt-1">Supplier: <span className="font-bold text-white">{selectedConsolidated.supplierName}</span></p>
-                  <p className="text-gray-400 text-sm">Total Shipments Included: <span className="font-bold text-white">{selectedConsolidated.shipmentIds.length}</span></p>
                 </div>
                 <div className="flex gap-2">
                   <button 
@@ -574,24 +524,31 @@ const BillingDashboard = () => {
                 </div>
               </div>
 
-              <div className="bg-[#0B0E14] p-5 rounded-xl border border-gray-700 shadow-inner space-y-3">
-                <div className="flex justify-between text-sm text-gray-400">
-                  <span>Subtotal (All Shipments)</span>
-                  <span className="font-mono">₹{selectedConsolidated.financials.subtotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
-                </div>
-                <div className="flex justify-between text-sm text-gray-400">
-                  <span>Tax Amount</span>
-                  <span className="font-mono">+ ₹{selectedConsolidated.financials.taxAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
-                </div>
-                <div className="border-t border-gray-700 pt-3 flex justify-between items-end">
-                  <span className="text-lg font-bold text-white">Grand Total</span>
-                  <span className="text-3xl font-mono font-bold text-green-400">₹{selectedConsolidated.financials.grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
-                </div>
+              <div className="p-4 bg-white text-black shadow-lg rounded-md overflow-x-auto min-w-[700px]">
+                <AccountantMasterInvoiceForm 
+                  masterInvoiceId={selectedConsolidated.invoiceId}
+                  companyName={selectedConsolidated.companyId?.companyName || undefined}
+                  companyAddress={selectedConsolidated.companyId ? (selectedConsolidated.companyId.address || "N/A") : undefined}
+                  companyGstin={selectedConsolidated.companyId ? (selectedConsolidated.companyId.gstin || "N/A") : undefined}
+                  companyPan={selectedConsolidated.companyId ? (selectedConsolidated.companyId.pan || "N/A") : undefined}
+                  templateType={selectedConsolidated.companyId?.invoiceTemplateType || 'TAX_INVOICE'}
+                  supplierName={selectedConsolidated.supplierName}
+                  receiverAddress={selectedConsolidated.supplierAddress || "Address Not Available"}
+                  receiverGstin={selectedConsolidated.supplierGstin || "N/A"}
+                  receiverPan={selectedConsolidated.supplierPan || "N/A"}
+                  shipmentCount={selectedConsolidated.shipmentIds.length}
+                  baseRate={selectedConsolidated.financials.subtotal}
+                  rcmApplied={selectedConsolidated.financials.taxAmount < (selectedConsolidated.financials.subtotal * 0.18)}
+                  cgst={selectedConsolidated.financials.taxAmount / 2}
+                  sgst={selectedConsolidated.financials.taxAmount / 2}
+                  grandTotal={selectedConsolidated.financials.grandTotal}
+                  isEditable={false}
+                />
               </div>
 
               {selectedConsolidated.status === 'PENDING' && (
-                <>
-                  <div className="bg-gray-800/30 p-4 rounded-xl border border-gray-700/50 flex justify-between items-center">
+                <div className="no-print">
+                  <div className="bg-gray-800/30 p-4 rounded-xl border border-gray-700/50 flex justify-between items-center mb-4">
                     <span className="text-sm font-bold text-gray-400 tracking-wider">PAYMENT METHOD</span>
                     <select 
                       value={paymentMethod}
@@ -615,7 +572,7 @@ const BillingDashboard = () => {
                   >
                     {processing ? 'Processing...' : 'Record Payment & Settle Batch'}
                   </button>
-                </>
+                </div>
               )}
             </div>
           )

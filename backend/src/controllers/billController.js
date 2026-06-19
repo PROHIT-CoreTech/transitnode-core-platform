@@ -1,6 +1,11 @@
 const ShipmentLedger = require('../models/NoSQL/ShipmentLedger');
+const Tenant = require('../models/NoSQL/Tenant');
+const Company = require('../models/NoSQL/Company');
 const crypto = require('crypto');
 const exceljs = require('exceljs');
+const fs = require('fs');
+const path = require('path');
+const { PDFDocument, rgb } = require('pdf-lib');
 
 // Mock helper function to simulate external SMS gateway
 const sendTransitSMS = async (receiverPhone, trackingUrl) => {
@@ -19,11 +24,26 @@ const sendTransitSMS = async (receiverPhone, trackingUrl) => {
 
 exports.getPendingInvoices = async (req, res) => {
   try {
-    const invoices = await ShipmentLedger.find({ 
+    let invoices = await ShipmentLedger.find({ 
       'accounting.paymentStatus': 'PENDING',
       'accounting.billingCycle': 'DAILY',
       'accounting.consolidatedInvoiceId': { $exists: false }
-    }).sort({ 'metadata.createdAt': -1 });
+    }).populate('companyId').sort({ 'metadata.createdAt': -1 }).lean();
+    
+    const Supplier = require('../models/NoSQL/Supplier');
+    invoices = await Promise.all(invoices.map(async (inv) => {
+      if (inv.logistics?.receiver?.name) {
+        const sup = await Supplier.findOne({ tenantId: req.user.tenantId, supplierName: inv.logistics.receiver.name }).lean();
+        if (sup) {
+          inv.supplierDetails = {
+            address: sup.address,
+            gstin: sup.gstin,
+            pan: sup.pan
+          };
+        }
+      }
+      return inv;
+    }));
     
     res.status(200).json({ invoices });
   } catch (error) {
@@ -111,15 +131,112 @@ exports.settleInvoice = async (req, res) => {
   }
 };
 
-exports.markAsMonthly = async (req, res) => {
+exports.generatePdf = async (req, res) => {
   try {
     const { trackingNumber } = req.params;
-    const shipment = await ShipmentLedger.findOne({ trackingNumber, tenantId: req.user.tenantId });
+    const shipment = await ShipmentLedger.findOne({ trackingNumber });
     if (!shipment) return res.status(404).json({ message: 'Shipment not found' });
-    if (shipment.accounting.paymentStatus === 'PAID') return res.status(400).json({ message: 'Already paid' });
 
-    shipment.accounting.billingCycle = 'MONTHLY';
-    await shipment.save();
+    let templatePath = null;
+
+    if (shipment.companyId) {
+      const company = await Company.findById(shipment.companyId);
+      if (company && company.customInvoiceTemplateUrl) {
+        templatePath = path.join(__dirname, '../../', company.customInvoiceTemplateUrl);
+      }
+    } 
+    
+    // Fallback: Look up by sender name for legacy shipments that didn't record companyId
+    if (!templatePath && shipment.logistics?.sender?.name) {
+      const company = await Company.findOne({ 
+        tenantId: shipment.tenantId, 
+        companyName: shipment.logistics.sender.name 
+      });
+      if (company && company.customInvoiceTemplateUrl) {
+        templatePath = path.join(__dirname, '../../', company.customInvoiceTemplateUrl);
+      }
+    }
+
+    if (!templatePath) {
+      const tenant = await Tenant.findById(shipment.tenantId);
+      if (tenant && tenant.customInvoiceTemplateUrl) {
+        templatePath = path.join(__dirname, '../../', tenant.customInvoiceTemplateUrl);
+      }
+    }
+
+    if (!templatePath || !fs.existsSync(templatePath)) {
+      return res.status(404).json({ message: 'Custom invoice template not found for this workspace' });
+    }
+
+    const existingPdfBytes = fs.readFileSync(templatePath);
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+    const pages = pdfDoc.getPages();
+    const firstPage = pages[0];
+
+    // --- SMART ALIGNMENT FOR SARTHAK ENTERPRISES TEMPLATE ---
+    // The template has a specific tabular structure. We'll map coordinates into those table cells.
+    const fontSize = 10;
+    const textColor = rgb(0.1, 0.1, 0.1);
+
+    // 1. Top Section Details (Tax Invoice No, Date)
+    firstPage.drawText(shipment.trackingNumber || '', { x: 150, y: 665, size: fontSize, color: textColor });
+    firstPage.drawText(new Date().toLocaleDateString(), { x: 150, y: 650, size: fontSize, color: textColor });
+
+    // 2. Particulars Section (Large empty box in middle)
+    const startY = 500;
+    firstPage.drawText(`Logistics Services - Freight Transport`, { x: 150, y: startY, size: 11, color: textColor });
+    firstPage.drawText(`Tracking Number: ${shipment.trackingNumber}`, { x: 150, y: startY - 15, size: fontSize, color: textColor });
+    firstPage.drawText(`Origin: ${shipment.logistics?.transport?.origin || 'N/A'}`, { x: 150, y: startY - 30, size: fontSize, color: textColor });
+    firstPage.drawText(`Destination: ${shipment.logistics?.transport?.destination || 'N/A'}`, { x: 150, y: startY - 45, size: fontSize, color: textColor });
+    firstPage.drawText(`Consignor: ${shipment.logistics?.sender?.name || 'N/A'}`, { x: 150, y: startY - 65, size: fontSize, color: textColor });
+    firstPage.drawText(`Consignee: ${shipment.logistics?.receiver?.name || 'N/A'}`, { x: 150, y: startY - 80, size: fontSize, color: textColor });
+
+    // Base Amount in the right column
+    if (shipment.accounting) {
+      const baseAmount = shipment.accounting.subtotal || shipment.accounting.baseRateApplied || 0;
+      firstPage.drawText(`${baseAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})}`, { x: 450, y: startY, size: fontSize, color: textColor });
+
+      // 3. Totals Section (Bottom right table)
+      // "Net Amount Rs."
+      firstPage.drawText(`${baseAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})}`, { x: 450, y: 280, size: fontSize, color: textColor });
+      
+      // CGST & SGST
+      const taxAmount = shipment.accounting.tax?.gstAmount || 0;
+      const splitTax = taxAmount / 2;
+      firstPage.drawText(`${splitTax.toLocaleString('en-IN', {minimumFractionDigits: 2})}`, { x: 450, y: 265, size: fontSize, color: textColor });
+      firstPage.drawText(`${splitTax.toLocaleString('en-IN', {minimumFractionDigits: 2})}`, { x: 450, y: 250, size: fontSize, color: textColor });
+
+      // "Gross Total Amt. Rs."
+      const grandTotal = shipment.accounting.grandTotal || 0;
+      firstPage.drawText(`${grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}`, { x: 450, y: 235, size: 12, color: rgb(0, 0, 0) });
+    }
+
+    const pdfBytes = await pdfDoc.save();
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="invoice_${shipment.trackingNumber}.pdf"`);
+    res.send(Buffer.from(pdfBytes));
+
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    res.status(500).json({ message: 'Server error generating PDF' });
+  }
+};
+
+  exports.markAsMonthly = async (req, res) => {
+    try {
+      const { trackingNumber } = req.params;
+      const { baseRateApplied } = req.body;
+      const shipment = await ShipmentLedger.findOne({ trackingNumber, tenantId: req.user.tenantId });
+      if (!shipment) return res.status(404).json({ message: 'Shipment not found' });
+      if (shipment.accounting.paymentStatus === 'PAID') return res.status(400).json({ message: 'Already paid' });
+  
+      shipment.accounting.billingCycle = 'MONTHLY';
+      if (baseRateApplied !== undefined) {
+        shipment.accounting.baseRateApplied = baseRateApplied;
+        shipment.accounting.subtotal = baseRateApplied;
+      }
+      await shipment.save();
 
     res.status(200).json({ message: 'Shipment flagged for end-of-month billing' });
   } catch (error) {
@@ -128,32 +245,50 @@ exports.markAsMonthly = async (req, res) => {
   }
 };
 
-exports.getPendingMonthlyBySupplier = async (req, res) => {
-  try {
-    const shipments = await ShipmentLedger.find({
-      tenantId: req.user.tenantId,
-      'accounting.paymentStatus': 'PENDING',
-      'accounting.billingCycle': 'MONTHLY',
-      'accounting.consolidatedInvoiceId': { $exists: false }
-    });
+  exports.getPendingMonthlyBySupplier = async (req, res) => {
+    try {
+      const shipments = await ShipmentLedger.find({
+        tenantId: req.user.tenantId,
+        'accounting.paymentStatus': 'PENDING',
+        'accounting.billingCycle': 'MONTHLY',
+        'accounting.consolidatedInvoiceId': { $exists: false }
+      }).populate('companyId');
+  
+      // Group by Supplier Name (logistics.receiver.name) AND Company (companyId._id)
+      const grouped = {};
+      shipments.forEach(s => {
+        const supplier = s.logistics?.receiver?.name || 'Unknown Supplier';
+        const companyIdStr = s.companyId ? s.companyId._id.toString() : 'UNKNOWN_COMPANY';
+        const key = `${supplier}_||_${companyIdStr}`;
+        if (!grouped[key]) {
+          grouped[key] = {
+            supplierName: supplier,
+            company: s.companyId || null,
+            shipmentCount: 0,
+            estimatedSubtotal: 0
+          };
+        }
+        grouped[key].shipmentCount += 1;
+        // Estimate value based on baseRateApplied or fallback
+        grouped[key].estimatedSubtotal += (s.accounting?.baseRateApplied || s.accounting?.subtotal || 0);
+      });
 
-    // Group by Supplier Name (logistics.receiver.name)
-    const grouped = {};
-    shipments.forEach(s => {
-      const supplier = s.logistics?.receiver?.name || 'Unknown Supplier';
-      if (!grouped[supplier]) {
-        grouped[supplier] = {
-          supplierName: supplier,
-          shipmentCount: 0,
-          estimatedSubtotal: 0
-        };
-      }
-      grouped[supplier].shipmentCount += 1;
-      // Estimate value based on baseRateApplied or fallback
-      grouped[supplier].estimatedSubtotal += (s.accounting?.baseRateApplied || s.accounting?.subtotal || 0);
-    });
-
+    const Supplier = require('../models/NoSQL/Supplier');
     const result = Object.values(grouped);
+    
+    for (let r of result) {
+      const sup = await Supplier.findOne({ tenantId: req.user.tenantId, supplierName: r.supplierName });
+      if (sup) {
+        r.address = sup.address;
+        r.gstin = sup.gstin;
+        r.pan = sup.pan;
+      } else {
+        r.address = '';
+        r.gstin = '';
+        r.pan = '';
+      }
+    }
+
     res.status(200).json({ suppliers: result });
   } catch (error) {
     console.error('Error grouping monthly shipments:', error);
@@ -161,33 +296,42 @@ exports.getPendingMonthlyBySupplier = async (req, res) => {
   }
 };
 
-exports.createConsolidatedInvoice = async (req, res) => {
-  try {
-    const { supplierName, taxPercentage } = req.body;
-    if (!supplierName) {
-      return res.status(400).json({ message: 'Supplier name is required' });
-    }
-
-    // Find all unbilled MONTHLY shipments for this supplier
-    const shipments = await ShipmentLedger.find({
-      tenantId: req.user.tenantId,
-      'logistics.receiver.name': supplierName,
-      'accounting.paymentStatus': 'PENDING',
-      'accounting.billingCycle': 'MONTHLY',
-      'accounting.consolidatedInvoiceId': { $exists: false }
-    });
-
-    if (shipments.length === 0) {
-      return res.status(400).json({ message: 'No unbilled monthly shipments found for this supplier' });
-    }
-
-    let subtotal = 0;
-    for (const shipment of shipments) {
-      subtotal += shipment.accounting.subtotal || shipment.accounting.baseRateApplied || 0;
-    }
-
-    const taxAmount = subtotal * ((taxPercentage || 18) / 100);
-    const grandTotal = subtotal + taxAmount;
+  exports.createConsolidatedInvoice = async (req, res) => {
+    try {
+      const { supplierName, companyId, taxPercentage, overrideSubtotal } = req.body;
+      if (!supplierName) {
+        return res.status(400).json({ message: 'Supplier name is required' });
+      }
+  
+      // Find all unbilled MONTHLY shipments for this supplier and company
+      const query = {
+        tenantId: req.user.tenantId,
+        'logistics.receiver.name': supplierName,
+        'accounting.paymentStatus': 'PENDING',
+        'accounting.billingCycle': 'MONTHLY',
+        'accounting.consolidatedInvoiceId': { $exists: false }
+      };
+      if (companyId) {
+        query.companyId = companyId;
+      }
+      
+      const shipments = await ShipmentLedger.find(query);
+  
+      if (shipments.length === 0) {
+        return res.status(400).json({ message: 'No unbilled monthly shipments found for this supplier' });
+      }
+  
+      let subtotal = 0;
+      if (overrideSubtotal !== undefined) {
+        subtotal = Number(overrideSubtotal);
+      } else {
+        for (const shipment of shipments) {
+          subtotal += shipment.accounting.subtotal || shipment.accounting.baseRateApplied || 0;
+        }
+      }
+  
+      const taxAmount = subtotal * ((taxPercentage || 18) / 100);
+      const grandTotal = subtotal + taxAmount;
 
     const invoiceId = 'MI-' + new Date().getFullYear() + '-' + Math.floor(10000 + Math.random() * 90000);
 
@@ -195,7 +339,7 @@ exports.createConsolidatedInvoice = async (req, res) => {
     const newInvoice = await ConsolidatedInvoice.create({
       invoiceId,
       tenantId: req.user.tenantId,
-      companyId: req.workspaceId,
+      companyId: companyId || req.workspaceId,
       supplierName,
       shipmentIds: shipments.map(s => s._id),
       financials: { subtotal, taxAmount, grandTotal },
@@ -218,10 +362,24 @@ exports.createConsolidatedInvoice = async (req, res) => {
 exports.getConsolidatedInvoices = async (req, res) => {
   try {
     const ConsolidatedInvoice = require('../models/NoSQL/ConsolidatedInvoice');
+    const Supplier = require('../models/NoSQL/Supplier');
     const invoices = await ConsolidatedInvoice.find({
       tenantId: req.user.tenantId
-    }).sort({ createdAt: -1 });
+    }).populate('companyId').sort({ createdAt: -1 }).lean();
     
+    for (let inv of invoices) {
+      const sup = await Supplier.findOne({ tenantId: req.user.tenantId, supplierName: inv.supplierName });
+      if (sup) {
+        inv.supplierAddress = sup.address;
+        inv.supplierGstin = sup.gstin;
+        inv.supplierPan = sup.pan;
+      } else {
+        inv.supplierAddress = '';
+        inv.supplierGstin = '';
+        inv.supplierPan = '';
+      }
+    }
+
     res.status(200).json({ invoices });
   } catch (error) {
     console.error('Error fetching consolidated invoices:', error);
@@ -235,7 +393,7 @@ exports.settleConsolidatedInvoice = async (req, res) => {
     const { paymentMethod } = req.body;
 
     const ConsolidatedInvoice = require('../models/NoSQL/ConsolidatedInvoice');
-    const invoice = await ConsolidatedInvoice.findOne({ _id: id, tenantId: req.user.tenantId });
+    const invoice = await ConsolidatedInvoice.findOne({ _id: id, tenantId: req.user.tenantId }).populate('companyId');
 
     if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
     if (invoice.status === 'PAID') return res.status(400).json({ message: 'Invoice is already paid' });
@@ -266,7 +424,7 @@ exports.exportConsolidatedInvoice = async (req, res) => {
   try {
     const { id } = req.params;
     const ConsolidatedInvoice = require('../models/NoSQL/ConsolidatedInvoice');
-    const invoice = await ConsolidatedInvoice.findOne({ _id: id, tenantId: req.user.tenantId });
+    const invoice = await ConsolidatedInvoice.findOne({ _id: id, tenantId: req.user.tenantId }).populate('companyId');
 
     if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
 
@@ -281,42 +439,115 @@ exports.exportConsolidatedInvoice = async (req, res) => {
 
     const sheet = workbook.addWorksheet(`Master Invoice ${invoice.invoiceId}`);
 
-    // Define columns
-    sheet.columns = [
-      { header: 'Date', key: 'date', width: 15 },
-      { header: 'Tracking Number', key: 'tracking', width: 25 },
-      { header: 'Origin', key: 'origin', width: 20 },
-      { header: 'Destination', key: 'destination', width: 20 },
-      { header: 'Base Freight', key: 'base', width: 15 },
-      { header: 'Grand Total', key: 'total', width: 15 }
-    ];
+    // 1. Title Row
+    const titleRow = sheet.addRow([]);
+    sheet.mergeCells('A1:N1');
+    const titleCell = sheet.getCell('A1');
+    
+    const sortedShipments = [...shipments].sort((a, b) => new Date(a.metadata.createdAt) - new Date(b.metadata.createdAt));
+    const startDateStr = sortedShipments.length > 0 ? new Date(sortedShipments[0].metadata.createdAt).toLocaleDateString('en-GB') : '';
+    const endDateStr = sortedShipments.length > 0 ? new Date(sortedShipments[sortedShipments.length - 1].metadata.createdAt).toLocaleDateString('en-GB') : '';
+    
+    titleCell.value = `${invoice.supplierName.toUpperCase()} DETAILS FOR THE PERIOD OF ${startDateStr} to ${endDateStr}`;
+    titleCell.font = { bold: true };
+    titleCell.alignment = { horizontal: 'center' };
 
-    // Style header row
-    sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-    sheet.getRow(1).fill = {
+    // 2. Header Row
+    const headerRow = sheet.addRow([
+      'Sr. No.', 'Sales Months', 'Billing Month', 'Billing Type', 'BILL DATE', 'Invoice No.',
+      'CLIENT\'S NAME', 'Bill Amount Rs.', 'TOTAL BILL AMOUNT', 'PAYMENT RECEIVED DATE',
+      'RECD. AMT. RS.', 'TDS AMT.', 'Vendor Portal Status', 'Remarks'
+    ]);
+
+    headerRow.font = { bold: true };
+    headerRow.fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'FF9333EA' } // Purple-600 to match the UI Theme for Master Invoices
+      fgColor: { argb: 'FFFFC000' } // Excel Gold
     };
+    
+    headerRow.eachCell(cell => {
+      cell.border = {
+        top: { style: 'thin' }, left: { style: 'thin' },
+        bottom: { style: 'thin' }, right: { style: 'thin' }
+      };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    });
+
+    // Adjust column widths
+    sheet.columns.forEach((col, i) => {
+      const widths = [8, 15, 15, 15, 15, 25, 35, 15, 20, 20, 15, 15, 20, 20];
+      col.width = widths[i];
+    });
+
+    const taxRate = invoice.financials.subtotal > 0 ? (invoice.financials.taxAmount / invoice.financials.subtotal) : 0;
 
     // Add data rows
-    shipments.forEach(shipment => {
-      const amt = shipment.accounting?.grandTotal || shipment.accounting?.subtotal || shipment.accounting?.baseRateApplied || 0;
-      const subtotal = shipment.accounting?.subtotal || shipment.accounting?.baseRateApplied || 0;
+    shipments.forEach((shipment, index) => {
+      const subtotal = shipment.accounting?.baseRateApplied || shipment.accounting?.subtotal || 0;
+      const amt = subtotal + (subtotal * taxRate);
       
-      const row = sheet.addRow({
-        date: new Date(shipment.metadata.createdAt).toLocaleDateString(),
-        tracking: shipment.trackingNumber,
-        origin: shipment.logistics?.transport?.origin || 'Unknown',
-        destination: shipment.logistics?.transport?.destination || 'Unknown',
-        base: subtotal,
-        total: amt
-      });
+      const dateObj = new Date(shipment.metadata.createdAt);
+      const monthStr = dateObj.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+      const dateStr = dateObj.toLocaleDateString('en-GB');
 
-      row.getCell('base').alignment = { horizontal: 'right' };
-      row.getCell('total').alignment = { horizontal: 'right' };
-      row.getCell('base').numFmt = '0.00';
-      row.getCell('total').numFmt = '0.00';
+      const row = sheet.addRow([
+        index + 1,
+        monthStr,
+        monthStr,
+        'Logistics',
+        dateStr,
+        shipment.trackingNumber,
+        invoice.supplierName,
+        subtotal,
+        amt,
+        '',
+        '',
+        '',
+        '',
+        ''
+      ]);
+
+      row.getCell(8).numFmt = '0.00';
+      row.getCell(9).numFmt = '0.00';
+      
+      row.eachCell(cell => {
+        cell.border = {
+          top: { style: 'thin' }, left: { style: 'thin' },
+          bottom: { style: 'thin' }, right: { style: 'thin' }
+        };
+      });
+    });
+
+    // Add Totals Row at the bottom
+    const bottomTotalsRow = sheet.addRow([
+      '', '', '', '', '', '', 'Total',
+      { formula: `SUM(H3:H${shipments.length + 2})`, result: 0 },
+      { formula: `SUM(I3:I${shipments.length + 2})`, result: 0 },
+      '',
+      { formula: `SUM(K3:K${shipments.length + 2})`, result: 0 },
+      { formula: `SUM(L3:L${shipments.length + 2})`, result: 0 },
+      '', ''
+    ]);
+    
+    bottomTotalsRow.font = { bold: true };
+    bottomTotalsRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFFFC000' }
+    };
+    bottomTotalsRow.getCell(8).numFmt = '0.00';
+    bottomTotalsRow.getCell(9).numFmt = '0.00';
+    bottomTotalsRow.getCell(11).numFmt = '0.00';
+    bottomTotalsRow.getCell(12).numFmt = '0.00';
+
+    bottomTotalsRow.eachCell(cell => {
+      if (cell.value) {
+        cell.border = {
+          top: { style: 'thin' }, left: { style: 'thin' },
+          bottom: { style: 'thin' }, right: { style: 'thin' }
+        };
+      }
     });
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

@@ -178,9 +178,15 @@ const IntakeDashboard = () => {
     setError('');
 
     try {
+      const selectedWorkspace = workspaces.find(w => w.companyName === formData.senderName);
+      const workspaceId = selectedWorkspace ? selectedWorkspace._id : 'MAIN';
+
       const token = localStorage.getItem('token');
       const response = await axios.post('/api/shipments/create', formData, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'x-workspace-id': workspaceId
+        }
       });
       
       setGeneratedShipment(response.data.shipment);

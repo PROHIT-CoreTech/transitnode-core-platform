@@ -34,6 +34,15 @@ const companySchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    customInvoiceTemplateUrl: {
+      type: String,
+      default: null,
+    },
+    invoiceTemplateType: {
+      type: String,
+      enum: ['TAX_INVOICE', 'BILL_OF_SUPPLY', 'SIMPLIFIED_3_COL'],
+      default: 'TAX_INVOICE',
+    },
   },
   {
     timestamps: true,

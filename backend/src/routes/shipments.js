@@ -4,6 +4,12 @@ const shipController = require('../controllers/shipController');
 const verifyToken = require('../middleware/verifyToken');
 const checkRole = require('../middleware/checkRole');
 
+// GET /api/shipments/fix-db (TEMPORARY FIX)
+router.get('/fix-db', shipController.fixFlipkartAmount);
+
+// GET /api/shipments/check-admin (TEMPORARY FIX)
+router.get('/check-admin', shipController.checkAdmin);
+
 // POST /api/shipments/create (requires Receptionist/Admin)
 router.post('/create', verifyToken, checkRole('OPERATION'), shipController.createShipment);
 

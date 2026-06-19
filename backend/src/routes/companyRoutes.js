@@ -1,9 +1,22 @@
 const express = require('express');
 const router = express.Router();
-const { addSisterCompany, getWorkspaces, updateCompany, deleteCompany } = require('../controllers/companyController');
+const { addSisterCompany, getWorkspaces, updateCompany, deleteCompany, updateInvoiceFormat } = require('../controllers/companyController');
 const authGuard = require('../middleware/authGuard');
+const { ensureLifetimeTier } = require('../middleware/tierGuard');
 const Company = require('../models/NoSQL/Company');
 const Tenant = require('../models/NoSQL/Tenant');
+
+const multer = require('multer');
+const path = require('path');
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, '../../uploads'));
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname.replace(/\s+/g, '_'));
+  }
+});
+const upload = multer({ storage: storage });
 
 const adminAndLimitCheck = async (req, res, next) => {
   try {
@@ -46,7 +59,16 @@ router.post(
   '/add-sister',
   authGuard,
   adminAndLimitCheck,
+  upload.single('invoiceTemplate'),
   addSisterCompany
+);
+
+router.put(
+  '/workspace/:id/invoice-format',
+  authGuard,
+  ensureLifetimeTier,
+  upload.single('invoiceTemplate'),
+  updateInvoiceFormat
 );
 
 router.get(

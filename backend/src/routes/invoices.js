@@ -15,6 +15,9 @@ router.get('/rates', verifyToken, checkRole(['ACCOUNTANT', 'ADMIN']), adminContr
 // PATCH /api/invoices/settle/:trackingNumber
 router.patch('/settle/:trackingNumber', verifyToken, checkRole(['ACCOUNTANT', 'ADMIN']), billController.settleInvoice);
 
+// GET /api/invoices/:trackingNumber/generate-pdf
+router.get('/:trackingNumber/generate-pdf', verifyToken, checkRole(['ACCOUNTANT', 'ADMIN']), billController.generatePdf);
+
 // PATCH /api/invoices/monthly/:trackingNumber
 router.patch('/monthly/:trackingNumber', verifyToken, checkRole(['ACCOUNTANT', 'ADMIN']), billController.markAsMonthly);
 

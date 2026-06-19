@@ -48,18 +48,30 @@ const FinancialLedger = ({ planType }) => {
     loadData();
   }, []);
 
-  const handleExport = (format) => {
-    let url = `${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/finance/export?format=${format}`;
-    if (exportStartDate) url += `&startDate=${exportStartDate}`;
-    if (exportEndDate) url += `&endDate=${exportEndDate}`;
-    
-    // Create an invisible anchor tag to trigger download cleanly
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = format === 'xml' ? 'tally_export.xml' : 'freight_sales_register.xlsx';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+  const handleExport = async (format) => {
+    try {
+      let url = `${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/finance/export?format=${format}`;
+      if (exportStartDate) url += `&startDate=${exportStartDate}`;
+      if (exportEndDate) url += `&endDate=${exportEndDate}`;
+      
+      const token = localStorage.getItem('token');
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = format === 'xml' ? 'tally_export.xml' : 'freight_sales_register.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(blobUrl);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Export failed', err);
+      alert('Failed to export data. Please try again.');
+    }
   };
 
   const handleCalculatePayroll = async () => {

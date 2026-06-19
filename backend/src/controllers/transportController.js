@@ -89,7 +89,7 @@ exports.startTrip = async (req, res) => {
       return res.status(400).json({ message: 'Tracking number is required' });
     }
 
-    const shipment = await ShipmentLedger.findOne({ trackingNumber, tenantId: req.user.tenantId, companyId: req.workspaceId });
+    const shipment = await ShipmentLedger.findOne({ trackingNumber, tenantId: req.user.tenantId });
     if (!shipment) {
       return res.status(404).json({ message: 'Shipment not found' });
     }
@@ -106,7 +106,7 @@ exports.startTrip = async (req, res) => {
     const driverPhone = shipment.logistics?.transport?.driverPhone;
     if (driverPhone) {
       await Driver.findOneAndUpdate(
-        { phone: driverPhone, tenantId: req.user.tenantId, companyId: req.workspaceId },
+        { phone: driverPhone, tenantId: req.user.tenantId },
         { status: 'ON_TRIP' }
       );
     }
@@ -115,7 +115,7 @@ exports.startTrip = async (req, res) => {
     const vehicleReg = shipment.logistics?.transport?.vehicleNumber;
     if (vehicleReg) {
       await Device.findOneAndUpdate(
-        { vehicleRegistration: vehicleReg, tenantId: req.user.tenantId, companyId: req.workspaceId },
+        { vehicleRegistration: vehicleReg, tenantId: req.user.tenantId },
         { status: 'ON_TRIP' }
       );
     }

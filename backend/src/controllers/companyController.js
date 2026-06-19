@@ -20,6 +20,7 @@ const addSisterCompany = async (req, res) => {
       stateCode,
       contactNumber,
       isActive: true,
+      customInvoiceTemplateUrl: req.file ? `/uploads/${req.file.filename}` : null,
     });
 
     await newCompany.save();
@@ -116,9 +117,34 @@ const deleteCompany = async (req, res) => {
   }
 };
 
+const updateInvoiceFormat = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tenantId = req.user?.tenantId;
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded. Please upload a valid PDF template.' });
+    }
+
+    const company = await Company.findOne({ _id: id, tenantId });
+    if (!company) {
+      return res.status(404).json({ success: false, message: 'Company not found or unauthorized' });
+    }
+
+    company.customInvoiceTemplateUrl = `/uploads/${req.file.filename}`;
+    await company.save();
+
+    res.status(200).json({ success: true, message: 'Invoice template updated successfully', customInvoiceTemplateUrl: company.customInvoiceTemplateUrl });
+  } catch (error) {
+    console.error('Update Invoice Format Error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error while updating invoice format' });
+  }
+};
+
 module.exports = {
   addSisterCompany,
   getWorkspaces,
   updateCompany,
-  deleteCompany
+  deleteCompany,
+  updateInvoiceFormat
 };

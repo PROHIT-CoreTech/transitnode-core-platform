@@ -1,9 +1,41 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import InvoiceTemplate from './InvoiceTemplate';
+import AccountantInvoiceForm from './AccountantInvoiceForm';
 
 const InvoiceModal = ({ invoice, orientation = 'landscape', onClose }) => {
   if (!invoice) return null;
+
+  const baseRate = invoice.calculated?.baseFreightRate || invoice.accounting?.subtotal || 0;
+  const rcmApplied = invoice.calculated?.rcmApplied || invoice.accounting?.tax?.rcmApplied || false;
+  const cgst = invoice.calculated?.cgst || ((invoice.accounting?.tax?.gstAmount || 0) / 2);
+  const sgst = invoice.calculated?.sgst || ((invoice.accounting?.tax?.gstAmount || 0) / 2);
+  const grandTotal = invoice.calculated?.grandTotal || invoice.accounting?.grandTotal || 0;
+
+  const formProps = {
+    invoice,
+    baseFreightRate: baseRate,
+    setBaseFreightRate: () => {},
+    rcmApplied,
+    setRcmApplied: () => {},
+    cgst,
+    sgst,
+    grandTotal,
+    companyName: invoice.companyId?.companyName || undefined,
+    companyAddress: invoice.companyId ? (invoice.companyId.address || "N/A") : undefined,
+    companyGstin: invoice.companyId ? (invoice.companyId.gstin || "N/A") : undefined,
+    companyPan: invoice.companyId ? (invoice.companyId.pan || "N/A") : undefined,
+    receiverAddress: invoice.supplierDetails?.address || invoice.logistics?.receiver?.address || undefined,
+    receiverGstin: invoice.supplierDetails?.gstin || undefined,
+    receiverPan: invoice.supplierDetails?.pan || undefined,
+    templateType: invoice.companyId?.invoiceTemplateType || 'TAX_INVOICE',
+    isEditable: false
+  };
+
+  const content = (
+    <div className="w-full mx-auto text-black font-sans bg-white print:m-0 print:p-0 print:w-full print:max-w-full print:min-h-0">
+      <AccountantInvoiceForm {...formProps} />
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-4 print:static print:p-0 print:block print:bg-transparent">
@@ -25,14 +57,14 @@ const InvoiceModal = ({ invoice, orientation = 'landscape', onClose }) => {
         <div className="flex-1 overflow-y-auto p-6 bg-gray-50 print:p-0 print:overflow-visible print:bg-white">
           {/* UI PREVIEW - Visible on screen, hidden during print */}
           <div className="bg-white shadow-md mx-auto max-w-full overflow-hidden print:hidden" style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}>
-            <InvoiceTemplate data={invoice} orientation={orientation} />
+            {content}
           </div>
         </div>
 
         {/* PRINT PORTAL - Hidden on screen, portaled to document body for perfect print isolation */}
         {createPortal(
-          <div id="printable-label" className="hidden print:block absolute inset-0 bg-white printable-portal">
-            <InvoiceTemplate data={invoice} orientation={orientation} />
+          <div id="printable-label" className="hidden print:block print:w-full print:m-0 print:p-0 print:relative">
+            {content}
           </div>,
           document.body
         )}
@@ -48,8 +80,8 @@ const InvoiceModal = ({ invoice, orientation = 'landscape', onClose }) => {
           <button 
             onClick={() => {
               const originalTitle = document.title;
-              const consigneeName = invoice.logistics?.receiver?.name ? invoice.logistics.receiver.name.replace(/\s+/g, '_') : 'Unknown';
-              document.title = `TNE_${invoice.trackingNumber}_${consigneeName}_${Date.now()}`;
+              const trackingStr = invoice.trackingNumber || 'Invoice';
+              document.title = `TNE_${trackingStr}_${Date.now()}`;
               window.print();
               document.title = originalTitle;
             }}
