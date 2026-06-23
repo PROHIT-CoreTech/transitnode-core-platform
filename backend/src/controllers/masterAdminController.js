@@ -191,12 +191,18 @@ exports.dashboardSummary = async (req, res) => {
     ]);
     const totalRevenue = revenueAggregation.length > 0 ? revenueAggregation[0].total : 0;
 
+    // 6. Recent Transactions History
+    const recentTransactions = await SubscriptionTransaction.find({})
+      .populate('tenantId', 'companyName')
+      .sort({ createdAt: -1 });
+
     return res.status(200).json({
       tenantsByTier,
       activeVehiclesCount,
       dailyTrackingVolume,
       allTenants,
-      totalRevenue
+      totalRevenue,
+      recentTransactions
     });
   } catch (error) {
     console.error('[MasterAdmin] dashboardSummary error:', error);
