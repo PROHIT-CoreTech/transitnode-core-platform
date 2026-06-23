@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { formatINR } from '../../utils/currency';
 
 const FinancialLedger = ({ planType }) => {
   const [trialBalance, setTrialBalance] = useState([]);
@@ -211,8 +212,8 @@ const FinancialLedger = ({ planType }) => {
                     {trialBalance.map((item, idx) => (
                       <tr key={idx} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                         <td className="py-3 px-4 text-gray-200">{item.account}</td>
-                        <td className="py-3 px-4 text-right text-emerald-400">{item.debit > 0 ? item.debit.toLocaleString() : '-'}</td>
-                        <td className="py-3 px-4 text-right text-rose-400">{item.credit > 0 ? item.credit.toLocaleString() : '-'}</td>
+                        <td className="py-3 px-4 text-right text-emerald-400">{item.debit > 0 ? formatINR(item.debit) : '-'}</td>
+                        <td className="py-3 px-4 text-right text-rose-400">{item.credit > 0 ? formatINR(item.credit) : '-'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -230,27 +231,27 @@ const FinancialLedger = ({ planType }) => {
                 <div className="space-y-6">
                   <div className="flex justify-between items-center bg-white/5 p-4 rounded-xl border border-white/5">
                     <span className="text-gray-400">Gross Revenue</span>
-                    <span className="text-xl font-bold text-emerald-400">₹{pnl.revenue.toLocaleString()}</span>
+                    <span className="text-xl font-bold text-emerald-400">₹{formatINR(pnl.revenue)}</span>
                   </div>
                   
                   <div className="space-y-3 px-4">
                     <div className="flex justify-between text-sm text-gray-500">
                       <span>- Fuel Expenses</span>
-                      <span>₹{pnl.expenses.fuel.toLocaleString()}</span>
+                      <span>₹{formatINR(pnl.expenses.fuel)}</span>
                     </div>
                     <div className="flex justify-between text-sm text-gray-500">
                       <span>- Toll Expenses</span>
-                      <span>₹{pnl.expenses.toll.toLocaleString()}</span>
+                      <span>₹{formatINR(pnl.expenses.toll)}</span>
                     </div>
                     <div className="flex justify-between text-sm text-gray-500">
                       <span>- Payroll (Salary Expense)</span>
-                      <span>₹{pnl.expenses.payroll ? pnl.expenses.payroll.toLocaleString() : '0'}</span>
+                      <span>₹{pnl.expenses.payroll ? formatINR(pnl.expenses.payroll) : '0'}</span>
                     </div>
                   </div>
 
                   <div className="flex justify-between items-center bg-gradient-to-r from-emerald-900/40 to-transparent p-4 rounded-xl border-l-4 border-emerald-500">
                     <span className="font-semibold text-gray-300">Net Profit</span>
-                    <span className="text-3xl font-black text-emerald-500">₹{pnl.netProfit.toLocaleString()}</span>
+                    <span className="text-3xl font-black text-emerald-500">₹{formatINR(pnl.netProfit)}</span>
                   </div>
                 </div>
               ) : (
@@ -301,15 +302,15 @@ const FinancialLedger = ({ planType }) => {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div className="bg-white/5 border border-white/10 rounded-xl p-5">
                       <p className="text-gray-400 text-sm font-medium mb-1">Total Net Pay</p>
-                      <p className="text-2xl font-bold text-white">₹{totalNetPay.toLocaleString()}</p>
+                      <p className="text-2xl font-bold text-white">₹{formatINR(totalNetPay)}</p>
                     </div>
                     <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-5">
                       <p className="text-emerald-400/80 text-sm font-medium mb-1">Total Disbursed (Paid)</p>
-                      <p className="text-2xl font-bold text-emerald-400">₹{totalPaid.toLocaleString()}</p>
+                      <p className="text-2xl font-bold text-emerald-400">₹{formatINR(totalPaid)}</p>
                     </div>
                     <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-5">
                       <p className="text-amber-400/80 text-sm font-medium mb-1">Total Outstanding (Pending)</p>
-                      <p className="text-2xl font-bold text-amber-400">₹{totalPending.toLocaleString()}</p>
+                      <p className="text-2xl font-bold text-amber-400">₹{formatINR(totalPending)}</p>
                     </div>
                   </div>
 
@@ -334,9 +335,9 @@ const FinancialLedger = ({ planType }) => {
                               <td className="py-3 px-4 font-medium">{record.employeeName || record.employeeId}</td>
                               <td className="py-3 px-4 text-sm text-gray-400">{record.role}</td>
                               {selectedMonth === 'All' && <td className="py-3 px-4 text-sm">{record.paymentMonth}</td>}
-                              <td className="py-3 px-4 text-right">₹{record.baseSalary.toLocaleString()}</td>
-                              <td className="py-3 px-4 text-right text-rose-400 font-medium">₹{record.totalAdvances.toLocaleString()}</td>
-                              <td className="py-3 px-4 text-right text-emerald-400 font-bold">₹{record.netPay.toLocaleString()}</td>
+                              <td className="py-3 px-4 text-right">₹{formatINR(record.baseSalary)}</td>
+                              <td className="py-3 px-4 text-right text-rose-400 font-medium">₹{formatINR(record.totalAdvances)}</td>
+                              <td className="py-3 px-4 text-right text-emerald-400 font-bold">₹{formatINR(record.netPay)}</td>
                               <td className="py-3 px-4 text-center">
                                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${record.status === 'PAID' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
                                   {record.status}

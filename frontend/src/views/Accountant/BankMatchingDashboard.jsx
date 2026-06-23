@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { formatINR } from '../../utils/currency';
 
 const BankMatchingDashboard = () => {
   const [transactions, setTransactions] = useState([]);
@@ -287,13 +288,13 @@ const BankMatchingDashboard = () => {
             <div>
               <span className="text-[10px] text-gray-500 block uppercase font-bold">Transaction Selected</span>
               <span className="text-xs text-indigo-400 font-mono font-bold truncate block max-w-full">
-                {selectedTx ? `₹${selectedTx.amount.toLocaleString()}` : 'None'}
+                {selectedTx ? `₹${formatINR(selectedTx.amount)}` : 'None'}
               </span>
             </div>
             <div className="border-t border-gray-800 pt-2">
               <span className="text-[10px] text-gray-500 block uppercase font-bold">Invoice Selected</span>
               <span className="text-xs text-indigo-400 font-mono font-bold truncate block max-w-full">
-                {selectedInvoice ? `${selectedInvoice.label} (₹${selectedInvoice.amount.toLocaleString()})` : 'None'}
+                {selectedInvoice ? `${selectedInvoice.label} (₹${formatINR(selectedInvoice.amount)})` : 'None'}
               </span>
             </div>
           </div>
