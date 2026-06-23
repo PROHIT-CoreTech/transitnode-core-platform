@@ -38,6 +38,7 @@ const Dashboard = () => {
         }
         return <Navigate to="/admin" replace />;
       case 'OPERATION':
+      case 'OPERATION_EXECUTIVE':
         return (
           <div style={{ marginTop: '24px' }}>
             <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>

@@ -27,6 +27,39 @@ const ShipmentTransactions = () => {
     }
   };
 
+  const handleExportCSV = () => {
+    if (shipments.length === 0) return;
+    const headers = [
+      'Tracking Number', 'Status', 'Sender Name', 'Receiver Name', 
+      'Origin', 'Destination', 'Vehicle Number', 'Driver Name', 
+      'Base Rate (INR)', 'Grand Total (INR)', 'Billing Cycle', 'Payment Status', 'Created Date'
+    ];
+    const rows = shipments.map(ship => [
+      ship.trackingNumber,
+      ship.status,
+      ship.logistics?.sender?.name || '',
+      ship.logistics?.receiver?.name || '',
+      ship.logistics?.transport?.origin || '',
+      ship.logistics?.transport?.destination || '',
+      ship.logistics?.transport?.vehicleNumber || '',
+      ship.logistics?.transport?.driverName || '',
+      ship.accounting?.baseRateApplied || 0,
+      ship.accounting?.grandTotal || ship.accounting?.subtotal || 0,
+      ship.accounting?.billingCycle || 'DAILY',
+      ship.accounting?.paymentStatus || 'UNPAID',
+      new Date(ship.metadata?.createdAt).toLocaleDateString('en-IN')
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + [headers.join(','), ...rows.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `shipment_ledger_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   useEffect(() => {
     fetchShipments();
   }, [timeRange, billingCycle]);
@@ -74,6 +107,16 @@ const ShipmentTransactions = () => {
               </svg>
             </div>
           </div>
+          <button 
+            onClick={handleExportCSV} 
+            disabled={shipments.length === 0} 
+            className={`p-2 text-slate-500 hover:text-indigo-600 bg-white border border-slate-300 rounded-lg shadow-sm transition-colors ${shipments.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`} 
+            title="Export CSV to Spreadsheet"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+          </button>
           <button onClick={fetchShipments} className="p-2 text-slate-500 hover:text-indigo-600 bg-white border border-slate-300 rounded-lg shadow-sm transition-colors" title="Refresh list">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />

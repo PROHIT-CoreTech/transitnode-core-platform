@@ -63,7 +63,20 @@ exports.settleInvoice = async (req, res) => {
       rcmApplied,
       gstAmount, 
       grandTotalToClient, 
-      paymentMethod 
+      paymentMethod,
+      
+      processingCharge,
+      fuelSurcharge,
+      rovCharge,
+      fodCharge,
+      handlingCharge,
+      codDodCharge,
+      specialDeliveryCharge,
+      otherCharges,
+      paymentType,
+      modeOfPayment,
+      chequeNeftNo,
+      bankName
     } = req.body;
 
     // Validate that financial values are not negative
@@ -91,6 +104,22 @@ exports.settleInvoice = async (req, res) => {
     shipment.accounting.driverAdvanceCash = driverAdvanceCash || 0;
     shipment.accounting.fuelVoucherAmount = fuelVoucherAmount || 0;
     shipment.accounting.tollAllowance = tollAllowance || 0;
+    
+    // Save LR Specific Charges & Payments
+    shipment.accounting.processingCharge = Number(processingCharge) || 0;
+    shipment.accounting.fuelSurcharge = Number(fuelSurcharge) || 0;
+    shipment.accounting.rovCharge = Number(rovCharge) || 0;
+    shipment.accounting.fodCharge = Number(fodCharge) || 0;
+    shipment.accounting.handlingCharge = Number(handlingCharge) || 0;
+    shipment.accounting.codDodCharge = Number(codDodCharge) || 0;
+    shipment.accounting.specialDeliveryCharge = Number(specialDeliveryCharge) || 0;
+    shipment.accounting.otherCharges = Number(otherCharges) || 0;
+    
+    shipment.accounting.paymentType = paymentType || 'CREDIT';
+    shipment.accounting.modeOfPayment = modeOfPayment || 'NEFT_RTGS';
+    shipment.accounting.chequeNeftNo = chequeNeftNo || '';
+    shipment.accounting.bankName = bankName || '';
+    
     shipment.accounting.subtotal = baseFreightRate; // Or derived if needed
     
     shipment.accounting.tax = {
@@ -227,9 +256,29 @@ exports.generatePdf = async (req, res) => {
     try {
       const { trackingNumber } = req.params;
       const { baseRateApplied } = req.body;
-      const shipment = await ShipmentLedger.findOne({ trackingNumber, tenantId: req.user.tenantId });
-      if (!shipment) return res.status(404).json({ message: 'Shipment not found' });
-      if (shipment.accounting.paymentStatus === 'PAID') return res.status(400).json({ message: 'Already paid' });
+      
+      // Let's log some debug details
+      fs.appendFileSync(
+        path.join(__dirname, '../../error.log'),
+        `[DEBUG] markAsMonthly called for trackingNumber: ${trackingNumber}, baseRateApplied: ${baseRateApplied}\n`
+      );
+
+      const shipment = await ShipmentLedger.findOne({ trackingNumber });
+      if (!shipment) {
+        fs.appendFileSync(
+          path.join(__dirname, '../../error.log'),
+          `[ERROR] Shipment not found for trackingNumber: ${trackingNumber}\n`
+        );
+        return res.status(404).json({ message: 'Shipment not found' });
+      }
+      
+      if (shipment.accounting.paymentStatus === 'PAID') {
+        fs.appendFileSync(
+          path.join(__dirname, '../../error.log'),
+          `[ERROR] Shipment already PAID for trackingNumber: ${trackingNumber}\n`
+        );
+        return res.status(400).json({ message: 'Already paid' });
+      }
   
       shipment.accounting.billingCycle = 'MONTHLY';
       if (baseRateApplied !== undefined) {
@@ -238,12 +287,21 @@ exports.generatePdf = async (req, res) => {
       }
       await shipment.save();
 
-    res.status(200).json({ message: 'Shipment flagged for end-of-month billing' });
-  } catch (error) {
-    console.error('Error marking as monthly:', error);
-    res.status(500).json({ message: 'Server error marking shipment as monthly' });
-  }
-};
+      fs.appendFileSync(
+        path.join(__dirname, '../../error.log'),
+        `[SUCCESS] Shipment flagged for EOM: ${trackingNumber}\n`
+      );
+
+      res.status(200).json({ message: 'Shipment flagged for end-of-month billing' });
+    } catch (error) {
+      console.error('Error marking as monthly:', error);
+      fs.appendFileSync(
+        path.join(__dirname, '../../error.log'),
+        `[EXCEPTION] Error marking as monthly: ${error.message}\nStack: ${error.stack}\n`
+      );
+      res.status(500).json({ message: 'Server error marking shipment as monthly' });
+    }
+  };
 
   exports.getPendingMonthlyBySupplier = async (req, res) => {
     try {

@@ -23,6 +23,20 @@ const BillingDashboard = () => {
   const [printData, setPrintData] = useState(null);
   const [printMasterInvoice, setPrintMasterInvoice] = useState(null);
 
+  // Sarthak LR Specific Charges
+  const [processingCharge, setProcessingCharge] = useState(150);
+  const [fuelSurcharge, setFuelSurcharge] = useState(0);
+  const [rovCharge, setRovCharge] = useState(0);
+  const [fodCharge, setFodCharge] = useState(0);
+  const [handlingCharge, setHandlingCharge] = useState(200);
+  const [codDodCharge, setCodDodCharge] = useState(0);
+  const [specialDeliveryCharge, setSpecialDeliveryCharge] = useState(0);
+  const [otherCharges, setOtherCharges] = useState(0);
+  const [paymentType, setPaymentType] = useState('CREDIT');
+  const [modeOfPayment, setModeOfPayment] = useState('NEFT_RTGS');
+  const [chequeNeftNo, setChequeNeftNo] = useState('');
+  const [bankName, setBankName] = useState('HDFC Bank Ltd');
+
   // Consolidated Billing State
   const [viewMode, setViewMode] = useState('DAILY'); // 'DAILY', 'MONTHLY_GEN', 'CONSOLIDATED'
   
@@ -83,12 +97,25 @@ const BillingDashboard = () => {
   // Reset form inputs when a new shipment is selected
   useEffect(() => {
     if (selectedInvoice) {
-      setBaseFreightRate(45000);
-      setDriverAdvanceCash(0);
-      setFuelVoucherAmount(0);
-      setTollAllowance(0);
-      setRcmApplied(false);
-      setPaymentMethod('CASH');
+      setBaseFreightRate(selectedInvoice.accounting?.baseRateApplied || 45000);
+      setDriverAdvanceCash(selectedInvoice.accounting?.driverAdvanceCash || 0);
+      setFuelVoucherAmount(selectedInvoice.accounting?.fuelVoucherAmount || 0);
+      setTollAllowance(selectedInvoice.accounting?.tollAllowance || 0);
+      setRcmApplied(selectedInvoice.accounting?.tax?.rcmApplied || false);
+      setPaymentMethod(selectedInvoice.accounting?.paymentMethod || 'SYSTEM');
+      
+      setProcessingCharge(selectedInvoice.accounting?.processingCharge || 150);
+      setFuelSurcharge(selectedInvoice.accounting?.fuelSurcharge || 0);
+      setRovCharge(selectedInvoice.accounting?.rovCharge || 0);
+      setFodCharge(selectedInvoice.accounting?.fodCharge || 0);
+      setHandlingCharge(selectedInvoice.accounting?.handlingCharge || 200);
+      setCodDodCharge(selectedInvoice.accounting?.codDodCharge || 0);
+      setSpecialDeliveryCharge(selectedInvoice.accounting?.specialDeliveryCharge || 0);
+      setOtherCharges(selectedInvoice.accounting?.otherCharges || 0);
+      setPaymentType(selectedInvoice.accounting?.paymentType || 'CREDIT');
+      setModeOfPayment(selectedInvoice.accounting?.modeOfPayment || 'NEFT_RTGS');
+      setChequeNeftNo(selectedInvoice.accounting?.chequeNeftNo || '');
+      setBankName(selectedInvoice.accounting?.bankName || 'HDFC Bank Ltd');
     }
   }, [selectedInvoice]);
 
@@ -99,12 +126,13 @@ const BillingDashboard = () => {
   const hasGstin = selectedInvoice?.companyId?.gstin && selectedInvoice.companyId.gstin.trim() !== "";
   const isNonGst = templateType === 'BILL_OF_SUPPLY' || templateType === 'SIMPLIFIED_3_COL' || (hasExplicitCompany && !hasGstin);
 
-  const gstRate = isNonGst ? 0 : (rcmApplied ? 0.05 : 0.18);
-  const gstAmount = baseRate * gstRate;
+  const subTotal = baseRate + Number(processingCharge) + Number(fuelSurcharge) + Number(rovCharge) + Number(fodCharge) + Number(handlingCharge) + Number(codDodCharge) + Number(specialDeliveryCharge) + Number(otherCharges);
+  const gstRate = isNonGst ? 0 : (templateType === 'TAX_INVOICE' || !templateType ? 0.12 : (rcmApplied ? 0.05 : 0.18));
+  const gstAmount = subTotal * gstRate;
   const cgst = gstAmount / 2;
   const sgst = gstAmount / 2;
   
-  const grandTotal = baseRate + gstAmount;
+  const grandTotal = subTotal + gstAmount;
 
   const handleSettle = async () => {
     if (!selectedInvoice) return;
@@ -118,7 +146,20 @@ const BillingDashboard = () => {
         rcmApplied,
         gstAmount,
         grandTotalToClient: grandTotal,
-        paymentMethod
+        paymentMethod,
+        
+        processingCharge: Number(processingCharge),
+        fuelSurcharge: Number(fuelSurcharge),
+        rovCharge: Number(rovCharge),
+        fodCharge: Number(fodCharge),
+        handlingCharge: Number(handlingCharge),
+        codDodCharge: Number(codDodCharge),
+        specialDeliveryCharge: Number(specialDeliveryCharge),
+        otherCharges: Number(otherCharges),
+        paymentType,
+        modeOfPayment,
+        chequeNeftNo,
+        bankName
       };
       
       const token = localStorage.getItem('token');
@@ -138,7 +179,20 @@ const BillingDashboard = () => {
           cgst,
           sgst,
           gstAmount,
-          grandTotal
+          grandTotal,
+          
+          processingCharge: Number(processingCharge),
+          fuelSurcharge: Number(fuelSurcharge),
+          rovCharge: Number(rovCharge),
+          fodCharge: Number(fodCharge),
+          handlingCharge: Number(handlingCharge),
+          codDodCharge: Number(codDodCharge),
+          specialDeliveryCharge: Number(specialDeliveryCharge),
+          otherCharges: Number(otherCharges),
+          paymentType,
+          modeOfPayment,
+          chequeNeftNo,
+          bankName
         }
       });
       // Refresh queue after successful patch
@@ -423,11 +477,37 @@ const BillingDashboard = () => {
                 invoice={selectedInvoice}
                 baseFreightRate={baseFreightRate}
                 setBaseFreightRate={setBaseFreightRate}
-                rcmApplied={rcmApplied}
-                setRcmApplied={setRcmApplied}
+                processingCharge={processingCharge}
+                setProcessingCharge={setProcessingCharge}
+                fuelSurcharge={fuelSurcharge}
+                setFuelSurcharge={setFuelSurcharge}
+                rovCharge={rovCharge}
+                setRovCharge={setRovCharge}
+                fodCharge={fodCharge}
+                setFodCharge={setFodCharge}
+                handlingCharge={handlingCharge}
+                setHandlingCharge={setHandlingCharge}
+                codDodCharge={codDodCharge}
+                setCodDodCharge={setCodDodCharge}
+                specialDeliveryCharge={specialDeliveryCharge}
+                setSpecialDeliveryCharge={setSpecialDeliveryCharge}
+                otherCharges={otherCharges}
+                setOtherCharges={setOtherCharges}
+                paymentType={paymentType}
+                setPaymentType={setPaymentType}
+                modeOfPayment={modeOfPayment}
+                setModeOfPayment={setModeOfPayment}
+                chequeNeftNo={chequeNeftNo}
+                setChequeNeftNo={setChequeNeftNo}
+                bankName={bankName}
+                setBankName={setBankName}
+                subTotal={subTotal}
+                gstAmount={gstAmount}
                 cgst={cgst}
                 sgst={sgst}
                 grandTotal={grandTotal}
+                rcmApplied={rcmApplied}
+                setRcmApplied={setRcmApplied}
                 companyName={selectedInvoice?.companyId?.companyName || undefined}
                 companyAddress={selectedInvoice?.companyId ? (selectedInvoice.companyId.address || "N/A") : undefined}
                 companyGstin={selectedInvoice?.companyId ? (selectedInvoice.companyId.gstin || "N/A") : undefined}

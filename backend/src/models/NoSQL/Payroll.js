@@ -14,7 +14,7 @@ const payrollSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['DRIVER', 'STAFF', 'ADMIN', 'ACCOUNTANT', 'OPERATION'],
+    enum: ['DRIVER', 'STAFF', 'ADMIN', 'ACCOUNTANT', 'OPERATION_EXECUTIVE'],
     required: true,
   },
   paymentMonth: {

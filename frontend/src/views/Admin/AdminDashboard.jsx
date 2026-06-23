@@ -20,7 +20,11 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
   
-  const [activeTab, setActiveTab] = useState('ANALYTICS'); // ANALYTICS, MANAGEMENT, DRIVER_MANAGEMENT, MAP
+  const [activeTab, setActiveTab] = useState(() => {
+    if (user?.role === 'ACCOUNTANT') return 'FINANCE';
+    if (user?.role === 'OPERATION' || user?.role === 'OPERATION_EXECUTIVE') return 'MAP';
+    return 'ANALYTICS';
+  }); // ANALYTICS, MANAGEMENT, DRIVER_MANAGEMENT, MAP
   const [expandedMenu, setExpandedMenu] = useState('DASHBOARD');
   const [isDemoActive, setIsDemoActive] = useState(false);
   const [timeRange, setTimeRange] = useState('daily');
@@ -61,7 +65,7 @@ const AdminDashboard = () => {
   const socketRef = useRef(null);
 
   // Forms State
-  const [userForm, setUserForm] = useState({ name: '', email: '', mobileNumber: '', password: '', role: 'OPERATION' });
+  const [userForm, setUserForm] = useState({ name: '', email: '', mobileNumber: '', password: '', role: 'OPERATION_EXECUTIVE' });
   const [rateForm, setRateForm] = useState({ basePricePerKg: '', volumetricDivisor: '', fuelSurchargeRate: '' });
   const [deviceForm, setDeviceForm] = useState({ 
     vehicleNumber: '', 
@@ -88,13 +92,16 @@ const AdminDashboard = () => {
   const [usersList, setUsersList] = useState([]);
 
   useEffect(() => {
-    if (!token || user?.role !== 'ADMIN') {
+    const allowedRoles = ['ADMIN', 'ACCOUNTANT', 'OPERATION', 'OPERATION_EXECUTIVE'];
+    if (!token || !allowedRoles.includes(user?.role)) {
       navigate('/login');
       return;
     }
-    fetchUsersList();
-    fetchSubscription();
-    fetchWorkspaces();
+    if (user?.role === 'ADMIN') {
+      fetchUsersList();
+      fetchSubscription();
+      fetchWorkspaces();
+    }
 
     // Socket Initialization
     socketRef.current = io(process.env.REACT_APP_API_URL || 'http://localhost:3000');
@@ -143,7 +150,8 @@ const AdminDashboard = () => {
 
   // Inject Workspace Context
   useEffect(() => {
-    if (!token || user?.role !== 'ADMIN') return;
+    const allowedRoles = ['ADMIN', 'ACCOUNTANT', 'OPERATION', 'OPERATION_EXECUTIVE'];
+    if (!token || !allowedRoles.includes(user?.role)) return;
     
     const interceptor = axios.interceptors.request.use(config => {
       if (config.headers && typeof config.headers.set === 'function') {
@@ -154,7 +162,11 @@ const AdminDashboard = () => {
       return config;
     });
 
-    fetchAnalytics();
+    if (user?.role === 'ADMIN') {
+      fetchAnalytics();
+    } else {
+      setLoading(false);
+    }
     fetchRates();
     fetchDrivers();
     fetchFleetAssets();
@@ -222,7 +234,10 @@ const AdminDashboard = () => {
 
   const fetchRates = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/rates`, {
+      const url = user?.role === 'ADMIN'
+        ? `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/rates`
+        : `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/invoices/rates`;
+      const res = await axios.get(url, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'x-workspace-id': activeWorkspace || 'MAIN'
@@ -437,7 +452,7 @@ const AdminDashboard = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('User created successfully');
-      setUserForm({ name: '', email: '', mobileNumber: '', password: '', role: 'OPERATION' });
+      setUserForm({ name: '', email: '', mobileNumber: '', password: '', role: 'OPERATION_EXECUTIVE' });
       fetchUsersList();
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to create user');
@@ -658,68 +673,76 @@ const AdminDashboard = () => {
         <nav className="flex-1 mt-6">
           <div className="px-4 space-y-2">
             {/* Dashboard */}
-            <div>
-              <button 
-                onClick={() => { setExpandedMenu('DASHBOARD'); setActiveTab('ANALYTICS'); }}
-                className={`w-full flex justify-between items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'ANALYTICS' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
-              >
-                <span>Dashboard</span>
-              </button>
-            </div>
+            {user?.role === 'ADMIN' && (
+              <div>
+                <button 
+                  onClick={() => { setExpandedMenu('DASHBOARD'); setActiveTab('ANALYTICS'); }}
+                  className={`w-full flex justify-between items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'ANALYTICS' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
+                >
+                  <span>Dashboard</span>
+                </button>
+              </div>
+            )}
 
             {/* Fleet Operations */}
-            <div>
-              <button 
-                onClick={() => setExpandedMenu(expandedMenu === 'FLEET' ? '' : 'FLEET')}
-                className="w-full flex justify-between items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors text-slate-300 hover:bg-slate-800"
-              >
-                <span>Fleet Operations</span>
-                <svg className={`w-4 h-4 transform transition-transform ${expandedMenu === 'FLEET' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-              </button>
-              {expandedMenu === 'FLEET' && (
-                <div className="pl-4 mt-1 space-y-1">
-                  <button onClick={() => setActiveTab('MAP')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'MAP' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Live Fleet Map</button>
-                  <button onClick={() => setActiveTab('FLEET_MANAGEMENT')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'FLEET_MANAGEMENT' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Fleet Management</button>
-                  <button onClick={() => setActiveTab('DRIVER_MANAGEMENT')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'DRIVER_MANAGEMENT' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Driver Management</button>
-                </div>
-              )}
-            </div>
+            {(user?.role === 'ADMIN' || user?.role === 'OPERATION' || user?.role === 'OPERATION_EXECUTIVE') && (
+              <div>
+                <button 
+                  onClick={() => setExpandedMenu(expandedMenu === 'FLEET' ? '' : 'FLEET')}
+                  className="w-full flex justify-between items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors text-slate-300 hover:bg-slate-800"
+                >
+                  <span>Fleet Operations</span>
+                  <svg className={`w-4 h-4 transform transition-transform ${expandedMenu === 'FLEET' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                {expandedMenu === 'FLEET' && (
+                  <div className="pl-4 mt-1 space-y-1">
+                    <button onClick={() => setActiveTab('MAP')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'MAP' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Live Fleet Map</button>
+                    <button onClick={() => setActiveTab('FLEET_MANAGEMENT')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'FLEET_MANAGEMENT' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Fleet Management</button>
+                    <button onClick={() => setActiveTab('DRIVER_MANAGEMENT')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'DRIVER_MANAGEMENT' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Driver Management</button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Finance & Ledgers */}
-            <div>
-              <button 
-                onClick={() => setExpandedMenu(expandedMenu === 'FINANCE' ? '' : 'FINANCE')}
-                className="w-full flex justify-between items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors text-slate-300 hover:bg-slate-800"
-              >
-                <span>Finance & Ledgers</span>
-                <svg className={`w-4 h-4 transform transition-transform ${expandedMenu === 'FINANCE' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-              </button>
-              {expandedMenu === 'FINANCE' && (
-                <div className="pl-4 mt-1 space-y-1">
-                  <button onClick={() => setActiveTab('FINANCE')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'FINANCE' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Financial Engine</button>
-                  <button onClick={() => setActiveTab('TRANSACTIONS')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'TRANSACTIONS' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Shipment Ledger</button>
-                  <button onClick={() => setActiveTab('SUPPLIERS')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'SUPPLIERS' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Suppliers</button>
-                </div>
-              )}
-            </div>
+            {(user?.role === 'ADMIN' || user?.role === 'ACCOUNTANT') && (
+              <div>
+                <button 
+                  onClick={() => setExpandedMenu(expandedMenu === 'FINANCE' ? '' : 'FINANCE')}
+                  className="w-full flex justify-between items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors text-slate-300 hover:bg-slate-800"
+                >
+                  <span>Finance & Ledgers</span>
+                  <svg className={`w-4 h-4 transform transition-transform ${expandedMenu === 'FINANCE' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                {expandedMenu === 'FINANCE' && (
+                  <div className="pl-4 mt-1 space-y-1">
+                    <button onClick={() => setActiveTab('FINANCE')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'FINANCE' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Financial Engine</button>
+                    <button onClick={() => setActiveTab('TRANSACTIONS')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'TRANSACTIONS' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Shipment Ledger</button>
+                    <button onClick={() => setActiveTab('SUPPLIERS')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'SUPPLIERS' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Suppliers</button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Admin & Compliance */}
-            <div>
-              <button 
-                onClick={() => setExpandedMenu(expandedMenu === 'ADMIN' ? '' : 'ADMIN')}
-                className="w-full flex justify-between items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors text-slate-300 hover:bg-slate-800"
-              >
-                <span>Admin & Compliance</span>
-                <svg className={`w-4 h-4 transform transition-transform ${expandedMenu === 'ADMIN' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-              </button>
-              {expandedMenu === 'ADMIN' && (
-                <div className="pl-4 mt-1 space-y-1">
-                  <button onClick={() => setActiveTab('COMPLIANCE')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'COMPLIANCE' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Compliance Vault</button>
-                  <button onClick={() => setActiveTab('MANAGEMENT')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'MANAGEMENT' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>User & Rates</button>
-                  <button onClick={() => setActiveTab('SUBSCRIPTION')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'SUBSCRIPTION' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Subscription</button>
-                </div>
-              )}
-            </div>
+            {user?.role === 'ADMIN' && (
+              <div>
+                <button 
+                  onClick={() => setExpandedMenu(expandedMenu === 'ADMIN' ? '' : 'ADMIN')}
+                  className="w-full flex justify-between items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors text-slate-300 hover:bg-slate-800"
+                >
+                  <span>Admin & Compliance</span>
+                  <svg className={`w-4 h-4 transform transition-transform ${expandedMenu === 'ADMIN' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                {expandedMenu === 'ADMIN' && (
+                  <div className="pl-4 mt-1 space-y-1">
+                    <button onClick={() => setActiveTab('COMPLIANCE')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'COMPLIANCE' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Compliance Vault</button>
+                    <button onClick={() => setActiveTab('MANAGEMENT')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'MANAGEMENT' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>User & Rates</button>
+                    <button onClick={() => setActiveTab('SUBSCRIPTION')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'SUBSCRIPTION' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Subscription</button>
+                  </div>
+                )}
+              </div>
+            )}
 
           </div>
         </nav>
@@ -745,45 +768,51 @@ const AdminDashboard = () => {
         <div className="p-8">
           
           {/* Demo Mode Toggle & Banner */}
-          <div className="mb-6 flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-            <div className="flex items-center space-x-3">
-              <div className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer ${isDemoActive ? 'bg-indigo-600' : 'bg-slate-300'}`} onClick={toggleDemoMode}>
-                <div className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ease-in-out ${isDemoActive ? 'translate-x-6' : ''}`}></div>
+          {user?.role === 'ADMIN' && (
+            <>
+              <div className="mb-6 flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer ${isDemoActive ? 'bg-indigo-600' : 'bg-slate-300'}`} onClick={toggleDemoMode}>
+                    <div className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ease-in-out ${isDemoActive ? 'translate-x-6' : ''}`}></div>
+                  </div>
+                  <span className="font-bold text-slate-800">⚡ Activate System Demo Mode</span>
+                </div>
               </div>
-              <span className="font-bold text-slate-800">⚡ Activate System Demo Mode</span>
-            </div>
-          </div>
 
-          {isDemoActive && (
-            <div className="mb-6 bg-amber-100 border border-amber-300 text-amber-800 px-4 py-3 rounded-xl shadow-sm animate-pulse flex items-center">
-              <span className="mr-2">⚠️</span>
-              <p className="font-medium">System running in simulated environment. Mocking live tracking streams.</p>
-            </div>
+              {isDemoActive && (
+                <div className="mb-6 bg-amber-100 border border-amber-300 text-amber-800 px-4 py-3 rounded-xl shadow-sm animate-pulse flex items-center">
+                  <span className="mr-2">⚠️</span>
+                  <p className="font-medium">System running in simulated environment. Mocking live tracking streams.</p>
+                </div>
+              )}
+            </>
           )}
 
           {/* Top Metrics Bar */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col transition-all hover:shadow-md">
-              <span className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">Gross Trip Revenue</span>
-              <span className="text-3xl font-bold text-slate-900">₹{metrics.totalRevenue?.toLocaleString('en-IN') || 0}</span>
-              <div className="mt-3 text-xs font-medium text-slate-400 flex justify-between border-t border-slate-100 pt-2">
-                <span>Daily/Cash: <span className="text-slate-600 font-bold">₹{metrics.dailyRevenue?.toLocaleString('en-IN') || 0}</span></span>
-                <span>Monthly: <span className="text-indigo-600 font-bold">₹{metrics.monthlyRevenue?.toLocaleString('en-IN') || 0}</span></span>
+          {user?.role === 'ADMIN' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col transition-all hover:shadow-md">
+                <span className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">Gross Trip Revenue</span>
+                <span className="text-3xl font-bold text-slate-900">₹{metrics.totalRevenue?.toLocaleString('en-IN') || 0}</span>
+                <div className="mt-3 text-xs font-medium text-slate-400 flex justify-between border-t border-slate-100 pt-2">
+                  <span>Daily/Cash: <span className="text-slate-600 font-bold">₹{metrics.dailyRevenue?.toLocaleString('en-IN') || 0}</span></span>
+                  <span>Monthly: <span className="text-indigo-600 font-bold">₹{metrics.monthlyRevenue?.toLocaleString('en-IN') || 0}</span></span>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col transition-all hover:shadow-md">
+                <span className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">Net Fleet Margin</span>
+                <span className="text-3xl font-bold text-emerald-600">{metrics.netFleetMargin}%</span>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col transition-all hover:shadow-md">
+                <span className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">Active Fleet on Road</span>
+                <span className="text-3xl font-bold text-indigo-600">{metrics.activeFleet}</span>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col transition-all hover:shadow-md">
+                <span className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">In Maintenance</span>
+                <span className="text-3xl font-bold text-amber-500">{metrics.maintenanceFleet}</span>
               </div>
             </div>
-            <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col transition-all hover:shadow-md">
-              <span className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">Net Fleet Margin</span>
-              <span className="text-3xl font-bold text-emerald-600">{metrics.netFleetMargin}%</span>
-            </div>
-            <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col transition-all hover:shadow-md">
-              <span className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">Active Fleet on Road</span>
-              <span className="text-3xl font-bold text-indigo-600">{metrics.activeFleet}</span>
-            </div>
-            <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col transition-all hover:shadow-md">
-              <span className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">In Maintenance</span>
-              <span className="text-3xl font-bold text-amber-500">{metrics.maintenanceFleet}</span>
-            </div>
-          </div>
+          )}
 
           {/* Views */}
           {activeTab === 'PROFILE' && (
@@ -975,7 +1004,7 @@ const AdminDashboard = () => {
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
                         <select value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border bg-white">
-                          <option value="OPERATION">Operation</option>
+                          <option value="OPERATION_EXECUTIVE">Operation Executive</option>
                           <option value="ACCOUNTANT">Accountant</option>
                           <option value="ADMIN">Admin</option>
                         </select>

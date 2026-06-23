@@ -13,11 +13,11 @@ async function updateRoles() {
     console.log('Connected to MongoDB.');
 
     const result = await User.updateMany(
-      { role: 'RECEPTIONIST' },
-      { $set: { role: 'OPERATION' } }
+      { role: { $in: ['RECEPTIONIST', 'OPERATION'] } },
+      { $set: { role: 'OPERATION_EXECUTIVE' } }
     );
     
-    console.log(`Successfully updated ${result.modifiedCount} existing users from RECEPTIONIST to OPERATION.`);
+    console.log(`Successfully updated ${result.modifiedCount} existing users to OPERATION_EXECUTIVE.`);
     process.exit(0);
   } catch (error) {
     console.error('Migration failed:', error);

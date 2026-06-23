@@ -22,7 +22,7 @@ exports.register = async (req, res) => {
       mobileNumber,
       password: hashedPassword,
       name,
-      role: role || 'OPERATION'
+      role: role || 'OPERATION_EXECUTIVE'
     });
 
     res.status(201).json({ message: 'User created successfully', user: { id: newUser._id, email: newUser.email, name: newUser.name, role: newUser.role } });

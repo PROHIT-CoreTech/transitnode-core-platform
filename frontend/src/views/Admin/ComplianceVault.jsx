@@ -312,11 +312,11 @@ const ComplianceVault = () => {
                 {/* Document Viewer */}
                 <div className="rounded-xl border border-slate-200 overflow-hidden bg-slate-100 relative group">
                   <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <a href={`http://localhost:3000${selectedDoc.fileUrl}`} target="_blank" rel="noreferrer" className="bg-white/90 backdrop-blur text-indigo-600 p-2 rounded-lg shadow font-bold text-xs hover:bg-indigo-50 border border-slate-200">
+                    <a href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}${selectedDoc.fileUrl}`} target="_blank" rel="noreferrer" className="bg-white/90 backdrop-blur text-indigo-600 p-2 rounded-lg shadow font-bold text-xs hover:bg-indigo-50 border border-slate-200">
                       Open Full Size
                     </a>
                   </div>
-                  <img src={`http://localhost:3000${selectedDoc.fileUrl}`} alt="Document" className="w-full h-64 object-cover cursor-pointer" onClick={() => window.open(`http://localhost:3000${selectedDoc.fileUrl}`, '_blank')} />
+                  <img src={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}${selectedDoc.fileUrl}`} alt="Document" className="w-full h-64 object-cover cursor-pointer" onClick={() => window.open(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}${selectedDoc.fileUrl}`, '_blank')} />
                 </div>
 
                 {/* Document Metadata */}

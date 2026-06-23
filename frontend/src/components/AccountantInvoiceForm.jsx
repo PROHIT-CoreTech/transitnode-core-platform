@@ -1,5 +1,5 @@
 import React from 'react';
-import SarthakInvoiceForm from './SarthakInvoiceForm';
+import AccountantLRForm from './AccountantLRForm';
 import InfinityInvoiceForm from './InfinityInvoiceForm';
 import ShreepatiInvoiceForm from './ShreepatiInvoiceForm';
 
@@ -12,8 +12,8 @@ const AccountantInvoiceForm = (props) => {
     return <ShreepatiInvoiceForm {...props} />;
   }
 
-  // Default to TAX_INVOICE
-  return <SarthakInvoiceForm {...props} />;
+  // Default to Sarthak Lorry Receipt Form
+  return <AccountantLRForm {...props} />;
 };
 
 export default AccountantInvoiceForm;

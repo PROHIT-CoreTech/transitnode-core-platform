@@ -95,7 +95,7 @@ const AccountantDashboard = () => {
                 </div>
                 <div className="w-1/4">
                   <p className="text-white text-sm">{inv.logistics?.sender?.name}</p>
-                  <p className="text-gray-500 text-xs">{inv.logistics?.package?.weight_kg} kg • {inv.logistics?.package?.dimensions}</p>
+                  <p className="text-gray-500 text-xs">{inv.logistics?.package?.weight_kg} kg</p>
                 </div>
                 <div className="w-1/4">
                   <span className="text-gray-300 font-mono">₹{(inv.accounting?.subtotal || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>

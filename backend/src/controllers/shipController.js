@@ -3,7 +3,10 @@ const ShipmentLedger = require('../models/NoSQL/ShipmentLedger');
 exports.createShipment = async (req, res) => {
   try {
     const { 
-      senderName, senderPhone, receiverName, receiverPhone, weight_kg, dimensions,
+      senderName, senderPhone, senderAddress, senderGstin, senderPostalCode, senderDropOff,
+      receiverName, receiverPhone, receiverAddress, receiverGstin, receiverPostalCode, receiverSelfCollect, receiverClientCode,
+      weight_kg, dimensions, actualWeight, chargedWeight, packingType, fragile, 
+      invoiceNo, invoiceDate, invoiceValue, ewayBillNo, riskCoverage,
       vehicleNumber, vehicleType, driverName, driverPhone, origin, destination, commodityType 
     } = req.body;
     
@@ -18,13 +21,42 @@ exports.createShipment = async (req, res) => {
       tenantId: req.user.tenantId, companyId: req.workspaceId,
       trackingNumber,
       status: 'READY_FOR_DISPATCH',
+      lrCopyUrl: 'ONLINE',
+      podStatus: 'COLLECTED',
       metadata: {
         receptionistId: req.user?.id
       },
       logistics: {
-        sender: { name: senderName, phone: senderPhone },
-        receiver: { name: receiverName, phone: receiverPhone },
-        package: { weight_kg, dimensions },
+        sender: { 
+          name: senderName, 
+          phone: senderPhone,
+          address: senderAddress,
+          gstin: senderGstin,
+          postalCode: senderPostalCode,
+          dropOff: senderDropOff === 'true' || senderDropOff === true
+        },
+        receiver: { 
+          name: receiverName, 
+          phone: receiverPhone,
+          address: receiverAddress,
+          gstin: receiverGstin,
+          postalCode: receiverPostalCode,
+          selfCollect: receiverSelfCollect === 'true' || receiverSelfCollect === true,
+          clientCode: receiverClientCode
+        },
+        package: { 
+          weight_kg: Number(weight_kg) || Number(actualWeight) || 0, 
+          dimensions,
+          actualWeight: Number(actualWeight) || Number(weight_kg) || 0,
+          chargedWeight: Number(chargedWeight) || Number(weight_kg) || 0,
+          packingType,
+          fragile: fragile === 'true' || fragile === true,
+          invoiceNo: trackingNumber,
+          invoiceDate: new Date(),
+          invoiceValue: Number(invoiceValue) || 0,
+          ewayBillNo,
+          riskCoverage: riskCoverage || 'OWNERS'
+        },
         transport: {
           vehicleNumber: vehicleNumber ? vehicleNumber.toUpperCase() : undefined,
           vehicleType,
@@ -224,3 +256,156 @@ exports.checkAdmin = async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 };
+
+exports.uploadLrCopy = async (req, res) => {
+  try {
+    const { trackingId } = req.params;
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const shipment = await ShipmentLedger.findOne({ 
+      trackingNumber: trackingId, 
+      tenantId: req.user.tenantId 
+    });
+
+    if (!shipment) {
+      return res.status(404).json({ message: 'Shipment not found' });
+    }
+
+    shipment.lrCopyUrl = `/uploads/${req.file.filename}`;
+    shipment.podStatus = 'COLLECTED';
+    
+    // Automatically transition to DELIVERED if it was in transit or arrived
+    if (['IN_TRANSIT', 'ARRIVED'].includes(shipment.status)) {
+      shipment.status = 'DELIVERED';
+      shipment.metadata.closedAt = new Date();
+      
+      // Also release/free driver and vehicle back to AVAILABLE/YARD
+      if (shipment.logistics?.transport?.driverPhone) {
+        const Driver = require('../models/NoSQL/Driver');
+        await Driver.findOneAndUpdate(
+          { phone: shipment.logistics.transport.driverPhone }, 
+          { status: 'AVAILABLE' }
+        );
+      }
+      if (shipment.logistics?.transport?.vehicleNumber) {
+        const Device = require('../models/NoSQL/Device');
+        await Device.findOneAndUpdate(
+          { vehicleRegistration: shipment.logistics.transport.vehicleNumber.toUpperCase() }, 
+          { status: 'YARD' }
+        );
+      }
+    }
+
+    await shipment.save();
+    res.status(200).json({ message: 'Lorry Receipt uploaded successfully', shipment });
+  } catch (error) {
+    console.error('Error uploading LR copy:', error);
+    res.status(500).json({ message: 'Server error uploading LR copy' });
+  }
+};
+
+exports.logException = async (req, res) => {
+  try {
+    const { trackingId } = req.params;
+    const { issueType, description } = req.body;
+
+    const shipment = await ShipmentLedger.findOne({ 
+      trackingNumber: trackingId, 
+      tenantId: req.user.tenantId 
+    });
+
+    if (!shipment) {
+      return res.status(404).json({ message: 'Shipment not found' });
+    }
+
+    shipment.exceptions.push({
+      issueType,
+      description,
+      reportedAt: new Date(),
+      status: 'OPEN'
+    });
+
+    await shipment.save();
+    res.status(200).json({ message: 'Exception logged successfully', shipment });
+  } catch (error) {
+    console.error('Error logging exception:', error);
+    res.status(500).json({ message: 'Server error logging exception' });
+  }
+};
+
+exports.resolveException = async (req, res) => {
+  try {
+    const { trackingId, exceptionId } = req.params;
+
+    const shipment = await ShipmentLedger.findOne({ 
+      trackingNumber: trackingId, 
+      tenantId: req.user.tenantId 
+    });
+
+    if (!shipment) {
+      return res.status(404).json({ message: 'Shipment not found' });
+    }
+
+    const exception = shipment.exceptions.id(exceptionId);
+    if (!exception) {
+      return res.status(404).json({ message: 'Exception not found' });
+    }
+
+    exception.status = 'RESOLVED';
+    await shipment.save();
+
+    res.status(200).json({ message: 'Exception resolved successfully', shipment });
+  } catch (error) {
+    console.error('Error resolving exception:', error);
+    res.status(500).json({ message: 'Server error resolving exception' });
+  }
+};
+
+exports.generateLrCopyOnline = async (req, res) => {
+  try {
+    const { trackingId } = req.params;
+
+    const shipment = await ShipmentLedger.findOne({ 
+      trackingNumber: trackingId, 
+      tenantId: req.user.tenantId 
+    });
+
+    if (!shipment) {
+      return res.status(404).json({ message: 'Shipment not found' });
+    }
+
+    shipment.lrCopyUrl = 'ONLINE';
+    shipment.podStatus = 'COLLECTED';
+    
+    // Automatically transition to DELIVERED if it was in transit or arrived
+    if (['IN_TRANSIT', 'ARRIVED'].includes(shipment.status)) {
+      shipment.status = 'DELIVERED';
+      shipment.metadata.closedAt = new Date();
+      
+      // Also release/free driver and vehicle back to AVAILABLE/YARD
+      if (shipment.logistics?.transport?.driverPhone) {
+        const Driver = require('../models/NoSQL/Driver');
+        await Driver.findOneAndUpdate(
+          { phone: shipment.logistics.transport.driverPhone }, 
+          { status: 'AVAILABLE' }
+        );
+      }
+      if (shipment.logistics?.transport?.vehicleNumber) {
+        const Device = require('../models/NoSQL/Device');
+        await Device.findOneAndUpdate(
+          { vehicleRegistration: shipment.logistics.transport.vehicleNumber.toUpperCase() }, 
+          { status: 'YARD' }
+        );
+      }
+    }
+
+    await shipment.save();
+    res.status(200).json({ message: 'Online Lorry Receipt generated successfully', shipment });
+  } catch (error) {
+    console.error('Error generating online LR copy:', error);
+    res.status(500).json({ message: 'Server error generating online LR copy' });
+  }
+};
+

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import ShippingLabelModal from '../../components/ShippingLabelModal';
+import LorryReceiptModal from '../../components/LorryReceiptModal';
 
 const IntakeDashboard = () => {
   const [loading, setLoading] = useState(false);
@@ -16,12 +16,23 @@ const IntakeDashboard = () => {
 
   const [formData, setFormData] = useState({
     senderName: '', senderPhone: '',
+    senderAddress: '', senderGstin: '', senderPostalCode: '', senderDropOff: false,
     receiverName: '', receiverPhone: '',
+    receiverAddress: '', receiverGstin: '', receiverPostalCode: '', receiverSelfCollect: false, receiverClientCode: '',
     vehicleNumber: '', vehicleType: '14-Ft Container',
     driverName: '', driverPhone: '',
     origin: '', destination: '',
-    commodityType: ''
+    commodityType: '',
+    actualWeight: '', chargedWeight: '',
+    dimensions: '', packingType: 'BOX', fragile: false,
+    invoiceNo: '', invoiceDate: new Date().toISOString().split('T')[0], invoiceValue: '', ewayBillNo: '',
+    riskCoverage: 'OWNERS'
   });
+
+  const [selectedShipment, setSelectedShipment] = useState(null);
+  const [exceptionForm, setExceptionForm] = useState({ issueType: 'BREAKDOWN', description: '' });
+  const [uploadingLr, setUploadingLr] = useState(false);
+  const [viewingLrShipment, setViewingLrShipment] = useState(null);
 
   useEffect(() => {
     fetchRecentShipments();
@@ -32,6 +43,120 @@ const IntakeDashboard = () => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  const handleGenerateLrOnline = async (trackingId) => {
+    setUploadingLr(true);
+    setError('');
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`/api/shipments/${trackingId}/generate-lr`, {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      await fetchRecentShipments();
+      setSelectedShipment(response.data.shipment);
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || 'Failed to generate online Lorry Receipt.');
+    } finally {
+      setUploadingLr(false);
+    }
+  };
+
+  const handleUploadLr = async (trackingId, file) => {
+    if (!file) return;
+    setUploadingLr(true);
+    setError('');
+    
+    const uploadData = new FormData();
+    uploadData.append('lrCopy', file);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`/api/shipments/${trackingId}/upload-lr`, uploadData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      await fetchRecentShipments();
+      setSelectedShipment(response.data.shipment);
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || 'Failed to upload Lorry Receipt copy.');
+    } finally {
+      setUploadingLr(false);
+    }
+  };
+
+  const handleLogException = async (trackingId) => {
+    setError('');
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`/api/shipments/${trackingId}/log-exception`, exceptionForm, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setExceptionForm({ issueType: 'BREAKDOWN', description: '' });
+      await fetchRecentShipments();
+      setSelectedShipment(response.data.shipment);
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || 'Failed to log exception ticket.');
+    }
+  };
+
+  const handleResolveException = async (trackingId, exceptionId) => {
+    setError('');
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.patch(`/api/shipments/${trackingId}/resolve-exception/${exceptionId}`, {}, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      await fetchRecentShipments();
+      setSelectedShipment(response.data.shipment);
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || 'Failed to resolve exception ticket.');
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (recentShipments.length === 0) return;
+    const headers = [
+      'Tracking Number', 'Status', 'Sender Name', 'Sender Phone', 
+      'Receiver Name', 'Receiver Phone', 'Origin', 'Destination', 
+      'Vehicle Number', 'Vehicle Type', 'Driver Name', 'Driver Phone', 
+      'Commodity Description', 'Base Rate (INR)', 'POD Status'
+    ];
+    const rows = recentShipments.map(ship => [
+      ship.trackingNumber,
+      ship.status,
+      ship.logistics?.sender?.name || '',
+      ship.logistics?.sender?.phone || '',
+      ship.logistics?.receiver?.name || '',
+      ship.logistics?.receiver?.phone || '',
+      ship.logistics?.transport?.origin || '',
+      ship.logistics?.transport?.destination || '',
+      ship.logistics?.transport?.vehicleNumber || '',
+      ship.logistics?.transport?.vehicleType || '',
+      ship.logistics?.transport?.driverName || '',
+      ship.logistics?.transport?.driverPhone || '',
+      ship.logistics?.transport?.commodityType || '',
+      ship.accounting?.baseRateApplied || 0,
+      ship.podStatus || 'PENDING'
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + [headers.join(','), ...rows.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `daily_manifest_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const fetchRecentShipments = async () => {
     try {
@@ -163,13 +288,39 @@ const IntakeDashboard = () => {
     return res;
   };
 
+  const handleSenderSelection = (e) => {
+    const name = e.target.value;
+    const workspace = workspaces.find(w => w.companyName === name);
+    setFormData(prev => ({
+      ...prev,
+      senderName: name,
+      senderPhone: workspace ? workspace.contactNumber || '' : prev.senderPhone,
+      senderAddress: workspace ? workspace.address || '' : prev.senderAddress,
+      senderGstin: workspace ? workspace.gstin || '' : prev.senderGstin,
+      senderPostalCode: workspace ? workspace.postalCode || '400703' : prev.senderPostalCode
+    }));
+  };
+
+  const handleReceiverSelection = (e) => {
+    const name = e.target.value;
+    const supplier = suppliers.find(s => s.supplierName === name);
+    setFormData(prev => ({
+      ...prev,
+      receiverName: name,
+      receiverPhone: supplier ? supplier.contactNumber || '' : prev.receiverPhone,
+      receiverAddress: supplier ? supplier.address || '' : prev.receiverAddress,
+      receiverGstin: supplier ? supplier.gstin || '' : prev.receiverGstin,
+      receiverPostalCode: supplier ? supplier.postalCode || '380001' : prev.receiverPostalCode
+    }));
+  };
+
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    let formattedValue = value;
+    const { name, value, type, checked } = e.target;
+    let val = type === 'checkbox' ? checked : value;
     if (name === 'vehicleNumber') {
-      formattedValue = formatVehicleNumber(value);
+      val = formatVehicleNumber(value);
     }
-    setFormData({ ...formData, [name]: formattedValue });
+    setFormData(prev => ({ ...prev, [name]: val }));
   };
 
   const handleSubmit = async (e) => {
@@ -192,11 +343,17 @@ const IntakeDashboard = () => {
       setGeneratedShipment(response.data.shipment);
       setFormData({
         senderName: '', senderPhone: '',
+        senderAddress: '', senderGstin: '', senderPostalCode: '', senderDropOff: false,
         receiverName: '', receiverPhone: '',
+        receiverAddress: '', receiverGstin: '', receiverPostalCode: '', receiverSelfCollect: false, receiverClientCode: '',
         vehicleNumber: '', vehicleType: '14-Ft Container',
         driverName: '', driverPhone: '',
         origin: '', destination: '',
-        commodityType: ''
+        commodityType: '',
+        actualWeight: '', chargedWeight: '',
+        dimensions: '', packingType: 'BOX', fragile: false,
+        invoiceNo: '', invoiceDate: new Date().toISOString().split('T')[0], invoiceValue: '', ewayBillNo: '',
+        riskCoverage: 'OWNERS'
       });
       fetchRecentShipments();
     } catch (err) {
@@ -258,16 +415,16 @@ const IntakeDashboard = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Sender Section */}
-                <div className="space-y-5 bg-gray-800 bg-opacity-30 p-6 rounded-xl border border-gray-700/50 hover:bg-opacity-50 transition-all duration-300">
+                <div className="space-y-4 bg-gray-800 bg-opacity-30 p-6 rounded-xl border border-gray-700/50 hover:bg-opacity-50 transition-all duration-300">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="p-1.5 bg-cyan-500 bg-opacity-20 rounded-md text-cyan-400">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                     </div>
-                    <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest">Branch Profile</h3>
+                    <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest">Consignor (Sender)</h3>
                   </div>
-                  <div className="relative mt-2">
-                    <label className="absolute -top-3 left-4 bg-gray-800 px-2 text-xs font-bold text-cyan-400">Branch / Company Name</label>
-                    <select name="senderName" value={formData.senderName} onChange={handleChange} required 
+                  <div className="relative">
+                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-cyan-400">Branch / Company Name</label>
+                    <select name="senderName" value={formData.senderName} onChange={handleSenderSelection} required 
                       className={inputClasses('senderName')} onFocus={() => setFocusedField('senderName')} onBlur={() => setFocusedField(null)}>
                       <option value="">-- Select Branch --</option>
                       {workspaces.map(w => (
@@ -275,25 +432,74 @@ const IntakeDashboard = () => {
                       ))}
                     </select>
                   </div>
+                  <div className="relative">
+                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-cyan-400">Address</label>
+                    <input type="text" name="senderAddress" value={formData.senderAddress} onChange={handleChange} required 
+                      className={inputClasses('senderAddress')} onFocus={() => setFocusedField('senderAddress')} onBlur={() => setFocusedField(null)} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="relative">
+                      <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-cyan-400">GST No.</label>
+                      <input type="text" name="senderGstin" value={formData.senderGstin} onChange={handleChange} required 
+                        className={inputClasses('senderGstin')} onFocus={() => setFocusedField('senderGstin')} onBlur={() => setFocusedField(null)} />
+                    </div>
+                    <div className="relative">
+                      <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-cyan-400">Postal Code</label>
+                      <input type="text" name="senderPostalCode" value={formData.senderPostalCode} onChange={handleChange} required 
+                        className={inputClasses('senderPostalCode')} onFocus={() => setFocusedField('senderPostalCode')} onBlur={() => setFocusedField(null)} />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 pt-1">
+                    <input type="checkbox" id="senderDropOff" name="senderDropOff" checked={formData.senderDropOff} onChange={handleChange} className="w-4 h-4 accent-cyan-400 cursor-pointer" />
+                    <label htmlFor="senderDropOff" className="text-xs text-gray-300 font-bold select-none cursor-pointer">Drop-off Cargo</label>
+                  </div>
                 </div>
 
                 {/* Receiver Section */}
-                <div className="space-y-5 bg-gray-800 bg-opacity-30 p-6 rounded-xl border border-gray-700/50 hover:bg-opacity-50 transition-all duration-300">
+                <div className="space-y-4 bg-gray-800 bg-opacity-30 p-6 rounded-xl border border-gray-700/50 hover:bg-opacity-50 transition-all duration-300">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="p-1.5 bg-purple-500 bg-opacity-20 rounded-md text-purple-400">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                     </div>
-                    <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest">Supplier / Receiver</h3>
+                    <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest">Consignee (Receiver)</h3>
                   </div>
-                  <div className="relative mt-2">
-                    <label className="absolute -top-3 left-4 bg-gray-800 px-2 text-xs font-bold text-purple-400">Supplier Name</label>
-                    <select name="receiverName" value={formData.receiverName} onChange={handleChange} required 
+                  <div className="relative">
+                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-purple-400">Supplier Name</label>
+                    <select name="receiverName" value={formData.receiverName} onChange={handleReceiverSelection} required 
                       className={inputClasses('receiverName')} onFocus={() => setFocusedField('receiverName')} onBlur={() => setFocusedField(null)}>
                       <option value="">-- Select Supplier --</option>
                       {suppliers.map(s => (
                         <option key={s._id} value={s.supplierName}>{s.supplierName} {s.state ? `(${s.state})` : ''}</option>
                       ))}
                     </select>
+                  </div>
+                  <div className="relative">
+                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-purple-400">Address</label>
+                    <input type="text" name="receiverAddress" value={formData.receiverAddress} onChange={handleChange} required 
+                      className={inputClasses('receiverAddress')} onFocus={() => setFocusedField('receiverAddress')} onBlur={() => setFocusedField(null)} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="relative">
+                      <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-purple-400">GST No.</label>
+                      <input type="text" name="receiverGstin" value={formData.receiverGstin} onChange={handleChange} required 
+                        className={inputClasses('receiverGstin')} onFocus={() => setFocusedField('receiverGstin')} onBlur={() => setFocusedField(null)} />
+                    </div>
+                    <div className="relative">
+                      <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-purple-400">Postal Code</label>
+                      <input type="text" name="receiverPostalCode" value={formData.receiverPostalCode} onChange={handleChange} required 
+                        className={inputClasses('receiverPostalCode')} onFocus={() => setFocusedField('receiverPostalCode')} onBlur={() => setFocusedField(null)} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 items-center">
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" id="receiverSelfCollect" name="receiverSelfCollect" checked={formData.receiverSelfCollect} onChange={handleChange} className="w-4 h-4 accent-purple-400 cursor-pointer" />
+                      <label htmlFor="receiverSelfCollect" className="text-xs text-gray-300 font-bold select-none cursor-pointer">Self Collect</label>
+                    </div>
+                    <div className="relative">
+                      <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[8px] font-bold text-purple-400">Client / Store Code</label>
+                      <input type="text" name="receiverClientCode" value={formData.receiverClientCode} onChange={handleChange} 
+                        className={inputClasses('receiverClientCode')} onFocus={() => setFocusedField('receiverClientCode')} onBlur={() => setFocusedField(null)} placeholder="Optional" />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -378,11 +584,84 @@ const IntakeDashboard = () => {
                 </div>
 
                 <div className="relative">
-                  <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-pink-400">Type of Goods / Cargo Description</label>
+                  <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-pink-400">Type of Goods / Cargo Description (Said to Contain)</label>
                   <textarea name="commodityType" value={formData.commodityType} onChange={handleChange} required rows="2"
-                    className={inputClasses('commodityType')} onFocus={() => setFocusedField('commodityType')} onBlur={() => setFocusedField(null)}></textarea>
+                    className={inputClasses('commodityType')} onFocus={() => setFocusedField('commodityType')} onBlur={() => setFocusedField(null)} placeholder="e.g. 50 Boxes of Electronics"></textarea>
                 </div>
 
+              </div>
+
+              {/* Cargo & Invoices Specifications Block */}
+              <div className="bg-gray-800 bg-opacity-30 p-6 rounded-xl border border-gray-700/50 hover:bg-opacity-50 transition-all duration-300 space-y-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-1.5 bg-pink-500 bg-opacity-20 rounded-md text-pink-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                  </div>
+                  <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest">Weight & Invoices</h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="relative">
+                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-pink-400">Actual Wt. (kg)</label>
+                    <input type="number" name="actualWeight" value={formData.actualWeight} onChange={handleChange} required 
+                      className={inputClasses('actualWeight')} onFocus={() => setFocusedField('actualWeight')} onBlur={() => setFocusedField(null)} />
+                  </div>
+                  <div className="relative">
+                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-pink-400">Charged Wt. (kg)</label>
+                    <input type="number" name="chargedWeight" value={formData.chargedWeight} onChange={handleChange} required 
+                      className={inputClasses('chargedWeight')} onFocus={() => setFocusedField('chargedWeight')} onBlur={() => setFocusedField(null)} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="relative">
+                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-pink-400">Packing Type</label>
+                    <select name="packingType" value={formData.packingType} onChange={handleChange} required 
+                      className={inputClasses('packingType')} onFocus={() => setFocusedField('packingType')} onBlur={() => setFocusedField(null)}>
+                      <option value="BOX">BOX</option>
+                      <option value="CARTON">CARTON</option>
+                      <option value="PALLET">PALLET</option>
+                      <option value="BAG">BAG</option>
+                      <option value="CRATE">CRATE</option>
+                      <option value="LOOSE">LOOSE</option>
+                    </select>
+                  </div>
+                  <div className="relative">
+                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-pink-400">Risk Coverage</label>
+                    <select name="riskCoverage" value={formData.riskCoverage} onChange={handleChange} required 
+                      className={inputClasses('riskCoverage')} onFocus={() => setFocusedField('riskCoverage')} onBlur={() => setFocusedField(null)}>
+                      <option value="OWNERS">Owner's Risk</option>
+                      <option value="CARRIERS">Carrier's Risk</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2 pt-2">
+                    <input type="checkbox" id="fragile" name="fragile" checked={formData.fragile} onChange={handleChange} className="w-4 h-4 accent-pink-400 cursor-pointer" />
+                    <label htmlFor="fragile" className="text-xs text-gray-300 font-bold select-none cursor-pointer">Fragile Cargo</label>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2 border-t border-gray-700/30">
+                  <div className="relative">
+                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-pink-400">Invoice No.</label>
+                    <input type="text" name="invoiceNo" value="(Auto-generated)" disabled 
+                      className={`${inputClasses('invoiceNo')} opacity-60 cursor-not-allowed`} />
+                  </div>
+                  <div className="relative">
+                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-pink-400">Invoice Date</label>
+                    <input type="date" name="invoiceDate" value={formData.invoiceDate || new Date().toISOString().split('T')[0]} disabled 
+                      className={`${inputClasses('invoiceDate')} opacity-60 cursor-not-allowed`} />
+                  </div>
+                  <div className="relative">
+                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-pink-400">Invoice Value (INR)</label>
+                    <input type="number" name="invoiceValue" value={formData.invoiceValue} onChange={handleChange} required 
+                      className={inputClasses('invoiceValue')} onFocus={() => setFocusedField('invoiceValue')} onBlur={() => setFocusedField(null)} />
+                  </div>
+                  <div className="relative">
+                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-pink-400">E-way Bill No.</label>
+                    <input type="text" name="ewayBillNo" value={formData.ewayBillNo} onChange={handleChange} required 
+                      className={inputClasses('ewayBillNo')} onFocus={() => setFocusedField('ewayBillNo')} onBlur={() => setFocusedField(null)} />
+                  </div>
+                </div>
               </div>
 
               <button type="submit" disabled={loading} 
@@ -408,11 +687,21 @@ const IntakeDashboard = () => {
         <div className="flex flex-col max-h-[850px]">
           <div className="bg-[#111827] border border-gray-700 p-6 rounded-2xl shadow-xl flex-1 flex flex-col overflow-hidden">
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-800">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
-                Active Manifests
-              </h2>
-              <span className="bg-gray-800 text-xs font-bold text-cyan-400 px-3 py-1 rounded-full">{recentShipments.length} logged</span>
+              <div>
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                  Active Manifests
+                </h2>
+                <span className="bg-gray-800 text-[10px] font-bold text-cyan-400 px-3 py-1 rounded-full mt-1 inline-block">{recentShipments.length} logged</span>
+              </div>
+              {recentShipments.length > 0 && (
+                <button 
+                  onClick={handleExportCSV}
+                  className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs font-bold px-3 py-2 rounded-xl transition"
+                >
+                  Export CSV
+                </button>
+              )}
             </div>
             
             <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
@@ -422,24 +711,152 @@ const IntakeDashboard = () => {
                   <p>Awaiting transmissions...</p>
                 </div>
               ) : (
-                recentShipments.map((ship, index) => (
-                  <div key={ship._id} style={{ animationDelay: `${index * 50}ms` }} className="bg-gray-800 bg-opacity-40 p-4 rounded-xl border border-gray-700 hover:border-cyan-500/50 hover:bg-gray-800 transition-all duration-300 animate-slide-up group cursor-default">
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="font-mono text-cyan-400 font-black tracking-wider text-sm group-hover:text-cyan-300 transition-colors">{ship.trackingNumber}</span>
-                      <span className="text-[10px] font-bold tracking-widest bg-[#0B0E14] text-gray-300 px-2 py-1 rounded border border-gray-700">{ship.status}</span>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center text-xs text-gray-400">
-                        <span className="w-10 font-bold text-gray-500">FROM</span>
-                        <span className="truncate text-white">{ship.logistics?.sender?.name}</span>
+                recentShipments.map((ship, index) => {
+                  const isSelected = selectedShipment?._id === ship._id;
+                  const openExceptions = ship.exceptions?.filter(e => e.status === 'OPEN') || [];
+                  const hasOpenExceptions = openExceptions.length > 0;
+
+                  return (
+                    <div 
+                      key={ship._id} 
+                      style={{ animationDelay: `${index * 50}ms` }} 
+                      onClick={() => setSelectedShipment(isSelected ? null : ship)}
+                      className={`bg-gray-800 bg-opacity-40 p-4 rounded-xl border transition-all duration-300 animate-slide-up group cursor-pointer ${
+                        isSelected ? 'border-cyan-400 bg-gray-800/80 shadow-[0_0_15px_rgba(34,211,238,0.15)]' : 'border-gray-700 hover:border-cyan-500/50 hover:bg-gray-800'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="font-mono text-cyan-400 font-black tracking-wider text-sm group-hover:text-cyan-300 transition-colors">{ship.trackingNumber}</span>
+                        <div className="flex items-center gap-2">
+                          {hasOpenExceptions && (
+                            <span className="text-[9px] font-bold tracking-widest bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded border border-red-500/30 animate-pulse">
+                              ⚠️ {openExceptions.length} EXP
+                            </span>
+                          )}
+                          <span className="text-[10px] font-bold tracking-widest bg-[#0B0E14] text-gray-300 px-2 py-1 rounded border border-gray-700">{ship.status}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center text-xs text-gray-400">
-                        <span className="w-10 font-bold text-gray-500">TO</span>
-                        <span className="truncate text-white">{ship.logistics?.receiver?.name}</span>
+                      <div className="space-y-1">
+                        <div className="flex items-center text-xs text-gray-400">
+                          <span className="w-10 font-bold text-gray-500">FROM</span>
+                          <span className="truncate text-white">{ship.logistics?.sender?.name}</span>
+                        </div>
+                        <div className="flex items-center text-xs text-gray-400">
+                          <span className="w-10 font-bold text-gray-500">TO</span>
+                          <span className="truncate text-white">{ship.logistics?.receiver?.name}</span>
+                        </div>
+                        <div className="flex items-center text-xs text-gray-400">
+                          <span className="w-10 font-bold text-gray-500">POD</span>
+                          <span className={`px-1.5 py-0.5 rounded font-bold uppercase text-[9px] ${
+                            ship.podStatus === 'VERIFIED' ? 'bg-green-500/20 text-green-400' :
+                            ship.podStatus === 'COLLECTED' ? 'bg-blue-500/20 text-blue-400' :
+                            'bg-yellow-500/20 text-yellow-400'
+                          }`}>{ship.podStatus || 'PENDING'}</span>
+                        </div>
                       </div>
+
+                      {isSelected && (
+                        <div className="mt-4 pt-4 border-t border-gray-700 space-y-4" onClick={(e) => e.stopPropagation()}>
+                          {/* Lorry Receipt Digital Generation */}
+                          <div className="bg-gray-900/60 p-3 rounded-lg border border-gray-800">
+                            <h4 className="text-xs font-bold text-gray-300 uppercase tracking-widest mb-2">Lorry Receipt (LR) POD</h4>
+                            {ship.lrCopyUrl ? (
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-green-400 font-bold flex items-center gap-1">
+                                  ✓ LR Generated
+                                </span>
+                                {ship.lrCopyUrl === 'ONLINE' ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setViewingLrShipment(ship)}
+                                    className="text-xs text-cyan-400 hover:underline font-bold bg-transparent border-0 cursor-pointer p-0"
+                                  >
+                                    View Digital LR
+                                  </button>
+                                ) : (
+                                  <a href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}${ship.lrCopyUrl}`} target="_blank" rel="noopener noreferrer" className="text-xs text-cyan-400 hover:underline font-bold">
+                                    View Uploaded LR
+                                  </a>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <p className="text-[10px] text-gray-400">Generate a digital, legally-compliant Lorry Receipt online.</p>
+                                <button
+                                  type="button"
+                                  onClick={() => handleGenerateLrOnline(ship.trackingNumber)}
+                                  disabled={uploadingLr}
+                                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-2 px-4 rounded-xl transition duration-300 shadow-md hover:shadow-indigo-500/20 cursor-pointer"
+                                >
+                                  {uploadingLr ? 'Generating Digital LR...' : 'Generate Digital LR Copy'}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Exceptions Logging & History */}
+                          <div className="bg-gray-900/60 p-3 rounded-lg border border-gray-800">
+                            <h4 className="text-xs font-bold text-gray-300 uppercase tracking-widest mb-2">Exceptions Ledger</h4>
+                            
+                            {/* Log Exception Form */}
+                            <form onSubmit={(e) => { e.preventDefault(); handleLogException(ship.trackingNumber); }} className="space-y-2 mb-3">
+                              <div className="flex gap-2">
+                                <select 
+                                  value={exceptionForm.issueType}
+                                  onChange={(e) => setExceptionForm({ ...exceptionForm, issueType: e.target.value })}
+                                  className="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-white flex-1 focus:outline-none focus:border-cyan-500"
+                                >
+                                  <option value="BREAKDOWN">Breakdown</option>
+                                  <option value="TRAFFIC">Traffic Delay</option>
+                                  <option value="WEATHER">Weather Delay</option>
+                                  <option value="ACCIDENT">Accident</option>
+                                  <option value="OTHER">Other Issue</option>
+                                </select>
+                                <button type="submit" className="bg-red-900/60 border border-red-700/50 hover:bg-red-800/80 text-red-200 text-xs font-bold px-3 py-1 rounded">
+                                  Report
+                                </button>
+                              </div>
+                              <textarea 
+                                value={exceptionForm.description}
+                                onChange={(e) => setExceptionForm({ ...exceptionForm, description: e.target.value })}
+                                placeholder="Describe exception details..."
+                                className="w-full bg-gray-900 border border-gray-700 rounded p-2 text-xs text-white focus:outline-none focus:border-cyan-500"
+                                rows="2"
+                                required
+                              />
+                            </form>
+
+                            {/* Exceptions History List */}
+                            {ship.exceptions?.length > 0 && (
+                              <div className="border-t border-gray-800 pt-2 space-y-2 max-h-[150px] overflow-y-auto custom-scrollbar">
+                                {ship.exceptions.map((exc) => (
+                                  <div key={exc._id} className="flex justify-between items-start text-[11px] bg-black/30 p-2 rounded">
+                                    <div>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className={`w-1.5 h-1.5 rounded-full ${exc.status === 'OPEN' ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}></span>
+                                        <span className="font-bold text-gray-300">{exc.issueType}</span>
+                                        <span className="text-[9px] text-gray-500">({new Date(exc.reportedAt).toLocaleDateString()})</span>
+                                      </div>
+                                      <p className="text-gray-400 mt-1 pl-3">{exc.description}</p>
+                                    </div>
+                                    {exc.status === 'OPEN' && (
+                                      <button 
+                                        onClick={() => handleResolveException(ship.trackingNumber, exc._id)}
+                                        className="bg-green-900/30 hover:bg-green-800/50 text-green-400 border border-green-700/30 text-[9px] font-bold px-1.5 py-0.5 rounded"
+                                      >
+                                        Resolve
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
@@ -448,7 +865,10 @@ const IntakeDashboard = () => {
       </div>
 
       {generatedShipment && (
-        <ShippingLabelModal shipment={generatedShipment} onClose={() => setGeneratedShipment(null)} />
+        <LorryReceiptModal shipment={generatedShipment} onClose={() => setGeneratedShipment(null)} />
+      )}
+      {viewingLrShipment && (
+        <LorryReceiptModal shipment={viewingLrShipment} onClose={() => setViewingLrShipment(null)} />
       )}
     </div>
   );

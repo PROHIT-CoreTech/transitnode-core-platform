@@ -29,14 +29,32 @@ const shipmentLedgerSchema = new mongoose.Schema(
       sender: {
         name: { type: String },
         phone: { type: String },
+        address: { type: String },
+        gstin: { type: String },
+        postalCode: { type: String },
+        dropOff: { type: Boolean, default: false }
       },
       receiver: {
         name: { type: String },
         phone: { type: String },
+        address: { type: String },
+        gstin: { type: String },
+        postalCode: { type: String },
+        selfCollect: { type: Boolean, default: false },
+        clientCode: { type: String }
       },
       package: {
         weight_kg: { type: Number, min: 0 },
-        dimensions: { type: String }, // e.g. "10x20x30"
+        dimensions: { type: String }, // e.g. "10x20x30" or "#Boxes x Dimension"
+        actualWeight: { type: Number, min: 0 },
+        chargedWeight: { type: Number, min: 0 },
+        packingType: { type: String },
+        fragile: { type: Boolean, default: false },
+        invoiceNo: { type: String },
+        invoiceDate: { type: Date },
+        invoiceValue: { type: Number, min: 0 },
+        ewayBillNo: { type: String },
+        riskCoverage: { type: String, enum: ['OWNERS', 'CARRIERS'], default: 'OWNERS' }
       },
       transport: {
         vehicleNumber: { type: String },
@@ -55,6 +73,18 @@ const shipmentLedgerSchema = new mongoose.Schema(
       driverAdvanceCash: { type: Number, min: 0, default: 0 },
       fuelVoucherAmount: { type: Number, min: 0, default: 0 },
       tollAllowance: { type: Number, min: 0, default: 0 },
+      processingCharge: { type: Number, default: 0 },
+      fuelSurcharge: { type: Number, default: 0 },
+      rovCharge: { type: Number, default: 0 },
+      fodCharge: { type: Number, default: 0 },
+      handlingCharge: { type: Number, default: 0 },
+      codDodCharge: { type: Number, default: 0 },
+      specialDeliveryCharge: { type: Number, default: 0 },
+      otherCharges: { type: Number, default: 0 },
+      paymentType: { type: String, enum: ['CREDIT', 'PAID', 'FOD'], default: 'CREDIT' },
+      modeOfPayment: { type: String, enum: ['CASH', 'CHEQUE_DD', 'NEFT_RTGS'], default: 'NEFT_RTGS' },
+      chequeNeftNo: { type: String },
+      bankName: { type: String },
       subtotal: { type: Number, min: 0 },
       tax: {
         gstPercentage: { type: Number, min: 0 },
@@ -72,6 +102,20 @@ const shipmentLedgerSchema = new mongoose.Schema(
       generatedDeliveryOtp: { type: String },
       consolidatedInvoiceId: { type: mongoose.Schema.Types.ObjectId, ref: 'ConsolidatedInvoice' },
     },
+    lrCopyUrl: { type: String },
+    podStatus: { 
+      type: String, 
+      enum: ['PENDING', 'COLLECTED', 'VERIFIED'], 
+      default: 'PENDING' 
+    },
+    exceptions: [
+      {
+        issueType: { type: String },
+        description: { type: String },
+        reportedAt: { type: Date, default: Date.now },
+        status: { type: String, enum: ['OPEN', 'RESOLVED'], default: 'OPEN' }
+      }
+    ],
   },
   {
     // Disable automatic timestamps since we are handling them in the metadata block

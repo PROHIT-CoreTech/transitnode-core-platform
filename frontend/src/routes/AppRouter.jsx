@@ -16,6 +16,10 @@ const AdminSetup = React.lazy(() => import('../views/Checkout/AdminSetup'));
 const MasterAdminDashboard = React.lazy(() => import('../views/MasterAdmin/MasterAdminDashboard'));
 import YardArrivals from '../views/GateOperations/YardArrivals';
 
+if (process.env.REACT_APP_API_URL) {
+  axios.defaults.baseURL = process.env.REACT_APP_API_URL;
+}
+
 const ProtectedRoute = ({ children }) => {
   const { user } = useContext(AuthContext);
   const { tenantProfile } = useContext(TenantBrandingContext);

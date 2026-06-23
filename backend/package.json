@@ -5,7 +5,9 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "list-users": "node query_users.js",
+    "stop-backend": "pkill -f 'node src/server.js' || true"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

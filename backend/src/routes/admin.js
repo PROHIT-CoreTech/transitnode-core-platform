@@ -23,10 +23,17 @@ const upload = multer({ storage: storage });
 // Open to drivers for uploading receipts
 router.post('/compliance/upload', upload.single('document'), adminController.uploadComplianceDocument);
 
-// Open to all tenant users for dropdowns (including OPERATION)
+// Open to all tenant users for dropdowns (including OPERATION_EXECUTIVE)
 router.get('/suppliers', supplierController.getSuppliers);
 router.get('/drivers', adminController.getDrivers);
 router.get('/fleet', adminController.getFleetAssets);
+
+// Fleet & Driver Management (accessible by OPERATION_EXECUTIVE and ADMIN)
+router.post('/drivers/create', checkRole(['ADMIN', 'OPERATION_EXECUTIVE']), upload.single('document'), adminController.createDriver);
+router.delete('/drivers/:id', checkRole(['ADMIN', 'OPERATION_EXECUTIVE']), adminController.deleteDriver);
+router.post('/fleet/register', checkRole(['ADMIN', 'OPERATION_EXECUTIVE']), upload.single('document'), adminController.registerFleetAsset);
+router.delete('/fleet/:id', checkRole(['ADMIN', 'OPERATION_EXECUTIVE']), adminController.deleteFleetAsset);
+router.put('/drivers/:driverId/assign-vehicle', checkRole(['ADMIN', 'OPERATION_EXECUTIVE']), adminController.assignVehicleToDriver);
 
 // Require ADMIN role for the rest
 router.use(checkRole(['ADMIN']));
@@ -35,10 +42,6 @@ const { startDemoSimulation, stopDemoSimulation } = require('../hardware/demoSim
 
 // User Management
 router.post('/users/create', adminController.createUser);
-
-// Driver Management
-router.post('/drivers/create', upload.single('document'), adminController.createDriver);
-router.delete('/drivers/:id', adminController.deleteDriver);
 
 // Employee Management
 router.post('/employee/verify', upload.fields([
@@ -56,9 +59,6 @@ router.put('/rates/update', adminController.updateRates);
 
 // Live Hardware Tracking
 router.post('/devices/map', adminController.mapDevice);
-router.post('/fleet/register', upload.single('document'), adminController.registerFleetAsset);
-router.delete('/fleet/:id', adminController.deleteFleetAsset);
-router.put('/drivers/:driverId/assign-vehicle', adminController.assignVehicleToDriver);
 
 // Compliance Vault
 router.get('/compliance/documents', adminController.getComplianceDocuments);
