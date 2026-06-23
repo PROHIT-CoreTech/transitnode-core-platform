@@ -57,6 +57,10 @@ const getWorkspaces = async (req, res) => {
         companyName: `${tenant.companyName} (Main HQ)`,
         address: tenant.address,
         state: tenant.state,
+        stateCode: tenant.stateCode,
+        gstin: tenant.gstin,
+        pan: tenant.pan,
+        contactNumber: tenant.contactNumber,
         isMainTenant: true
       });
     }

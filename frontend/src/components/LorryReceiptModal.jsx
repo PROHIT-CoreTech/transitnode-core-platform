@@ -21,30 +21,38 @@ const LorryReceiptModal = ({ shipment, onClose }) => {
   });
 
   const SarthakLRTemplate = () => {
+    const hasFinanceData = accounting?.paymentStatus === 'PAID' || accounting?.billingCycle === 'MONTHLY';
+
     // Extract base calculations from database record
-    const baseFreight = accounting?.baseRateApplied || 0;
-    const processingCharge = accounting?.processingCharge !== undefined ? accounting.processingCharge : 150;
-    const fuelSurcharge = accounting?.fuelSurcharge !== undefined ? accounting.fuelSurcharge : 0;
-    const rovCharge = accounting?.rovCharge !== undefined ? accounting.rovCharge : 0;
-    const fodCharge = accounting?.fodCharge !== undefined ? accounting.fodCharge : 0;
-    const handlingCharge = accounting?.handlingCharge !== undefined ? accounting.handlingCharge : 200;
-    const codDodCharge = accounting?.codDodCharge !== undefined ? accounting.codDodCharge : 0;
-    const specialDeliveryCharge = accounting?.specialDeliveryCharge !== undefined ? accounting.specialDeliveryCharge : 0;
-    const otherCharges = accounting?.otherCharges !== undefined ? accounting.otherCharges : 0;
+    const baseFreight = hasFinanceData ? (accounting?.baseRateApplied || 0) : "";
+    const processingCharge = hasFinanceData ? (accounting?.processingCharge !== undefined ? accounting.processingCharge : 150) : "";
+    const fuelSurcharge = hasFinanceData ? (accounting?.fuelSurcharge !== undefined ? accounting.fuelSurcharge : 0) : "";
+    const rovCharge = hasFinanceData ? (accounting?.rovCharge !== undefined ? accounting.rovCharge : 0) : "";
+    const fodCharge = hasFinanceData ? (accounting?.fodCharge !== undefined ? accounting.fodCharge : 0) : "";
+    const handlingCharge = hasFinanceData ? (accounting?.handlingCharge !== undefined ? accounting.handlingCharge : 200) : "";
+    const codDodCharge = hasFinanceData ? (accounting?.codDodCharge !== undefined ? accounting.codDodCharge : 0) : "";
+    const specialDeliveryCharge = hasFinanceData ? (accounting?.specialDeliveryCharge !== undefined ? accounting.specialDeliveryCharge : 0) : "";
+    const otherCharges = hasFinanceData ? (accounting?.otherCharges !== undefined ? accounting.otherCharges : 0) : "";
     
-    const subTotal = baseFreight + processingCharge + fuelSurcharge + rovCharge + fodCharge + handlingCharge + codDodCharge + specialDeliveryCharge + otherCharges;
+    const subTotal = hasFinanceData ? (baseFreight + processingCharge + fuelSurcharge + rovCharge + fodCharge + handlingCharge + codDodCharge + specialDeliveryCharge + otherCharges) : "";
     
     // Check if GST is calculated in database, otherwise default to 12%
-    const gstAmount = accounting?.tax?.gstAmount !== undefined ? accounting.tax.gstAmount : Math.round(subTotal * 0.12);
-    const grandTotal = accounting?.grandTotal !== undefined ? accounting.grandTotal : (subTotal + gstAmount);
+    const gstAmount = hasFinanceData ? (accounting?.tax?.gstAmount !== undefined ? accounting.tax.gstAmount : Math.round(subTotal * 0.12)) : "";
+    const grandTotal = hasFinanceData ? (accounting?.grandTotal !== undefined ? accounting.grandTotal : (subTotal + gstAmount)) : "";
     
-    const paymentType = accounting?.paymentType || 'CREDIT';
-    const modeOfPayment = accounting?.modeOfPayment || 'NEFT_RTGS';
-    const bankName = accounting?.bankName || 'HDFC Bank Ltd';
+    const paymentType = hasFinanceData ? (accounting?.paymentType || 'CREDIT') : "";
+    const modeOfPayment = hasFinanceData ? (accounting?.modeOfPayment || 'NEFT_RTGS') : "";
+    const bankName = hasFinanceData ? (accounting?.bankName || 'HDFC Bank Ltd') : "";
 
     // Split tracking ID to get a short numeric serial number for the stamp
     const shortSerialNumber = trackingNumber.split('-').pop() || '4113';
-    const chequeNeftNo = accounting?.chequeNeftNo || `TXN-${shortSerialNumber}`;
+    const chequeNeftNo = hasFinanceData ? (accounting?.chequeNeftNo || `TXN-${shortSerialNumber}`) : "";
+
+    const senderName = logistics?.sender?.name || 'Sarthak Enterprises';
+    const initials = senderName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+    const nameParts = senderName.split(' ');
+    const firstName = nameParts[0] || 'SARTHAK';
+    const lastName = nameParts.slice(1).join(' ') || 'ENTERPRISES';
 
     return (
       <div className="w-full bg-white text-black p-4 font-sans text-[11px] leading-tight border border-gray-400 print:border-none print:p-0">
@@ -56,21 +64,23 @@ const LorryReceiptModal = ({ shipment, onClose }) => {
           {/* Brand Logo & Name */}
           <div className="col-span-4 border-b border-r border-black p-2 flex items-center gap-2">
             <div className="bg-black text-white p-1 rounded font-black text-xs tracking-tighter">
-              SE
+              {initials}
             </div>
             <div>
-              <h1 className="text-sm font-black tracking-tight leading-none uppercase">Sarthak</h1>
-              <p className="text-[10px] font-bold tracking-widest text-gray-700 uppercase leading-none mt-0.5">Enterprises</p>
+              <h1 className="text-sm font-black tracking-tight leading-none uppercase">{firstName}</h1>
+              <p className="text-[10px] font-bold tracking-widest text-gray-700 uppercase leading-none mt-0.5">{lastName}</p>
             </div>
           </div>
           
           {/* Address & Contacts */}
           <div className="col-span-4 border-b border-r border-black p-2 text-[9px] leading-tight">
-            <p className="font-bold">V1032, Krushi Wholesale Mart,</p>
-            <p>Opp. Akshar Complex, Sector 19,</p>
-            <p>Vashi, Navi Mumbai - 400703.</p>
-            <p>Mob.: +91 9867416154</p>
-            <p>Email: suhas.bhoite123@gmail.com</p>
+            <p className="font-bold">{logistics?.sender?.address || 'V1032, Krushi Wholesale Mart, Opp. Akshar Complex, Sector 19, Vashi, Navi Mumbai - 400703.'}</p>
+            <p>Mob.: +91 {logistics?.sender?.phone || '9867416154'}</p>
+            {senderName.toLowerCase().includes('sarthak') ? (
+              <p>Email: suhas.bhoite123@gmail.com</p>
+            ) : (
+              <p>Email: contact@{senderName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com</p>
+            )}
           </div>
           
           {/* Booking Info */}
@@ -127,7 +137,18 @@ const LorryReceiptModal = ({ shipment, onClose }) => {
             </div>
             <div className="col-span-4 p-1 border-b border-black">
               <span className="text-[8px] block text-gray-500 uppercase">Postal Code</span>
-              <span className="font-bold font-mono">{logistics?.sender?.postalCode || 'N/A'}</span>
+              <span className="font-bold font-mono">
+                {(() => {
+                  const savedCode = logistics?.sender?.postalCode;
+                  const address = logistics?.sender?.address;
+                  if (savedCode && savedCode !== '400703') return savedCode;
+                  if (address) {
+                    const match = address.match(/\b\d{6}\b/);
+                    if (match) return match[0];
+                  }
+                  return savedCode || 'N/A';
+                })()}
+              </span>
             </div>
 
             <div className="col-span-12 p-1 border-b border-black min-h-[30px]">
@@ -168,7 +189,18 @@ const LorryReceiptModal = ({ shipment, onClose }) => {
             </div>
             <div className="col-span-4 p-1 border-b border-black">
               <span className="text-[8px] block text-gray-500 uppercase">Postal Code</span>
-              <span className="font-bold font-mono">{logistics?.receiver?.postalCode || 'N/A'}</span>
+              <span className="font-bold font-mono">
+                {(() => {
+                  const savedCode = logistics?.receiver?.postalCode;
+                  const address = logistics?.receiver?.address;
+                  if (savedCode && savedCode !== '380001') return savedCode;
+                  if (address) {
+                    const match = address.match(/\b\d{6}\b/);
+                    if (match) return match[0];
+                  }
+                  return savedCode || 'N/A';
+                })()}
+              </span>
             </div>
 
             <div className="col-span-12 p-1 border-b border-black min-h-[30px]">
@@ -202,9 +234,9 @@ const LorryReceiptModal = ({ shipment, onClose }) => {
           </div>
 
           {/* Payment Type */}
-          <div className="col-span-4 border-b border-r border-black p-1">
-            <span className="text-[8px] block text-gray-500 uppercase mb-1">Payment Type</span>
-            <div className="flex gap-4 items-center h-full">
+          <div className="col-span-4 border-b border-r border-black p-1 pb-2">
+            <span className="text-[8px] block text-gray-500 uppercase mb-1 font-bold">Payment Type</span>
+            <div className="flex gap-4 items-center mt-0.5">
               <label className="flex items-center gap-1 cursor-default">
                 <input type="checkbox" checked={paymentType === 'CREDIT'} readOnly className="w-2.5 h-2.5 accent-black" />
                 <span className="font-bold text-[9px]">CREDIT</span>
@@ -328,62 +360,62 @@ const LorryReceiptModal = ({ shipment, onClose }) => {
 
             <div className="border-b border-black p-1 flex justify-between">
               <span>Base Freight:</span>
-              <span className="font-mono font-bold">₹{baseFreight.toLocaleString('en-IN')}</span>
+              <span className="font-mono font-bold">{baseFreight !== "" ? `₹${baseFreight.toLocaleString('en-IN')}` : ""}</span>
             </div>
             
             <div className="border-b border-black p-1 flex justify-between">
               <span>Processing Charge:</span>
-              <span className="font-mono">₹{processingCharge}</span>
+              <span className="font-mono">{processingCharge !== "" ? `₹${processingCharge}` : ""}</span>
             </div>
 
             <div className="border-b border-black p-1 flex justify-between">
               <span>Fuel Surcharge:</span>
-              <span className="font-mono">₹{fuelSurcharge}</span>
+              <span className="font-mono">{fuelSurcharge !== "" ? `₹${fuelSurcharge}` : ""}</span>
             </div>
 
             <div className="border-b border-black p-1 flex justify-between">
               <span>ROV Charge:</span>
-              <span className="font-mono">₹{rovCharge}</span>
+              <span className="font-mono">{rovCharge !== "" ? `₹${rovCharge}` : ""}</span>
             </div>
 
             <div className="border-b border-black p-1 flex justify-between">
               <span>FOD Charge:</span>
-              <span className="font-mono">₹{fodCharge}</span>
+              <span className="font-mono">{fodCharge !== "" ? `₹${fodCharge}` : ""}</span>
             </div>
 
             <div className="border-b border-black p-1 flex justify-between">
               <span>Handling Charge:</span>
-              <span className="font-mono">₹{handlingCharge}</span>
+              <span className="font-mono">{handlingCharge !== "" ? `₹${handlingCharge}` : ""}</span>
             </div>
 
             <div className="border-b border-black p-1 flex justify-between">
               <span>COD/DOD Charge:</span>
-              <span className="font-mono">₹{codDodCharge}</span>
+              <span className="font-mono">{codDodCharge !== "" ? `₹${codDodCharge}` : ""}</span>
             </div>
 
             <div className="border-b border-black p-1 flex justify-between">
               <span>Special Delivery:</span>
-              <span className="font-mono">₹{specialDeliveryCharge}</span>
+              <span className="font-mono">{specialDeliveryCharge !== "" ? `₹${specialDeliveryCharge}` : ""}</span>
             </div>
 
             <div className="border-b border-black p-1 flex justify-between">
               <span>Other Charges:</span>
-              <span className="font-mono">₹{otherCharges}</span>
+              <span className="font-mono">{otherCharges !== "" ? `₹${otherCharges}` : ""}</span>
             </div>
 
             <div className="border-b border-black p-1 flex justify-between bg-gray-50 font-bold">
               <span>Sub-total:</span>
-              <span className="font-mono">₹{subTotal.toLocaleString('en-IN')}</span>
+              <span className="font-mono">{subTotal !== "" ? `₹${subTotal.toLocaleString('en-IN')}` : ""}</span>
             </div>
 
             <div className="border-b border-black p-1 flex justify-between text-gray-700 bg-gray-50 font-semibold">
               <span>GST of 12%:</span>
-              <span className="font-mono">₹{gstAmount.toLocaleString('en-IN')}</span>
+              <span className="font-mono">{gstAmount !== "" ? `₹${gstAmount.toLocaleString('en-IN')}` : ""}</span>
             </div>
 
             <div className="p-1 flex justify-between bg-indigo-50 font-black text-xs text-indigo-900">
               <span>Grand Total:</span>
-              <span className="font-mono">₹{grandTotal.toLocaleString('en-IN')}</span>
+              <span className="font-mono">{grandTotal !== "" ? `₹${grandTotal.toLocaleString('en-IN')}` : ""}</span>
             </div>
             
             {/* Mode of Payment & Details inside Charges Column block */}
@@ -406,7 +438,7 @@ const LorryReceiptModal = ({ shipment, onClose }) => {
 
         {/* Dynamic Verification Seal footer */}
         <div className="mt-2 flex justify-between items-center text-[8px] text-gray-400 px-1 print:hidden">
-          <span>Official Lorry Receipt Generated Electronically • Verified Sarthak Enterprises Platform</span>
+          <span>Official Lorry Receipt Generated Electronically • Verified {senderName} Platform</span>
           <span>Hash ID: {trackingNumber}</span>
         </div>
       </div>

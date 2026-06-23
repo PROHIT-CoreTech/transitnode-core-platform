@@ -10,8 +10,21 @@ exports.createShipment = async (req, res) => {
       vehicleNumber, vehicleType, driverName, driverPhone, origin, destination, commodityType 
     } = req.body;
     
-    // Generate TR-YYYY-XXXXX tracking ID
-    const trackingNumber = 'TR-' + new Date().getFullYear() + '-' + Math.floor(10000 + Math.random() * 90000);
+    // Query the latest shipment tracking ID for the current year to determine the next sequential number
+    const currentYear = new Date().getFullYear();
+    const lastShipment = await ShipmentLedger.findOne({ 
+      trackingNumber: new RegExp(`^TR-${currentYear}-`) 
+    }).sort({ _id: -1 });
+
+    let nextNum = 10001; // Start sequence
+    if (lastShipment && lastShipment.trackingNumber) {
+      const parts = lastShipment.trackingNumber.split('-');
+      const lastNum = parseInt(parts[parts.length - 1], 10);
+      if (!isNaN(lastNum)) {
+        nextNum = lastNum + 1;
+      }
+    }
+    const trackingNumber = `TR-${currentYear}-${nextNum}`;
     
     // Base estimation logic
     const baseRateApplied = 5000; // Flat transport rate default

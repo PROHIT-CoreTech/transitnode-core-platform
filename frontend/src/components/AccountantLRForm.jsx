@@ -29,6 +29,12 @@ const AccountantLRForm = ({
 
   const shortSerialNumber = invoice.trackingNumber.split('-').pop() || '4113';
 
+  const senderName = invoice.logistics?.sender?.name || 'Sarthak Enterprises';
+  const initials = senderName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+  const nameParts = senderName.split(' ');
+  const firstName = nameParts[0] || 'SARTHAK';
+  const lastName = nameParts.slice(1).join(' ') || 'ENTERPRISES';
+
   return (
     <div className="w-full bg-white text-black p-4 font-sans text-[11px] leading-tight border border-gray-400">
       <div className="mb-2 bg-indigo-50 border border-indigo-200 text-indigo-900 p-2 rounded-lg text-xs font-bold flex justify-between items-center">
@@ -39,19 +45,22 @@ const AccountantLRForm = ({
         {/* HEADER SECTION */}
         <div className="col-span-4 border-b border-r border-black p-2 flex items-center gap-2">
           <div className="bg-black text-white p-1 rounded font-black text-xs tracking-tighter">
-            SE
+            {initials}
           </div>
           <div>
-            <h1 className="text-sm font-black tracking-tight leading-none uppercase">Sarthak</h1>
-            <p className="text-[10px] font-bold tracking-widest text-gray-700 uppercase leading-none mt-0.5">Enterprises</p>
+            <h1 className="text-sm font-black tracking-tight leading-none uppercase">{firstName}</h1>
+            <p className="text-[10px] font-bold tracking-widest text-gray-700 uppercase leading-none mt-0.5">{lastName}</p>
           </div>
         </div>
         
         <div className="col-span-4 border-b border-r border-black p-2 text-[9px] leading-tight">
-          <p className="font-bold">V1032, Krushi Wholesale Mart,</p>
-          <p>Opp. Akshar Complex, Sector 19,</p>
-          <p>Vashi, Navi Mumbai - 400703.</p>
-          <p>Mob.: +91 9867416154</p>
+          <p className="font-bold">{invoice.logistics?.sender?.address || 'V1032, Krushi Wholesale Mart, Opp. Akshar Complex, Sector 19, Vashi, Navi Mumbai - 400703.'}</p>
+          <p>Mob.: +91 {invoice.logistics?.sender?.phone || '9867416154'}</p>
+          {senderName.toLowerCase().includes('sarthak') ? (
+            <p>Email: suhas.bhoite123@gmail.com</p>
+          ) : (
+            <p>Email: contact@{senderName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com</p>
+          )}
         </div>
         
         <div className="col-span-2 border-b border-r border-black grid grid-rows-2">
@@ -100,7 +109,18 @@ const AccountantLRForm = ({
           </div>
           <div className="col-span-4 p-1 border-b border-black">
             <span className="text-[8px] block text-gray-500 uppercase">Postal Code</span>
-            <span className="font-bold font-mono">{invoice.logistics?.sender?.postalCode || '400703'}</span>
+            <span className="font-bold font-mono">
+              {(() => {
+                const savedCode = invoice.logistics?.sender?.postalCode;
+                const address = invoice.logistics?.sender?.address;
+                if (savedCode && savedCode !== '400703') return savedCode;
+                if (address) {
+                  const match = address.match(/\b\d{6}\b/);
+                  if (match) return match[0];
+                }
+                return savedCode || '400703';
+              })()}
+            </span>
           </div>
 
           <div className="col-span-12 p-1 border-b border-black min-h-[30px]">
@@ -140,7 +160,18 @@ const AccountantLRForm = ({
           </div>
           <div className="col-span-4 p-1 border-b border-black">
             <span className="text-[8px] block text-gray-500 uppercase">Postal Code</span>
-            <span className="font-bold font-mono">{invoice.logistics?.receiver?.postalCode || '380001'}</span>
+            <span className="font-bold font-mono">
+              {(() => {
+                const savedCode = invoice.logistics?.receiver?.postalCode;
+                const address = invoice.logistics?.receiver?.address;
+                if (savedCode && savedCode !== '380001') return savedCode;
+                if (address) {
+                  const match = address.match(/\b\d{6}\b/);
+                  if (match) return match[0];
+                }
+                return savedCode || '380001';
+              })()}
+            </span>
           </div>
 
           <div className="col-span-12 p-1 border-b border-black min-h-[30px]">

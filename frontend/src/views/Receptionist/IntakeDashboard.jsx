@@ -291,26 +291,44 @@ const IntakeDashboard = () => {
   const handleSenderSelection = (e) => {
     const name = e.target.value;
     const workspace = workspaces.find(w => w.companyName === name);
+    
+    let extractedPostalCode = '400703';
+    if (workspace && workspace.address) {
+      const match = workspace.address.match(/\b\d{6}\b/);
+      if (match) {
+        extractedPostalCode = match[0];
+      }
+    }
+
     setFormData(prev => ({
       ...prev,
       senderName: name,
       senderPhone: workspace ? workspace.contactNumber || '' : prev.senderPhone,
       senderAddress: workspace ? workspace.address || '' : prev.senderAddress,
       senderGstin: workspace ? workspace.gstin || '' : prev.senderGstin,
-      senderPostalCode: workspace ? workspace.postalCode || '400703' : prev.senderPostalCode
+      senderPostalCode: workspace ? workspace.postalCode || extractedPostalCode : prev.senderPostalCode
     }));
   };
 
   const handleReceiverSelection = (e) => {
     const name = e.target.value;
     const supplier = suppliers.find(s => s.supplierName === name);
+
+    let extractedPostalCode = '380001';
+    if (supplier && supplier.address) {
+      const match = supplier.address.match(/\b\d{6}\b/);
+      if (match) {
+        extractedPostalCode = match[0];
+      }
+    }
+
     setFormData(prev => ({
       ...prev,
       receiverName: name,
       receiverPhone: supplier ? supplier.contactNumber || '' : prev.receiverPhone,
       receiverAddress: supplier ? supplier.address || '' : prev.receiverAddress,
       receiverGstin: supplier ? supplier.gstin || '' : prev.receiverGstin,
-      receiverPostalCode: supplier ? supplier.postalCode || '380001' : prev.receiverPostalCode
+      receiverPostalCode: supplier ? supplier.postalCode || extractedPostalCode : prev.receiverPostalCode
     }));
   };
 
@@ -439,8 +457,8 @@ const IntakeDashboard = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="relative">
-                      <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-cyan-400">GST No.</label>
-                      <input type="text" name="senderGstin" value={formData.senderGstin} onChange={handleChange} required 
+                      <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-cyan-400">GST No. (Optional)</label>
+                      <input type="text" name="senderGstin" value={formData.senderGstin} onChange={handleChange} 
                         className={inputClasses('senderGstin')} onFocus={() => setFocusedField('senderGstin')} onBlur={() => setFocusedField(null)} />
                     </div>
                     <div className="relative">
@@ -480,8 +498,8 @@ const IntakeDashboard = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="relative">
-                      <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-purple-400">GST No.</label>
-                      <input type="text" name="receiverGstin" value={formData.receiverGstin} onChange={handleChange} required 
+                      <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-purple-400">GST No. (Optional)</label>
+                      <input type="text" name="receiverGstin" value={formData.receiverGstin} onChange={handleChange} 
                         className={inputClasses('receiverGstin')} onFocus={() => setFocusedField('receiverGstin')} onBlur={() => setFocusedField(null)} />
                     </div>
                     <div className="relative">
