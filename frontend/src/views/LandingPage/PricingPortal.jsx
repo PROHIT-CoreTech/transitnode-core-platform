@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import PricingTruckCard from '../../components/PricingTruckCard';
 
 const CheckIcon = ({ className = "w-6 h-6 text-teal-600 mx-auto" }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -176,121 +177,97 @@ const PricingPortal = () => {
         </p>
       </header>
 
-      {/* Pricing Cards */}
-      <section className="container mx-auto px-6 py-20 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-8 max-w-[1400px] mx-auto w-full">
-          
+      {/* Featured Fleet Flagship Tier */}
+      <section className="container mx-auto px-6 py-8 relative z-10">
+        <PricingTruckCard 
+          onCtaClick={() => { setSelectedPlan('platinum'); setShowModal(true); }}
+        />
+      </section>
+
+      {/* Other Fleet Packages */}
+      <section className="container mx-auto px-6 pb-24 relative z-10">
+        <div className="text-center mb-12">
+          <h3 className="text-2xl font-bold text-slate-800">Additional Subscription Tiers</h3>
+          <p className="text-slate-500 text-sm mt-2">Choose the scope that matches your operational cargo volume</p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto w-full">
           {/* Free Trial */}
           <div className="bg-white border border-slate-200 rounded-3xl p-8 flex flex-col hover:-translate-y-2 hover:border-slate-300 hover:shadow-2xl transition-all duration-300 shadow-sm relative overflow-hidden group">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-slate-200 to-slate-300 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
-            <h3 className="text-xl xl:text-2xl font-bold mb-3 text-slate-900">10-Day Exploration</h3>
-            <p className="text-slate-500 mb-6 min-h-[60px] text-base leading-relaxed">Perfect for testing our core capabilities on a limited scale.</p>
+            <h3 className="text-xl font-bold mb-3 text-slate-900">10-Day Exploration</h3>
+            <p className="text-slate-500 mb-6 min-h-[60px] text-sm leading-relaxed">Perfect for testing our core capabilities on a limited scale.</p>
             <div className="mb-8">
-              <span className="text-5xl font-extrabold text-slate-900">₹0</span>
+              <span className="text-4xl font-extrabold text-slate-900">₹0</span>
             </div>
-            <ul className="space-y-6 mb-12 flex-1">
-              <li className="flex items-start text-slate-700 text-lg">
-                <CheckIcon className="w-6 h-6 text-teal-600 flex-shrink-0 mt-1" />
-                <span className="ml-4">Restricted vehicle mapping counts</span>
+            <ul className="space-y-4 mb-12 flex-1">
+              <li className="flex items-start text-slate-700 text-sm">
+                <CheckIcon className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
+                <span className="ml-3">Restricted vehicle mapping counts</span>
               </li>
-              <li className="flex items-start text-slate-700 text-lg">
-                <CheckIcon className="w-6 h-6 text-teal-600 flex-shrink-0 mt-1" />
-                <span className="ml-4">Basic multi-language app access</span>
+              <li className="flex items-start text-slate-700 text-sm">
+                <CheckIcon className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
+                <span className="ml-3">Basic multi-language app access</span>
               </li>
             </ul>
-            <button onClick={() => { setSelectedPlan('free'); setShowModal(true); }} className="w-full mt-auto bg-slate-50 hover:bg-slate-100 text-slate-800 py-3 rounded-xl font-bold transition-colors border border-slate-200 text-base">
+            <button onClick={() => { setSelectedPlan('free'); setShowModal(true); }} className="w-full mt-auto bg-slate-50 hover:bg-slate-100 text-slate-800 py-3 rounded-xl font-bold transition-colors border border-slate-200 text-sm">
               Start Free Trial
             </button>
           </div>
 
-          {/* Platinum Plan - Best Value */}
-          <div className="bg-slate-900 rounded-3xl p-8 flex flex-col border-2 border-teal-500 shadow-2xl shadow-teal-500/20 relative transform hover:-translate-y-4 transition-all duration-300 z-10 mt-8 lg:mt-0 xl:-translate-y-4 group">
-            <div className="absolute inset-0 bg-gradient-to-b from-teal-500/10 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-teal-500 to-sky-500 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg tracking-wide uppercase whitespace-nowrap">
-              Best Enterprise Value
-            </div>
-            <h3 className="text-xl xl:text-2xl font-bold mb-3 text-white mt-4">5-Year Control Tower</h3>
-            <p className="text-slate-400 mb-6 min-h-[60px] text-base leading-relaxed">Unrestricted access to the entire logistics operating system.</p>
-            <div className="mb-8 flex items-baseline">
-              <span className="text-5xl font-extrabold text-white">₹1.00L</span>
-            </div>
-            <ul className="space-y-6 mb-12 flex-1">
-              <li className="flex items-start text-slate-300 text-lg">
-                <CheckIcon className="w-6 h-6 text-teal-400 flex-shrink-0 mt-1" />
-                <span className="ml-4">Unlimited asset counts</span>
-              </li>
-              <li className="flex items-start text-slate-300 text-lg">
-                <CheckIcon className="w-6 h-6 text-teal-400 flex-shrink-0 mt-1" />
-                <span className="ml-4">Advanced compliance vaults</span>
-              </li>
-              <li className="flex items-start text-slate-300 text-lg">
-                <CheckIcon className="w-6 h-6 text-teal-400 flex-shrink-0 mt-1" />
-                <span className="ml-4">Full system feature availability</span>
-              </li>
-              <li className="flex items-start text-slate-300 text-lg">
-                <CheckIcon className="w-6 h-6 text-teal-400 flex-shrink-0 mt-1" />
-                <span className="ml-4">Priority 24/7 technical support</span>
-              </li>
-            </ul>
-            <button onClick={() => { setSelectedPlan('platinum'); setShowModal(true); }} className="w-full mt-auto bg-teal-500 hover:bg-teal-400 text-slate-900 py-3 rounded-xl font-bold transition-all shadow-lg shadow-teal-500/25 text-base">
-              Secure Enterprise Plan
-            </button>
-          </div>
-
-          {/* Lifetime Plan */}
-          <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl p-8 flex flex-col border border-amber-400 shadow-2xl shadow-amber-500/30 relative transform hover:-translate-y-4 transition-all duration-300 z-10 mt-8 xl:mt-0 xl:-translate-y-2 text-white group overflow-hidden">
-            <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-colors duration-500 pointer-events-none"></div>
-            <h3 className="text-xl xl:text-2xl font-bold mb-3 text-white">Lifetime Ownership</h3>
-            <p className="text-amber-100 mb-6 min-h-[60px] text-base leading-relaxed">Pay once, own the ecosystem forever. No recurring fees.</p>
-            <div className="mb-8">
-              <span className="text-5xl font-extrabold text-white">₹5.00L</span>
-            </div>
-            <ul className="space-y-6 mb-12 flex-1">
-              <li className="flex items-start text-white text-lg">
-                <CheckIcon className="w-6 h-6 text-white flex-shrink-0 mt-1" />
-                <span className="ml-4">Never pay subscription fees again</span>
-              </li>
-              <li className="flex items-start text-white text-lg">
-                <CheckIcon className="w-6 h-6 text-white flex-shrink-0 mt-1" />
-                <span className="ml-4">Lifetime platinum benefits</span>
-              </li>
-              <li className="flex items-start text-white text-lg">
-                <CheckIcon className="w-6 h-6 text-white flex-shrink-0 mt-1" />
-                <span className="ml-4">VIP white-glove onboarding</span>
-              </li>
-            </ul>
-            <button onClick={() => { setSelectedPlan('lifetime'); setShowModal(true); }} className="w-full mt-auto bg-white hover:bg-slate-50 text-amber-600 py-3 rounded-xl font-bold transition-all shadow-lg text-base">
-              Unlock Lifetime
-            </button>
-          </div>
-
           {/* Silver Plan */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-8 flex flex-col hover:-translate-y-2 hover:border-slate-300 hover:shadow-2xl transition-all duration-300 shadow-sm mt-8 xl:mt-0 relative overflow-hidden group">
+          <div className="bg-white border border-slate-200 rounded-3xl p-8 flex flex-col hover:-translate-y-2 hover:border-slate-300 hover:shadow-2xl transition-all duration-300 shadow-sm relative overflow-hidden group">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-slate-200 to-slate-400 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
-            <h3 className="text-xl xl:text-2xl font-bold mb-3 text-slate-900">3-Year Acceleration</h3>
-            <p className="text-slate-500 mb-6 min-h-[60px] text-base leading-relaxed">Ideal for growing fleets needing deep operational integration.</p>
+            <h3 className="text-xl font-bold mb-3 text-slate-900">3-Year Acceleration</h3>
+            <p className="text-slate-500 mb-6 min-h-[60px] text-sm leading-relaxed">Ideal for growing fleets needing deep operational integration.</p>
             <div className="mb-8">
-              <span className="text-5xl font-extrabold text-slate-900">₹50k</span>
+              <span className="text-4xl font-extrabold text-slate-900">₹50k</span>
             </div>
-            <ul className="space-y-6 mb-12 flex-1">
-              <li className="flex items-start text-slate-700 text-lg">
-                <CheckIcon className="w-6 h-6 text-teal-600 flex-shrink-0 mt-1" />
-                <span className="ml-4">Long-term structural savings</span>
+            <ul className="space-y-4 mb-12 flex-1">
+              <li className="flex items-start text-slate-700 text-sm">
+                <CheckIcon className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
+                <span className="ml-3">Long-term structural savings</span>
               </li>
-              <li className="flex items-start text-slate-700 text-lg">
-                <CheckIcon className="w-6 h-6 text-teal-600 flex-shrink-0 mt-1" />
-                <span className="ml-4">Full Tally XML integration</span>
+              <li className="flex items-start text-slate-700 text-sm">
+                <CheckIcon className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
+                <span className="ml-3">Full Tally XML integration</span>
               </li>
-              <li className="flex items-start text-slate-700 text-lg">
-                <CheckIcon className="w-6 h-6 text-teal-600 flex-shrink-0 mt-1" />
-                <span className="ml-4">25 active vehicle tracking nodes</span>
+              <li className="flex items-start text-slate-700 text-sm">
+                <CheckIcon className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
+                <span className="ml-3">25 active vehicle tracking nodes</span>
               </li>
             </ul>
-            <button onClick={() => { setSelectedPlan('silver'); setShowModal(true); }} className="w-full mt-auto bg-slate-50 hover:bg-slate-100 text-slate-800 py-3 rounded-xl font-bold transition-colors border border-slate-200 text-base">
+            <button onClick={() => { setSelectedPlan('silver'); setShowModal(true); }} className="w-full mt-auto bg-slate-50 hover:bg-slate-100 text-slate-800 py-3 rounded-xl font-bold transition-colors border border-slate-200 text-sm">
               Upgrade to Silver
             </button>
           </div>
 
+          {/* Lifetime Plan */}
+          <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl p-8 flex flex-col border border-amber-400 shadow-2xl shadow-amber-500/30 relative transform hover:-translate-y-4 transition-all duration-300 z-10 text-white group overflow-hidden">
+            <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-colors duration-500 pointer-events-none"></div>
+            <h3 className="text-xl font-bold mb-3 text-white">Lifetime Ownership</h3>
+            <p className="text-amber-100 mb-6 min-h-[60px] text-sm leading-relaxed">Pay once, own the ecosystem forever. No recurring fees.</p>
+            <div className="mb-8">
+              <span className="text-4xl font-extrabold text-white">₹5.00L</span>
+            </div>
+            <ul className="space-y-4 mb-12 flex-1">
+              <li className="flex items-start text-white text-sm">
+                <CheckIcon className="w-5 h-5 text-white flex-shrink-0 mt-0.5" />
+                <span className="ml-3">Never pay subscription fees again</span>
+              </li>
+              <li className="flex items-start text-white text-sm">
+                <CheckIcon className="w-5 h-5 text-white flex-shrink-0 mt-0.5" />
+                <span className="ml-3">Lifetime platinum benefits</span>
+              </li>
+              <li className="flex items-start text-white text-sm">
+                <CheckIcon className="w-5 h-5 text-white flex-shrink-0 mt-0.5" />
+                <span className="ml-3 font-semibold">VIP white-glove onboarding</span>
+              </li>
+            </ul>
+            <button onClick={() => { setSelectedPlan('lifetime'); setShowModal(true); }} className="w-full mt-auto bg-white hover:bg-slate-50 text-amber-600 py-3 rounded-xl font-bold transition-all shadow-lg text-sm">
+              Unlock Lifetime
+            </button>
+          </div>
         </div>
       </section>
 
