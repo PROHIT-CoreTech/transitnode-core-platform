@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import PricingTruckCard from '../../components/PricingTruckCard';
+import HeroBackground from '../../components/HeroBackground';
 
 const CheckIcon = ({ className = "w-6 h-6 text-teal-600 mx-auto" }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -15,7 +16,7 @@ const DashIcon = () => (
 );
 
 const HexagonLogo = () => (
-  <svg className="w-10 h-10 text-teal-700" viewBox="0 0 24 24" fill="currentColor">
+  <svg className="w-10 h-10 text-teal-400" viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 2.2L2.5 7.7v11l9.5 5.5 9.5-5.5v-11L12 2.2zm0 2.3l7.5 4.3v8.6l-7.5 4.3-7.5-4.3V8.8L12 4.5z"/>
     <path d="M12 7l4.5 2.6v5.2L12 17.4l-4.5-2.6V9.6L12 7z"/>
   </svg>
@@ -101,7 +102,10 @@ const PricingPortal = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-teal-500/30 overflow-x-hidden relative">
+    <div className="min-h-screen bg-[#07111a] text-slate-100 font-sans selection:bg-teal-500/30 overflow-x-hidden relative">
+      {/* Dynamic Scrolling Highway Background */}
+      <HeroBackground />
+
       <style>
         {`
           @keyframes driveRight {
@@ -144,184 +148,211 @@ const PricingPortal = () => {
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="container mx-auto px-6 py-6 flex justify-between items-center border-b border-slate-200">
-        <div className="flex items-center space-x-3">
-          <HexagonLogo />
-          <span className="text-2xl font-extrabold tracking-tight text-slate-800">
-            PROHIT CORETECH<span className="text-teal-600">.</span>
-          </span>
-        </div>
-        <button onClick={() => { setSelectedPlan('free'); setShowModal(true); }} className="bg-teal-600 hover:bg-teal-700 text-white px-8 py-3 rounded-full font-semibold transition-all duration-300 shadow-xl shadow-teal-600/20 active:scale-95">
-          Start 10-Day Trial
-        </button>
-      </nav>
+      {/* Navigation — sticky with solid background so it's always visible over the canvas */}
+      <div className="sticky top-0 z-50 w-full bg-slate-950 border-b-2 border-teal-600/50 shadow-lg shadow-slate-950/80 backdrop-blur-md">
+        <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
+          <div className="flex items-center space-x-3">
+            <HexagonLogo />
+            <div>
+              <span className="text-xl font-extrabold tracking-tight text-white block leading-tight">
+                PROHIT CoreTech<span className="text-teal-400">.</span>
+              </span>
+              <span className="text-[10px] font-bold tracking-widest text-teal-400/70 uppercase">TransitNode ERP</span>
+            </div>
+          </div>
+          <button onClick={() => { setSelectedPlan('free'); setShowModal(true); }} className="bg-teal-600 hover:bg-teal-500 text-white px-7 py-2.5 rounded-full font-bold transition-all duration-300 shadow-lg shadow-teal-600/30 active:scale-95 text-sm">
+            Start 10-Day Trial
+          </button>
+        </nav>
+      </div>
 
       {/* Hero Segment */}
       <header className="container mx-auto px-6 py-24 text-center max-w-5xl relative">
         <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px]"></div>
         
-        <div className="inline-block mb-4 px-5 py-2 rounded-full bg-white border border-teal-100 text-teal-800 text-sm font-bold tracking-widest shadow-sm uppercase">
+        <div className="inline-block mb-4 px-5 py-2 rounded-full bg-slate-900/80 border border-teal-500/20 text-teal-400 text-sm font-bold tracking-widest shadow-sm uppercase">
           White-Label Logistics ERP
         </div>
         
-        <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight mb-6 leading-tight text-slate-900">
+        <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight mb-6 leading-tight text-white">
           Enterprise Fleet Control. <br className="hidden md:block"/>
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-700 to-teal-500">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-teal-500">
             Zero Friction.
           </span>
         </h1>
         
-        <p className="text-xl text-slate-600 mb-8 leading-relaxed max-w-3xl mx-auto font-light">
+        <p className="text-xl text-slate-300 mb-8 leading-relaxed max-w-3xl mx-auto font-light">
           Scale your operations with automated telemetry tracking, localized multi-language driver applications, and direct corporate Tally ERP export files.
         </p>
       </header>
 
-      {/* Featured Fleet Flagship Tier */}
-      <section className="container mx-auto px-6 py-8 relative z-10">
-        <PricingTruckCard 
-          onCtaClick={() => { setSelectedPlan('platinum'); setShowModal(true); }}
-        />
-      </section>
-
-      {/* Other Fleet Packages */}
-      <section className="container mx-auto px-6 pb-24 relative z-10">
-        <div className="text-center mb-12">
-          <h3 className="text-2xl font-bold text-slate-800">Additional Subscription Tiers</h3>
-          <p className="text-slate-500 text-sm mt-2">Choose the scope that matches your operational cargo volume</p>
+      {/* Fleet Pricing Section */}
+      <section className="container mx-auto px-6 py-12 relative z-10">
+        <div className="text-center mb-16 max-w-2xl mx-auto">
+          <div className="inline-block mb-4 px-5 py-2 rounded-full bg-slate-800/80 border border-teal-500/20 text-teal-400 text-sm font-bold tracking-widest uppercase">
+            Fleet Subscription Tiers
+          </div>
+          <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">
+            Choose Your{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-teal-400">
+              Operational Cargo
+            </span>{' '}Volume
+          </h2>
+          <p className="text-slate-400 text-base mt-4 leading-relaxed">
+            Select the subscription tier that matches your logistics fleet scale. No hidden fees.
+          </p>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto w-full">
-          {/* Free Trial */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-8 flex flex-col hover:-translate-y-2 hover:border-slate-300 hover:shadow-2xl transition-all duration-300 shadow-sm relative overflow-hidden group">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-slate-200 to-slate-300 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
-            <h3 className="text-xl font-bold mb-3 text-slate-900">10-Day Exploration</h3>
-            <p className="text-slate-500 mb-6 min-h-[60px] text-sm leading-relaxed">Perfect for testing our core capabilities on a limited scale.</p>
-            <div className="mb-8">
-              <span className="text-4xl font-extrabold text-slate-900">₹0</span>
-            </div>
-            <ul className="space-y-4 mb-12 flex-1">
-              <li className="flex items-start text-slate-700 text-sm">
-                <CheckIcon className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
-                <span className="ml-3">Restricted vehicle mapping counts</span>
-              </li>
-              <li className="flex items-start text-slate-700 text-sm">
-                <CheckIcon className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
-                <span className="ml-3">Basic multi-language app access</span>
-              </li>
-            </ul>
-            <button onClick={() => { setSelectedPlan('free'); setShowModal(true); }} className="w-full mt-auto bg-slate-50 hover:bg-slate-100 text-slate-800 py-3 rounded-xl font-bold transition-colors border border-slate-200 text-sm">
-              Start Free Trial
-            </button>
-          </div>
 
-          {/* Silver Plan */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-8 flex flex-col hover:-translate-y-2 hover:border-slate-300 hover:shadow-2xl transition-all duration-300 shadow-sm relative overflow-hidden group">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-slate-200 to-slate-400 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
-            <h3 className="text-xl font-bold mb-3 text-slate-900">3-Year Acceleration</h3>
-            <p className="text-slate-500 mb-6 min-h-[60px] text-sm leading-relaxed">Ideal for growing fleets needing deep operational integration.</p>
-            <div className="mb-8">
-              <span className="text-4xl font-extrabold text-slate-900">₹50k</span>
-            </div>
-            <ul className="space-y-4 mb-12 flex-1">
-              <li className="flex items-start text-slate-700 text-sm">
-                <CheckIcon className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
-                <span className="ml-3">Long-term structural savings</span>
-              </li>
-              <li className="flex items-start text-slate-700 text-sm">
-                <CheckIcon className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
-                <span className="ml-3">Full Tally XML integration</span>
-              </li>
-              <li className="flex items-start text-slate-700 text-sm">
-                <CheckIcon className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
-                <span className="ml-3">25 active vehicle tracking nodes</span>
-              </li>
-            </ul>
-            <button onClick={() => { setSelectedPlan('silver'); setShowModal(true); }} className="w-full mt-auto bg-slate-50 hover:bg-slate-100 text-slate-800 py-3 rounded-xl font-bold transition-colors border border-slate-200 text-sm">
-              Upgrade to Silver
-            </button>
-          </div>
+        <div className="flex flex-col space-y-12 max-w-5xl mx-auto w-full">
+          {/* Card 1: 10-Day Exploration */}
+          <PricingTruckCard 
+            title="10-Day Exploration"
+            description="Perfect for testing our core capabilities on a limited scale."
+            price="₹0"
+            duration="10 Days"
+            features={[
+              "Restricted vehicle mapping counts",
+              "Basic multi-language app access",
+              "No custom subdomain",
+              "Community support"
+            ]}
+            ctaText="Start Free Trial"
+            onCtaClick={() => { setSelectedPlan('free'); setShowModal(true); }}
+            badgeText="Starter Tier"
+            cabinColor="bg-slate-800"
+            textColor="text-slate-100"
+            badgeBgColor="bg-slate-950"
+            badgeTextColor="text-slate-400"
+            accentBorderColor="border-slate-700"
+            cargoLineColor="bg-slate-600"
+            checkIconColor="text-slate-400"
+          />
 
-          {/* Lifetime Plan */}
-          <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl p-8 flex flex-col border border-amber-400 shadow-2xl shadow-amber-500/30 relative transform hover:-translate-y-4 transition-all duration-300 z-10 text-white group overflow-hidden">
-            <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-colors duration-500 pointer-events-none"></div>
-            <h3 className="text-xl font-bold mb-3 text-white">Lifetime Ownership</h3>
-            <p className="text-amber-100 mb-6 min-h-[60px] text-sm leading-relaxed">Pay once, own the ecosystem forever. No recurring fees.</p>
-            <div className="mb-8">
-              <span className="text-4xl font-extrabold text-white">₹5.00L</span>
-            </div>
-            <ul className="space-y-4 mb-12 flex-1">
-              <li className="flex items-start text-white text-sm">
-                <CheckIcon className="w-5 h-5 text-white flex-shrink-0 mt-0.5" />
-                <span className="ml-3">Never pay subscription fees again</span>
-              </li>
-              <li className="flex items-start text-white text-sm">
-                <CheckIcon className="w-5 h-5 text-white flex-shrink-0 mt-0.5" />
-                <span className="ml-3">Lifetime platinum benefits</span>
-              </li>
-              <li className="flex items-start text-white text-sm">
-                <CheckIcon className="w-5 h-5 text-white flex-shrink-0 mt-0.5" />
-                <span className="ml-3 font-semibold">VIP white-glove onboarding</span>
-              </li>
-            </ul>
-            <button onClick={() => { setSelectedPlan('lifetime'); setShowModal(true); }} className="w-full mt-auto bg-white hover:bg-slate-50 text-amber-600 py-3 rounded-xl font-bold transition-all shadow-lg text-sm">
-              Unlock Lifetime
-            </button>
-          </div>
+          {/* Card 2: 3-Year Acceleration */}
+          <PricingTruckCard 
+            title="3-Year Acceleration"
+            description="Ideal for growing fleets needing deep operational integration."
+            price="₹50k"
+            duration="36 Months (3 Years)"
+            features={[
+              "Long-term structural savings",
+              "Full Tally XML integration",
+              "25 active vehicle tracking nodes",
+              "Standard email support"
+            ]}
+            ctaText="Upgrade to Silver"
+            onCtaClick={() => { setSelectedPlan('silver'); setShowModal(true); }}
+            badgeText="Popular Value"
+            cabinColor="bg-teal-600"
+            textColor="text-white"
+            badgeBgColor="bg-slate-950"
+            badgeTextColor="text-teal-400"
+            accentBorderColor="border-teal-500"
+            cargoLineColor="bg-teal-500"
+            checkIconColor="text-teal-400"
+          />
+
+          {/* Card 3: 5-Year Control Tower */}
+          <PricingTruckCard 
+            title="5-Year Control Tower"
+            description="Unrestricted access to the entire logistics operating system."
+            price="₹1.00L"
+            duration="60 Months (5 Years)"
+            features={[
+              "Unlimited asset & driver counts",
+              "Advanced compliance vaults",
+              "Full system feature availability",
+              "Priority 24/7 technical support"
+            ]}
+            ctaText="Secure Enterprise Plan"
+            onCtaClick={() => { setSelectedPlan('platinum'); setShowModal(true); }}
+            badgeText="Best Enterprise Value"
+            cabinColor="bg-amber-500"
+            textColor="text-slate-950"
+            badgeBgColor="bg-slate-950"
+            badgeTextColor="text-amber-400"
+            accentBorderColor="border-amber-600"
+            cargoLineColor="bg-amber-500"
+            checkIconColor="text-amber-500"
+          />
+
+          {/* Card 4: Lifetime Ownership */}
+          <PricingTruckCard 
+            title="Lifetime Ownership"
+            description="Pay once, own the ecosystem forever. No recurring fees."
+            price="₹5.00L"
+            duration="Lifetime"
+            features={[
+              "Never pay subscription fees again",
+              "Lifetime platinum benefits",
+              "VIP white-glove onboarding",
+              "Dedicated customer success manager"
+            ]}
+            ctaText="Unlock Lifetime"
+            onCtaClick={() => { setSelectedPlan('lifetime'); setShowModal(true); }}
+            badgeText="Infinite Ownership"
+            cabinColor="bg-indigo-600"
+            textColor="text-white"
+            badgeBgColor="bg-slate-950"
+            badgeTextColor="text-indigo-300"
+            accentBorderColor="border-indigo-500"
+            cargoLineColor="bg-indigo-400"
+            checkIconColor="text-indigo-400"
+          />
         </div>
       </section>
 
       {/* Testimonials */}
-      <section className="container mx-auto px-6 py-24">
-        <div className="max-w-6xl mx-auto">
+      <section className="container mx-auto px-6 py-14 relative z-10">
+        <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-16">
-            <div className="max-w-xl">
-              <div className="flex items-center space-x-4 mb-4">
-                <div className="h-px w-12 bg-slate-400"></div>
-                <span className="text-slate-600 font-semibold tracking-wide uppercase text-sm">Testimonials</span>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10">
+            <div className="max-w-sm">
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="h-px w-8 bg-slate-600"></div>
+                <span className="text-teal-400 font-bold tracking-widest uppercase text-xs">Testimonials</span>
               </div>
-              <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 leading-tight">
-                Hear what our amazing<br/>customers say
+              <h2 className="text-2xl md:text-3xl font-extrabold text-white leading-snug">
+                What our customers say
               </h2>
             </div>
-            <div className="max-w-md mt-6 md:mt-0 text-slate-600 text-lg leading-relaxed border-l-2 border-slate-200 pl-6">
-              Our enterprise logistics platform is built for heavy-duty fleet operations. We offer premium support with access to advanced tracking facilities to scale your business effortlessly.
-            </div>
+            <p className="max-w-xs mt-4 md:mt-0 text-slate-400 text-sm leading-relaxed border-l-2 border-slate-700 pl-4">
+              Built for heavy-duty fleet operations with premium support and advanced tracking.
+            </p>
           </div>
 
           {/* Carousel Area */}
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-3">
             {/* Left Arrow */}
-            <button 
+            <button
               onClick={() => setActiveTestimonial(prev => prev === 0 ? testimonials.length - 1 : prev - 1)}
-              className="hidden md:flex w-12 h-12 rounded-full bg-slate-900 text-white items-center justify-center hover:bg-teal-600 transition-colors shadow-lg flex-shrink-0 z-10"
+              className="hidden md:flex w-9 h-9 rounded-full bg-slate-800 text-white items-center justify-center hover:bg-teal-600 transition-colors shadow-md flex-shrink-0 z-10"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
             </button>
 
             {/* Cards */}
-            <div className="flex-1 rounded-xl overflow-hidden shadow-2xl shadow-slate-200/50 relative">
-              <div 
+            <div className="flex-1 rounded-xl overflow-hidden shadow-xl relative">
+              <div
                 className="flex transition-transform duration-700 ease-in-out h-full"
                 style={{ transform: `translateX(-${activeTestimonial * 100}%)` }}
               >
                 {testimonials.map((t, idx) => (
-                  <div key={idx} className={`min-w-full w-full flex-shrink-0 ${t.bgColor} p-12 md:p-16 flex flex-col justify-between`}>
-                    <div className="max-w-4xl mx-auto w-full">
-                      <div className={`w-14 h-14 ${t.iconColor} flex items-center justify-center mb-8 rounded-xl shadow-sm transform -rotate-6`}>
-                        <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d={t.iconPath}/></svg>
+                  <div key={idx} className={`min-w-full w-full flex-shrink-0 ${t.bgColor} p-6 md:p-8 flex flex-col justify-between`}>
+                    <div className="max-w-xl mx-auto w-full">
+                      <div className={`w-9 h-9 ${t.iconColor} flex items-center justify-center mb-5 rounded-lg shadow-sm transform -rotate-6`}>
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d={t.iconPath}/></svg>
                       </div>
-                      <p className="text-slate-700 text-xl md:text-2xl leading-relaxed mb-10 font-medium italic">
+                      <p className="text-slate-700 text-sm md:text-base leading-relaxed mb-6 font-medium italic">
                         {t.text}
                       </p>
-                      <div className="flex items-center space-x-5">
-                        <div className="w-16 h-16 rounded-full bg-slate-300 overflow-hidden shadow-md ring-4 ring-white">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-full bg-slate-300 overflow-hidden shadow ring-2 ring-white flex-shrink-0">
                           <img src={t.image} alt="Avatar" className="w-full h-full object-cover" />
                         </div>
                         <div>
-                          <h4 className="font-bold text-slate-900 text-lg">{t.name}</h4>
-                          <p className="text-teal-600 font-medium text-sm tracking-wide uppercase mt-1">{t.role}</p>
+                          <h4 className="font-bold text-slate-900 text-sm">{t.name}</h4>
+                          <p className="text-teal-600 font-semibold text-xs tracking-wide uppercase mt-0.5">{t.role}</p>
                         </div>
                       </div>
                     </div>
@@ -331,24 +362,24 @@ const PricingPortal = () => {
             </div>
 
             {/* Right Arrow */}
-            <button 
+            <button
               onClick={() => setActiveTestimonial(prev => prev === testimonials.length - 1 ? 0 : prev + 1)}
-              className="hidden md:flex w-12 h-12 rounded-full bg-slate-900 text-white items-center justify-center hover:bg-teal-600 transition-colors shadow-lg flex-shrink-0 z-10"
+              className="hidden md:flex w-9 h-9 rounded-full bg-slate-800 text-white items-center justify-center hover:bg-teal-600 transition-colors shadow-md flex-shrink-0 z-10"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
             </button>
           </div>
 
           {/* Dots */}
-          <div className="flex justify-center items-center space-x-3 mt-10">
+          <div className="flex justify-center items-center space-x-2 mt-6">
             {testimonials.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setActiveTestimonial(idx)}
-                className={`h-2 rounded-full transition-all duration-500 ${
-                  activeTestimonial === idx 
-                    ? 'w-10 bg-teal-500 shadow-md shadow-teal-500/40' 
-                    : 'w-2 bg-slate-300 hover:bg-slate-400'
+                className={`h-1.5 rounded-full transition-all duration-500 ${
+                  activeTestimonial === idx
+                    ? 'w-8 bg-teal-500 shadow-sm shadow-teal-500/40'
+                    : 'w-1.5 bg-slate-500 hover:bg-slate-400'
                 }`}
                 aria-label={`Go to testimonial ${idx + 1}`}
               />
@@ -356,6 +387,7 @@ const PricingPortal = () => {
           </div>
         </div>
       </section>
+
 
       {/* Registration Modal Overlay */}
       {showModal && (
@@ -417,55 +449,102 @@ const PricingPortal = () => {
       )}
 
       {/* Footer */}
-      <footer className="bg-slate-900 border-t border-slate-800 text-slate-400 py-20">
-        <div className="container mx-auto px-6 max-w-7xl">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12 border-b border-slate-800 pb-12">
+      <footer className="relative z-10 bg-slate-900 border-t-2 border-slate-700 text-white">
+
+        {/* Main Footer Grid */}
+        <div className="container mx-auto px-6 max-w-7xl py-16">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+
+            {/* Brand Block */}
             <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center space-x-3 mb-6">
+              <div className="flex items-center space-x-3 mb-3">
                 <HexagonLogo />
-                <span className="text-2xl font-extrabold tracking-tight text-white">
-                  PROHIT CORETECH<span className="text-teal-500">.</span>
-                </span>
+                <div>
+                  <span className="text-2xl font-extrabold tracking-tight text-white block leading-tight">
+                    PROHIT CoreTech<span className="text-teal-400">.</span>
+                  </span>
+                  <span className="text-xs font-bold tracking-widest text-teal-400 uppercase">
+                    TransitNode ERP Platform
+                  </span>
+                </div>
               </div>
-              <p className="max-w-md text-slate-500 text-lg leading-relaxed mb-6">
-                Next-generation enterprise logistics operating system for heavy-duty fleet control, telematics, and automated accounting.
+              <p className="max-w-md text-slate-300 text-sm leading-relaxed mb-6 mt-4">
+                Next-generation enterprise logistics operating system for heavy-duty fleet control, telematics, and automated accounting — built and managed under <span className="text-teal-400 font-bold">PROHIT CoreTech</span>.
               </p>
-              <div className="flex space-x-4">
-                <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-teal-500 hover:text-white transition-all">
+              <div className="flex items-center space-x-4">
+                <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-teal-500 hover:text-white transition-all duration-300">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/></svg>
                 </a>
-                <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-teal-500 hover:text-white transition-all">
+                <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-teal-500 hover:text-white transition-all duration-300">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
                 </a>
               </div>
             </div>
+
+            {/* Platform Links */}
             <div>
-              <h4 className="text-white font-bold text-lg mb-6">Platform</h4>
-              <ul className="space-y-4">
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Fleet Tracking</a></li>
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Tally Export</a></li>
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Compliance Vault</a></li>
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Financial Engine</a></li>
+              <h4 className="text-teal-400 font-bold text-xs uppercase tracking-widest mb-5 border-b border-slate-700 pb-2">Platform</h4>
+              <ul className="space-y-3 text-sm">
+                <li><a href="#" className="text-slate-300 hover:text-teal-400 transition-colors">Fleet Tracking</a></li>
+                <li><a href="#" className="text-slate-300 hover:text-teal-400 transition-colors">Tally ERP Export</a></li>
+                <li><a href="#" className="text-slate-300 hover:text-teal-400 transition-colors">Compliance Vault</a></li>
+                <li><a href="#" className="text-slate-300 hover:text-teal-400 transition-colors">Financial Engine</a></li>
+                <li><a href="#" className="text-slate-300 hover:text-teal-400 transition-colors">Driver App</a></li>
               </ul>
             </div>
+
+            {/* Company Links */}
             <div>
-              <h4 className="text-white font-bold text-lg mb-6">Company</h4>
-              <ul className="space-y-4">
-                <li><a href="#" className="hover:text-teal-400 transition-colors">About Us</a></li>
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Careers</a></li>
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Terms of Service</a></li>
+              <h4 className="text-teal-400 font-bold text-xs uppercase tracking-widest mb-5 border-b border-slate-700 pb-2">Company</h4>
+              <ul className="space-y-3 text-sm">
+                <li><a href="#" className="text-slate-300 hover:text-teal-400 transition-colors">About PROHIT CoreTech</a></li>
+                <li><a href="#" className="text-slate-300 hover:text-teal-400 transition-colors">Careers</a></li>
+                <li><a href="#" className="text-slate-300 hover:text-teal-400 transition-colors">Privacy Policy</a></li>
+                <li><a href="#" className="text-slate-300 hover:text-teal-400 transition-colors">Terms of Service</a></li>
+                <li><a href="#" className="text-slate-300 hover:text-teal-400 transition-colors">Security</a></li>
               </ul>
-            </div>
-          </div>
-          <div className="flex flex-col md:flex-row justify-between items-center text-sm text-slate-500">
-            <p>&copy; {new Date().getFullYear()} PROHIT CoreTech. All rights reserved.</p>
-            <div className="flex space-x-6 mt-4 md:mt-0">
-              <a href="#" className="hover:text-white transition-colors">System Status</a>
-              <a href="#" className="hover:text-white transition-colors">Security</a>
             </div>
           </div>
         </div>
+
+        {/* Copyright Bar — solid dark background with guaranteed white text */}
+        <div className="bg-slate-800 border-t-2 border-teal-500">
+          <div className="h-[3px] bg-gradient-to-r from-teal-500 via-teal-300 to-emerald-400 w-full"></div>
+          <div className="container mx-auto px-6 max-w-7xl py-5">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-5">
+
+              {/* Left: Copyright + Product */}
+              <div className="flex flex-col items-center md:items-start gap-1.5">
+                <p className="text-sm text-white font-bold">
+                  &copy; {new Date().getFullYear()}{' '}
+                  <span className="text-teal-400 font-extrabold">PROHIT CoreTech</span>
+                  <span className="text-white"> — All Rights Reserved.</span>
+                </p>
+                <p className="text-xs text-slate-300 font-medium">
+                  TransitNode ERP is a product of{' '}
+                  <span className="text-teal-400 font-semibold">PROHIT CoreTech</span>.
+                  Unauthorized reproduction is prohibited.
+                </p>
+              </div>
+
+              {/* Center: Made in India badge */}
+              <div className="flex items-center space-x-2 px-4 py-2 rounded-full bg-teal-700/50 border border-teal-500 shadow-md">
+                <span className="text-base">🇮🇳</span>
+                <span className="text-xs font-extrabold text-white tracking-wider uppercase">Made in India</span>
+              </div>
+
+              {/* Right: Legal links */}
+              <div className="flex items-center space-x-4 text-xs text-slate-200 font-semibold">
+                <a href="#" className="hover:text-teal-400 transition-colors duration-200">Privacy Policy</a>
+                <span className="text-slate-400">·</span>
+                <a href="#" className="hover:text-teal-400 transition-colors duration-200">Terms of Service</a>
+                <span className="text-slate-400">·</span>
+                <a href="#" className="hover:text-teal-400 transition-colors duration-200">System Status</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </footer>
 
     </div>
