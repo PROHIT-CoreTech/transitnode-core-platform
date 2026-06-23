@@ -53,7 +53,7 @@ const PricingPortal = () => {
       name: "William Alex",
       role: "Founder @LogisticsCorp",
       image: "https://i.pravatar.cc/150?img=11",
-      text: "\"Highly recommend CoreMatrix they helped me a lot. I love their work experience and best effort, I got best product design by them and excellent solution, in future we work again them, Thankful to the agency for given such as services.\"",
+      text: "\"Highly recommend PROHIT CoreTech they helped me a lot. I love their work experience and best effort, I got best product design by them and excellent solution, in future we work again them, Thankful to the agency for given such as services.\"",
       bgColor: "bg-[#eefcf8]",
       iconColor: "bg-teal-500 text-white",
       iconPath: "M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"
@@ -148,7 +148,7 @@ const PricingPortal = () => {
         <div className="flex items-center space-x-3">
           <HexagonLogo />
           <span className="text-2xl font-extrabold tracking-tight text-slate-800">
-            COREMATRIX TECH<span className="text-teal-600">.</span>
+            PROHIT CORETECH<span className="text-teal-600">.</span>
           </span>
         </div>
         <button onClick={() => { setSelectedPlan('free'); setShowModal(true); }} className="bg-teal-600 hover:bg-teal-700 text-white px-8 py-3 rounded-full font-semibold transition-all duration-300 shadow-xl shadow-teal-600/20 active:scale-95">
@@ -415,7 +415,7 @@ const PricingPortal = () => {
                     <label className="block text-sm font-bold text-slate-700 mb-2 tracking-wide uppercase">Target Subdomain</label>
                     <div className="flex shadow-sm rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-teal-500/20 focus-within:border-teal-500">
                       <input required type="text" value={formData.customSubdomain} onChange={e => setFormData({...formData, customSubdomain: e.target.value})} className="w-full bg-slate-50 border border-slate-200 border-r-0 px-5 py-4 text-slate-900 focus:bg-white focus:outline-none transition-all" placeholder="acme" />
-                      <span className="bg-slate-100 border border-slate-200 border-l-0 text-slate-500 px-5 py-4 font-medium flex items-center">.corematrix.in</span>
+                      <span className="bg-slate-100 border border-slate-200 border-l-0 text-slate-500 px-5 py-4 font-medium flex items-center">.prohitcoretech.in</span>
                     </div>
                   </div>
                   <div className="pt-8 flex items-center justify-end space-x-4 border-t border-slate-100">
@@ -447,7 +447,7 @@ const PricingPortal = () => {
               <div className="flex items-center space-x-3 mb-6">
                 <HexagonLogo />
                 <span className="text-2xl font-extrabold tracking-tight text-white">
-                  COREMATRIX TECH<span className="text-teal-500">.</span>
+                  PROHIT CORETECH<span className="text-teal-500">.</span>
                 </span>
               </div>
               <p className="max-w-md text-slate-500 text-lg leading-relaxed mb-6">
@@ -482,7 +482,7 @@ const PricingPortal = () => {
             </div>
           </div>
           <div className="flex flex-col md:flex-row justify-between items-center text-sm text-slate-500">
-            <p>&copy; {new Date().getFullYear()} CoreMatrix Tech. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} PROHIT CoreTech. All rights reserved.</p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <a href="#" className="hover:text-white transition-colors">System Status</a>
               <a href="#" className="hover:text-white transition-colors">Security</a>

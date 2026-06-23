@@ -106,7 +106,7 @@ const SaaSCheckout = () => {
           
           <div className="mb-8">
             <h3 className="font-bold text-slate-900 text-lg">{planName}</h3>
-            <p className="text-slate-500 text-sm mb-4">Sub: CoreMatrix Logistics Management</p>
+            <p className="text-slate-500 text-sm mb-4">Sub: PROHIT CoreTech Logistics Management</p>
             
             <div className="flex justify-between items-center mb-2">
               <span className="text-slate-600">Price</span>

@@ -20,6 +20,8 @@ export const TenantBrandingProvider = ({ children }) => {
         hostname === 'www.transitnode.in' ||
         hostname === 'corematrix.in' ||
         hostname === 'www.corematrix.in' ||
+        hostname === 'prohitcoretech.in' ||
+        hostname === 'www.prohitcoretech.in' ||
         hostname.endsWith('.vercel.app');
 
       if (isMainDomain) {

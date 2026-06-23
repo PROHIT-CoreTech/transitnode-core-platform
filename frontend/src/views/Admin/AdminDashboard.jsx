@@ -1557,7 +1557,7 @@ const AdminDashboard = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-slate-700 mb-1">Sister Company Name *</label>
-                        <input type="text" required value={sisterCompanyForm.companyName} onChange={e => setSisterCompanyForm({...sisterCompanyForm, companyName: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" placeholder="e.g. CoreMatrix Logistics Pvt Ltd" />
+                        <input type="text" required value={sisterCompanyForm.companyName} onChange={e => setSisterCompanyForm({...sisterCompanyForm, companyName: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" placeholder="e.g. PROHIT Logistics Pvt Ltd" />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">GSTIN</label>
@@ -1775,7 +1775,7 @@ const AdminDashboard = () => {
               ) : (
                 <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-8 text-center mt-8 relative overflow-hidden">
                   <h3 className="text-2xl font-bold mb-2 text-amber-600">Lifetime Member</h3>
-                  <p className="text-amber-700/80 max-w-2xl mx-auto">You have unlocked the absolute highest tier. Thank you for your infinite commitment to CoreMatrix!</p>
+                  <p className="text-amber-700/80 max-w-2xl mx-auto">You have unlocked the absolute highest tier. Thank you for your infinite commitment to PROHIT CoreTech!</p>
                 </div>
               )}
             </div>
@@ -1791,7 +1791,7 @@ const AdminDashboard = () => {
                     <h3 className="text-2xl font-bold text-slate-900 mb-6">Upgrade Order</h3>
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 mb-6">
                       <h4 className="font-bold text-slate-800 text-lg">{pendingUpgradePlan} Plan</h4>
-                      <p className="text-slate-500 text-sm mb-4">CoreMatrix Enterprise Access</p>
+                      <p className="text-slate-500 text-sm mb-4">PROHIT CoreTech Enterprise Access</p>
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-slate-600">Base Price</span>
                         <span className="font-medium text-slate-900">₹{getUpgradePrice(pendingUpgradePlan).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>

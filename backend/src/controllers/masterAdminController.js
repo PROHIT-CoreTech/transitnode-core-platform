@@ -142,8 +142,8 @@ exports.onboardManual = async (req, res) => {
     const setupLink = `${protocol}://${customSubdomain}.${frontendDomain}/setup-admin`;
     
     console.log('\n======================================================');
-    console.log('MOCK EMAIL SENT TO:', userEmail);
-    console.log('SUBJECT: Welcome to CoreMatrix Tech - Setup Your Admin Account');
+    console.log('MOCK EMAIL/SMS SENT TO:', registeredMobile);
+    console.log('SUBJECT: Welcome to PROHIT CoreTech - Setup Your Admin Account');
     console.log('SETUP LINK:');
     console.log(setupLink);
     console.log('======================================================\n');

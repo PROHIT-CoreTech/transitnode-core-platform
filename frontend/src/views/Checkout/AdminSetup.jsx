@@ -59,7 +59,7 @@ const AdminSetup = () => {
           </div>
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Secure Your Workspace</h2>
           <p className="text-slate-500 text-sm">
-            Welcome to {tenantProfile?.companyName || 'CoreMatrix'}! Set up your permanent admin credentials before entering the dashboard.
+            Welcome to {tenantProfile?.companyName || 'PROHIT CoreTech'}! Set up your permanent admin credentials before entering the dashboard.
           </p>
         </div>
 

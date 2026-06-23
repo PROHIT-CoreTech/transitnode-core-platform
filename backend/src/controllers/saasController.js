@@ -66,7 +66,7 @@ exports.registerTenant = async (req, res) => {
     const newAdmin = new User({
       tenantId: newTenant._id,
       username: registeredMobile,
-      email: `admin@${customSubdomain}.corematrix.in`,
+      email: `admin@${customSubdomain}.prohitcoretech.in`,
       mobileNumber: registeredMobile,
       password: hashedPassword,
       name: `Admin - ${companyName}`,
@@ -79,8 +79,8 @@ exports.registerTenant = async (req, res) => {
 
     // MOCK EMAIL SENDING
     console.log('\n======================================================');
-    console.log('MOCK EMAIL SENT TO:', `admin@${customSubdomain}.corematrix.in`);
-    console.log('SUBJECT: Welcome to CoreMatrix Tech - Your Workspace is Ready');
+    console.log('MOCK EMAIL SENT TO:', `admin@${customSubdomain}.prohitcoretech.in`);
+    console.log('SUBJECT: Welcome to PROHIT CoreTech - Your Workspace is Ready');
     console.log(`MAGIC LOGIN LINK:`);
     console.log(`${protocol}://${customSubdomain}.${frontendDomain}/magic-login/${magicToken}`);
     console.log('======================================================\n');
