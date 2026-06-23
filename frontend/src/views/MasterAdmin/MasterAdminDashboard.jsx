@@ -296,7 +296,17 @@ const MasterAdminDashboard = () => {
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b'}} />
                       <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b'}} />
                       <Tooltip cursor={{fill: '#f1f5f9'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                      <Bar dataKey="Tenants" fill="#4f46e5" radius={[6, 6, 0, 0]} />
+                      <Bar dataKey="Tenants" radius={[6, 6, 0, 0]} barSize={35}>
+                        {chartData.map((entry, index) => {
+                          const colorsMap = {
+                            LIFETIME: '#8b5cf6', // purple-500
+                            PLATINUM: '#1e293b', // slate-800
+                            SILVER: '#64748b',   // slate-500
+                            TRIAL: '#3b82f6'     // blue-500
+                          };
+                          return <Cell key={`cell-${index}`} fill={colorsMap[entry.name] || '#4f46e5'} />;
+                        })}
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
