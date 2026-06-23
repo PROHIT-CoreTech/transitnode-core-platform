@@ -26,12 +26,15 @@ exports.registerTenant = async (req, res) => {
     const protocol = frontendDomain.includes('localhost') ? 'http' : 'https';
     const fullLoginUrl = `${protocol}://${customSubdomain}.${frontendDomain}/login`;
 
+    const upperPlanTier = planTier ? planTier.toUpperCase() : 'TRIAL';
+    const mappedPlanType = upperPlanTier === 'FREE' ? 'TRIAL' : upperPlanTier;
+
     const newTenant = new Tenant({
       companyName,
       registeredMobile,
       customSubdomain,
       fullLoginUrl,
-      planType: planTier ? planTier.toUpperCase() : 'TRIAL',
+      planType: mappedPlanType,
       licenseExpiresAt,
     });
 
