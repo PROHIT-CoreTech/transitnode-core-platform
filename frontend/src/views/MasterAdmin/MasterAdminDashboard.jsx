@@ -31,6 +31,15 @@ const MasterAdminDashboard = () => {
   // Success Modal State
   const [onboardSuccess, setOnboardSuccess] = useState(null);
 
+  // Filter States for Tenants Directory
+  const [tenantSearch, setTenantSearch] = useState('');
+  const [planFilter, setPlanFilter] = useState('ALL');
+
+  // Filter States for Transactions History
+  const [txSearch, setTxSearch] = useState('');
+  const [txPlanFilter, setTxPlanFilter] = useState('ALL');
+  const [txMethodFilter, setTxMethodFilter] = useState('ALL');
+
   const getHeaders = () => {
     const token = localStorage.getItem('token');
     return {
@@ -151,6 +160,38 @@ const MasterAdminDashboard = () => {
       company: tx.tenantId?.companyName || 'Unknown Tenant'
     };
   });
+
+  // 3. Filtered list for Tenants Directory
+  const filteredTenants = summary?.allTenants?.filter(tenant => {
+    const matchesSearch = 
+      (tenant.companyName || '').toLowerCase().includes(tenantSearch.toLowerCase()) ||
+      (tenant.customSubdomain || '').toLowerCase().includes(tenantSearch.toLowerCase()) ||
+      (tenant.registeredMobile || '').includes(tenantSearch);
+      
+    const matchesPlan = 
+      planFilter === 'ALL' || 
+      tenant.planType === planFilter;
+      
+    return matchesSearch && matchesPlan;
+  }) || [];
+
+  // 4. Filtered list for Transactions History
+  const filteredTransactions = summary?.recentTransactions?.filter(tx => {
+    const matchesSearch = 
+      (tx.tenantId?.companyName || '').toLowerCase().includes(txSearch.toLowerCase()) ||
+      (tx.paymentMethod || '').toLowerCase().includes(txSearch.toLowerCase()) ||
+      (tx.planType || '').toLowerCase().includes(txSearch.toLowerCase());
+      
+    const matchesPlan = 
+      txPlanFilter === 'ALL' || 
+      tx.planType === txPlanFilter;
+
+    const matchesMethod = 
+      txMethodFilter === 'ALL' || 
+      tx.paymentMethod === txMethodFilter;
+      
+    return matchesSearch && matchesPlan && matchesMethod;
+  }) || [];
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 p-8">
@@ -353,8 +394,38 @@ const MasterAdminDashboard = () => {
         {/* 2. Tenants Directory Tab */}
         {activeTab === 'tenants' && (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-200">
-            <div className="p-6 border-b border-slate-200">
-              <h2 className="text-xl font-bold text-slate-800">All Registered Tenants</h2>
+            <div className="p-6 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">All Registered Tenants</h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  Showing {filteredTenants.length} of {summary?.allTenants?.length || 0} total tenants
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search name, subdomain, mobile..."
+                    value={tenantSearch}
+                    onChange={(e) => setTenantSearch(e.target.value)}
+                    className="w-full sm:w-64 pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-900"
+                  />
+                  <div className="absolute left-3 top-2.5 text-slate-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                  </div>
+                </div>
+                <select
+                  value={planFilter}
+                  onChange={(e) => setPlanFilter(e.target.value)}
+                  className="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-900 font-medium"
+                >
+                  <option value="ALL">All Plans</option>
+                  <option value="TRIAL">Trial</option>
+                  <option value="SILVER">Silver</option>
+                  <option value="PLATINUM">Platinum</option>
+                  <option value="LIFETIME">Lifetime</option>
+                </select>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -370,8 +441,8 @@ const MasterAdminDashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="text-sm divide-y divide-slate-100">
-                  {summary?.allTenants?.length > 0 ? (
-                    summary.allTenants.map((tenant) => (
+                  {filteredTenants.length > 0 ? (
+                    filteredTenants.map((tenant) => (
                       <tr key={tenant._id} className="hover:bg-slate-50 transition-colors">
                         <td className="p-4 font-medium text-slate-900">{tenant.companyName}</td>
                         <td className="p-4 text-indigo-600">{tenant.customSubdomain}</td>
@@ -396,8 +467,8 @@ const MasterAdminDashboard = () => {
                         <td className="p-4 text-slate-500">{new Date(tenant.createdAt).toLocaleDateString()}</td>
                         <td className="p-4 text-right">
                           <button 
-                            onClick={() => fetchTenantDetails(tenant._id)}
-                            className="text-indigo-600 hover:text-indigo-800 font-medium text-sm transition-colors"
+                             onClick={() => fetchTenantDetails(tenant._id)}
+                             className="text-indigo-600 hover:text-indigo-800 font-medium text-sm transition-colors"
                           >
                             View Details
                           </button>
@@ -406,7 +477,7 @@ const MasterAdminDashboard = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="7" className="p-8 text-center text-slate-500">No tenants found.</td>
+                      <td colSpan="7" className="p-8 text-center text-slate-500 font-medium">No matching tenants found.</td>
                     </tr>
                   )}
                 </tbody>
@@ -474,11 +545,48 @@ const MasterAdminDashboard = () => {
         {/* 4. Transactions History Tab */}
         {activeTab === 'transactions' && (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-200">
-            <div className="p-6 border-b border-slate-200 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-slate-800">Subscription Transactions History</h2>
-              <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-                {summary?.recentTransactions?.length || 0} Transactions
-              </span>
+            <div className="p-6 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">Subscription Transactions History</h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  Showing {filteredTransactions.length} of {summary?.recentTransactions?.length || 0} total transactions
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search company or payment method..."
+                    value={txSearch}
+                    onChange={(e) => setTxSearch(e.target.value)}
+                    className="w-full sm:w-60 pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-900"
+                  />
+                  <div className="absolute left-3 top-2.5 text-slate-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                  </div>
+                </div>
+                <select
+                  value={txPlanFilter}
+                  onChange={(e) => setTxPlanFilter(e.target.value)}
+                  className="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-900 font-medium"
+                >
+                  <option value="ALL">All Plans</option>
+                  <option value="TRIAL">Trial</option>
+                  <option value="SILVER">Silver</option>
+                  <option value="PLATINUM">Platinum</option>
+                  <option value="LIFETIME">Lifetime</option>
+                </select>
+                <select
+                  value={txMethodFilter}
+                  onChange={(e) => setTxMethodFilter(e.target.value)}
+                  className="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-900 font-medium"
+                >
+                  <option value="ALL">All Methods</option>
+                  <option value="STRIPE">Stripe (Card)</option>
+                  <option value="OFFLINE_MANUAL">Offline (Manual)</option>
+                  <option value="backfill">System Backfill</option>
+                </select>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -492,8 +600,8 @@ const MasterAdminDashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="text-sm divide-y divide-slate-100">
-                  {summary?.recentTransactions?.length > 0 ? (
-                    summary.recentTransactions.map((tx) => (
+                  {filteredTransactions.length > 0 ? (
+                    filteredTransactions.map((tx) => (
                       <tr key={tx._id} className="hover:bg-slate-50 transition-colors">
                         <td className="p-4 font-medium text-slate-900">
                           {tx.tenantId?.companyName || (
@@ -540,7 +648,7 @@ const MasterAdminDashboard = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5" className="p-8 text-center text-slate-500">No transactions recorded.</td>
+                      <td colSpan="5" className="p-8 text-center text-slate-500 font-medium">No matching transactions found.</td>
                     </tr>
                   )}
                 </tbody>
