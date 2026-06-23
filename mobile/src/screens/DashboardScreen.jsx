@@ -43,7 +43,7 @@ const DashboardScreen = () => {
     origin: '',
     destination: '',
     commodity: '',
-    destinationCoords: '',
+    destinationCoords: '19.0760,72.8777', // Fallback to Mumbai Hub coordinates
     advanceCash: 0,
     status: 'DELIVERED'
   };

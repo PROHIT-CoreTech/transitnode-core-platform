@@ -53,6 +53,17 @@ const consolidatedInvoiceSchema = new mongoose.Schema(
     settledAt: {
       type: Date,
     },
+    portalStatus: { 
+      type: String, 
+      enum: ['NOT_UPLOADED', 'UPLOADED', 'DISPUTED'], 
+      default: 'NOT_UPLOADED' 
+    },
+    portalRefId: { 
+      type: String 
+    },
+    portalUploadedAt: { 
+      type: Date 
+    },
     generatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

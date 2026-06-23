@@ -1,4 +1,76 @@
 const ShipmentLedger = require('../models/NoSQL/ShipmentLedger');
+const https = require('https');
+
+const geocodeAddress = (address) => {
+  return new Promise((resolve) => {
+    if (!address) return resolve('19.0760,72.8777'); // default to Mumbai
+    
+    const cleanAddress = address.trim().toLowerCase();
+    
+    // Local hub dictionary for common test cases (instant, offline-resilient matching)
+    const COMMON_HUBS = {
+      'mumbai': '19.0760,72.8777',
+      'pune': '18.5204,73.8567',
+      'chennai': '13.0827,80.2707',
+      'delhi': '28.6139,77.2090',
+      'bangalore': '12.9716,77.5946',
+      'bengaluru': '12.9716,77.5946',
+      'hyderabad': '17.3850,78.4867',
+      'kolkata': '22.5726,88.3639',
+      'ahmedabad': '23.0225,72.5714',
+      'jaipur': '26.9124,75.7873',
+      'goa': '15.2993,74.1240',
+      'surat': '21.1702,72.8311',
+      'nagpur': '21.1458,79.0882'
+    };
+    
+    for (const [key, coords] of Object.entries(COMMON_HUBS)) {
+      if (cleanAddress.includes(key)) {
+        return resolve(coords);
+      }
+    }
+    
+    // Query OpenStreetMap Nominatim API using native https
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`;
+    
+    const options = {
+      headers: {
+        'User-Agent': 'TransitNode-ERP-Geocoding-Agent'
+      },
+      timeout: 3000 // 3 seconds timeout
+    };
+    
+    const req = https.get(url, options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const { lat, lon } = parsed[0];
+            return resolve(`${lat},${lon}`);
+          }
+        } catch (e) {
+          console.warn(`[WARNING] Geocoding parsing failed for "${address}":`, e.message);
+        }
+        resolve('19.0760,72.8777'); // default to Mumbai
+      });
+    });
+    
+    req.on('error', (err) => {
+      console.warn(`[WARNING] Geocoding API request failed for "${address}":`, err.message);
+      resolve('19.0760,72.8777'); // default to Mumbai
+    });
+    
+    req.on('timeout', () => {
+      req.destroy();
+      console.warn(`[WARNING] Geocoding API timeout for "${address}"`);
+      resolve('19.0760,72.8777'); // default to Mumbai
+    });
+  });
+};
 
 exports.createShipment = async (req, res) => {
   try {
@@ -29,6 +101,9 @@ exports.createShipment = async (req, res) => {
     // Base estimation logic
     const baseRateApplied = 5000; // Flat transport rate default
     const subtotal = baseRateApplied;
+    
+    // Dynamically resolve destination coordinates (using exact consignee address with hub name fallback)
+    const destinationCoords = await geocodeAddress(receiverAddress || destination);
     
     const newShipment = await ShipmentLedger.create({
       tenantId: req.user.tenantId, companyId: req.workspaceId,
@@ -77,6 +152,7 @@ exports.createShipment = async (req, res) => {
           driverPhone,
           origin,
           destination,
+          destinationCoords,
           commodityType
         }
       },
@@ -150,8 +226,13 @@ exports.listShipments = async (req, res) => {
 exports.getShipment = async (req, res) => {
   try {
     const { trackingId } = req.params;
-    // Public endpoint: trackingNumber is globally unique, no tenantId required
-    const shipment = await ShipmentLedger.findOne({ trackingNumber: trackingId });
+    // Public endpoint: trackingNumber or publicTrackingToken is globally unique, no tenantId required
+    const shipment = await ShipmentLedger.findOne({
+      $or: [
+        { trackingNumber: trackingId },
+        { publicTrackingToken: trackingId }
+      ]
+    });
     
     if (!shipment) {
       return res.status(404).json({ message: 'Shipment not found' });
@@ -178,7 +259,11 @@ exports.getStats = async (req, res) => {
 
 exports.getPendingInvoices = async (req, res) => {
   try {
-    const invoices = await ShipmentLedger.find({ 'accounting.paymentStatus': 'PENDING', tenantId: req.user.tenantId, companyId: req.workspaceId }).sort({ 'metadata.createdAt': -1 });
+    const invoices = await ShipmentLedger.find({ 
+      'accounting.invoiceGeneratedAt': { $exists: false }, 
+      tenantId: req.user.tenantId, 
+      companyId: req.workspaceId 
+    }).sort({ 'metadata.createdAt': -1 });
     res.status(200).json({ invoices });
   } catch (error) {
     console.error('Error fetching pending invoices:', error);

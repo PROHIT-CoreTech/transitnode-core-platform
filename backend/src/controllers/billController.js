@@ -25,7 +25,7 @@ const sendTransitSMS = async (receiverPhone, trackingUrl) => {
 exports.getPendingInvoices = async (req, res) => {
   try {
     let invoices = await ShipmentLedger.find({ 
-      'accounting.paymentStatus': 'PENDING',
+      'accounting.invoiceGeneratedAt': { $exists: false },
       'accounting.billingCycle': 'DAILY',
       'accounting.consolidatedInvoiceId': { $exists: false }
     }).populate('companyId').sort({ 'metadata.createdAt': -1 }).lean();
@@ -55,6 +55,13 @@ exports.getPendingInvoices = async (req, res) => {
 exports.settleInvoice = async (req, res) => {
   try {
     const { trackingNumber } = req.params;
+    
+    // Log the request payload for debugging
+    fs.appendFileSync(
+      path.join(__dirname, '../../error.log'),
+      `[DEBUG] settleInvoice called for trackingNumber: ${trackingNumber}, body: ${JSON.stringify(req.body)}\n`
+    );
+
     const { 
       baseFreightRate, 
       driverAdvanceCash, 
@@ -79,17 +86,44 @@ exports.settleInvoice = async (req, res) => {
       bankName
     } = req.body;
 
+    const baseFreightRateNum = Number(baseFreightRate) || 0;
+    const driverAdvanceCashNum = Number(driverAdvanceCash) || 0;
+    const fuelVoucherAmountNum = Number(fuelVoucherAmount) || 0;
+    const tollAllowanceNum = Number(tollAllowance) || 0;
+    const gstAmountNum = Number(gstAmount) || 0;
+    const grandTotalToClientNum = Number(grandTotalToClient) || 0;
+
     // Validate that financial values are not negative
-    if (baseFreightRate < 0 || driverAdvanceCash < 0 || fuelVoucherAmount < 0 || tollAllowance < 0 || gstAmount < 0 || grandTotalToClient < 0) {
+    if (baseFreightRateNum < 0 || driverAdvanceCashNum < 0 || fuelVoucherAmountNum < 0 || tollAllowanceNum < 0 || gstAmountNum < 0 || grandTotalToClientNum < 0) {
+      fs.appendFileSync(
+        path.join(__dirname, '../../error.log'),
+        `[WARNING] Financial values validation failed: baseFreightRate=${baseFreightRateNum}, driverAdvanceCash=${driverAdvanceCashNum}, fuelVoucherAmount=${fuelVoucherAmountNum}, tollAllowance=${tollAllowanceNum}, gstAmount=${gstAmountNum}, grandTotalToClient=${grandTotalToClientNum}\n`
+      );
       return res.status(400).json({ message: 'Financial values cannot be negative' });
     }
 
     const shipment = await ShipmentLedger.findOne({ trackingNumber });
     if (!shipment) {
+      fs.appendFileSync(
+        path.join(__dirname, '../../error.log'),
+        `[ERROR] Shipment not found: ${trackingNumber}\n`
+      );
       return res.status(404).json({ message: 'Shipment not found' });
     }
 
+    // Defensive check to initialize accounting if missing
+    if (!shipment.accounting) {
+      shipment.accounting = {
+        paymentStatus: 'PENDING',
+        billingCycle: 'DAILY'
+      };
+    }
+
     if (shipment.accounting.paymentStatus === 'PAID') {
+      fs.appendFileSync(
+        path.join(__dirname, '../../error.log'),
+        `[ERROR] Invoice already settled: ${trackingNumber}\n`
+      );
       return res.status(400).json({ message: 'Invoice already settled' });
     }
 
@@ -99,11 +133,11 @@ exports.settleInvoice = async (req, res) => {
     }
     
     // Save base logic inside accounting
-    shipment.accounting.accountantId = req.user?.id;
-    shipment.accounting.baseRateApplied = baseFreightRate;
-    shipment.accounting.driverAdvanceCash = driverAdvanceCash || 0;
-    shipment.accounting.fuelVoucherAmount = fuelVoucherAmount || 0;
-    shipment.accounting.tollAllowance = tollAllowance || 0;
+    shipment.accounting.accountantId = req.user?.userId || req.user?.id;
+    shipment.accounting.baseRateApplied = baseFreightRateNum;
+    shipment.accounting.driverAdvanceCash = driverAdvanceCashNum;
+    shipment.accounting.fuelVoucherAmount = fuelVoucherAmountNum;
+    shipment.accounting.tollAllowance = tollAllowanceNum;
     
     // Save LR Specific Charges & Payments
     shipment.accounting.processingCharge = Number(processingCharge) || 0;
@@ -120,16 +154,16 @@ exports.settleInvoice = async (req, res) => {
     shipment.accounting.chequeNeftNo = chequeNeftNo || '';
     shipment.accounting.bankName = bankName || '';
     
-    shipment.accounting.subtotal = baseFreightRate; // Or derived if needed
+    shipment.accounting.subtotal = baseFreightRateNum; // Or derived if needed
     
     shipment.accounting.tax = {
       gstPercentage: rcmApplied ? 5 : 18,
-      gstAmount: gstAmount,
+      gstAmount: gstAmountNum,
       rcmApplied: Boolean(rcmApplied)
     };
     
-    shipment.accounting.grandTotal = grandTotalToClient;
-    shipment.accounting.paymentStatus = 'PAID';
+    shipment.accounting.grandTotal = grandTotalToClientNum;
+    shipment.accounting.paymentStatus = (paymentType === 'PAID') ? 'PAID' : 'PENDING';
     shipment.accounting.paymentMethod = paymentMethod || 'SYSTEM'; 
     shipment.accounting.invoiceGeneratedAt = new Date();
 
@@ -141,21 +175,18 @@ exports.settleInvoice = async (req, res) => {
 
     await shipment.save();
 
-    // Trigger Automated Tracking Link SMS
-    const trackingUrl = `https://track.transitnode.com/status/${shipment.publicTrackingToken}`;
-    try {
-      const receiverPhone = shipment.logistics?.receiver?.phone;
-      if (receiverPhone) {
-        await sendTransitSMS(receiverPhone, trackingUrl);
-      }
-    } catch (smsError) {
-      console.error('Error sending Tracking SMS:', smsError);
-      // Gracefully fail, DO NOT throw to prevent rolling back the core database invoice state write.
-    }
+    fs.appendFileSync(
+      path.join(__dirname, '../../error.log'),
+      `[SUCCESS] Freight invoice settled successfully: ${trackingNumber}\n`
+    );
 
     res.status(200).json({ message: 'Freight invoice settled successfully', shipment });
   } catch (error) {
     console.error('Error settling freight invoice:', error);
+    fs.appendFileSync(
+      path.join(__dirname, '../../error.log'),
+      `[EXCEPTION] Error settling freight invoice: ${error.message}\nStack: ${error.stack}\n`
+    );
     res.status(500).json({ message: 'Server error settling invoice' });
   }
 };
@@ -303,33 +334,44 @@ exports.generatePdf = async (req, res) => {
     }
   };
 
-  exports.getPendingMonthlyBySupplier = async (req, res) => {
-    try {
-      const shipments = await ShipmentLedger.find({
-        tenantId: req.user.tenantId,
-        'accounting.paymentStatus': 'PENDING',
-        'accounting.billingCycle': 'MONTHLY',
-        'accounting.consolidatedInvoiceId': { $exists: false }
-      }).populate('companyId');
-  
-      // Group by Supplier Name (logistics.receiver.name) AND Company (companyId._id)
-      const grouped = {};
-      shipments.forEach(s => {
-        const supplier = s.logistics?.receiver?.name || 'Unknown Supplier';
-        const companyIdStr = s.companyId ? s.companyId._id.toString() : 'UNKNOWN_COMPANY';
-        const key = `${supplier}_||_${companyIdStr}`;
-        if (!grouped[key]) {
-          grouped[key] = {
-            supplierName: supplier,
-            company: s.companyId || null,
-            shipmentCount: 0,
-            estimatedSubtotal: 0
-          };
-        }
-        grouped[key].shipmentCount += 1;
-        // Estimate value based on baseRateApplied or fallback
-        grouped[key].estimatedSubtotal += (s.accounting?.baseRateApplied || s.accounting?.subtotal || 0);
-      });
+exports.getPendingMonthlyBySupplier = async (req, res) => {
+  try {
+    const Tenant = require('../models/NoSQL/Tenant');
+    const tenant = await Tenant.findById(req.user.tenantId).lean();
+    const mainHqName = tenant ? `${tenant.companyName} (Main HQ)` : 'Main HQ';
+
+    const shipments = await ShipmentLedger.find({
+      tenantId: req.user.tenantId,
+      'accounting.paymentStatus': 'PENDING',
+      'accounting.billingCycle': 'MONTHLY',
+      'accounting.consolidatedInvoiceId': { $exists: false }
+    }).populate('companyId');
+
+    // Group by Supplier Name (logistics.receiver.name) AND Company (companyId._id)
+    const grouped = {};
+    shipments.forEach(s => {
+      const supplier = s.logistics?.receiver?.name || 'Unknown Supplier';
+      const companyIdStr = s.companyId ? s.companyId._id.toString() : 'MAIN_HQ';
+      const key = `${supplier}_||_${companyIdStr}`;
+      if (!grouped[key]) {
+        grouped[key] = {
+          supplierName: supplier,
+          company: s.companyId ? s.companyId : {
+            _id: req.user.tenantId,
+            companyName: mainHqName,
+            isMainTenant: true,
+            address: tenant ? tenant.address : '',
+            gstin: tenant ? tenant.gstin : '',
+            pan: tenant ? tenant.pan : ''
+          },
+          shipmentCount: 0,
+          estimatedSubtotal: 0
+        };
+      }
+      grouped[key].shipmentCount += 1;
+      // Estimate value based on baseRateApplied or fallback
+      grouped[key].estimatedSubtotal += (s.accounting?.baseRateApplied || s.accounting?.subtotal || 0);
+    });
 
     const Supplier = require('../models/NoSQL/Supplier');
     const result = Object.values(grouped);
@@ -354,42 +396,51 @@ exports.generatePdf = async (req, res) => {
   }
 };
 
-  exports.createConsolidatedInvoice = async (req, res) => {
-    try {
-      const { supplierName, companyId, taxPercentage, overrideSubtotal } = req.body;
-      if (!supplierName) {
-        return res.status(400).json({ message: 'Supplier name is required' });
-      }
-  
-      // Find all unbilled MONTHLY shipments for this supplier and company
-      const query = {
-        tenantId: req.user.tenantId,
-        'logistics.receiver.name': supplierName,
-        'accounting.paymentStatus': 'PENDING',
-        'accounting.billingCycle': 'MONTHLY',
-        'accounting.consolidatedInvoiceId': { $exists: false }
-      };
-      if (companyId) {
+exports.createConsolidatedInvoice = async (req, res) => {
+  try {
+    const { supplierName, companyId, taxPercentage, overrideSubtotal } = req.body;
+    if (!supplierName) {
+      return res.status(400).json({ message: 'Supplier name is required' });
+    }
+
+    // Find all unbilled MONTHLY shipments for this supplier and company
+    const query = {
+      tenantId: req.user.tenantId,
+      'logistics.receiver.name': supplierName,
+      'accounting.paymentStatus': 'PENDING',
+      'accounting.billingCycle': 'MONTHLY',
+      'accounting.consolidatedInvoiceId': { $exists: false }
+    };
+    
+    if (companyId) {
+      if (companyId.toString() === req.user.tenantId.toString()) {
+        // Main HQ shipments can have companyId as null or explicitly the tenantId
+        query.$or = [
+          { companyId: null },
+          { companyId: req.user.tenantId }
+        ];
+      } else {
         query.companyId = companyId;
       }
-      
-      const shipments = await ShipmentLedger.find(query);
-  
-      if (shipments.length === 0) {
-        return res.status(400).json({ message: 'No unbilled monthly shipments found for this supplier' });
+    }
+    
+    const shipments = await ShipmentLedger.find(query);
+
+    if (shipments.length === 0) {
+      return res.status(400).json({ message: 'No unbilled monthly shipments found for this supplier' });
+    }
+
+    let subtotal = 0;
+    if (overrideSubtotal !== undefined) {
+      subtotal = Number(overrideSubtotal);
+    } else {
+      for (const shipment of shipments) {
+        subtotal += shipment.accounting.subtotal || shipment.accounting.baseRateApplied || 0;
       }
-  
-      let subtotal = 0;
-      if (overrideSubtotal !== undefined) {
-        subtotal = Number(overrideSubtotal);
-      } else {
-        for (const shipment of shipments) {
-          subtotal += shipment.accounting.subtotal || shipment.accounting.baseRateApplied || 0;
-        }
-      }
-  
-      const taxAmount = subtotal * ((taxPercentage || 18) / 100);
-      const grandTotal = subtotal + taxAmount;
+    }
+
+    const taxAmount = subtotal * ((taxPercentage || 18) / 100);
+    const grandTotal = subtotal + taxAmount;
 
     const invoiceId = 'MI-' + new Date().getFullYear() + '-' + Math.floor(10000 + Math.random() * 90000);
 
@@ -397,7 +448,7 @@ exports.generatePdf = async (req, res) => {
     const newInvoice = await ConsolidatedInvoice.create({
       invoiceId,
       tenantId: req.user.tenantId,
-      companyId: companyId || req.workspaceId,
+      companyId: (companyId && companyId.toString() !== req.user.tenantId.toString()) ? companyId : null,
       supplierName,
       shipmentIds: shipments.map(s => s._id),
       financials: { subtotal, taxAmount, grandTotal },
@@ -445,7 +496,21 @@ exports.getConsolidatedInvoices = async (req, res) => {
       tenantId: req.user.tenantId
     }).populate('companyId').sort({ createdAt: -1 }).lean();
     
+    const Tenant = require('../models/NoSQL/Tenant');
+    const tenant = await Tenant.findById(req.user.tenantId).lean();
+    const mainHqName = tenant ? `${tenant.companyName} (Main HQ)` : 'Main HQ';
+
     for (let inv of invoices) {
+      if (!inv.companyId) {
+        inv.companyId = {
+          _id: req.user.tenantId,
+          companyName: mainHqName,
+          isMainTenant: true,
+          address: tenant ? tenant.address : '',
+          gstin: tenant ? tenant.gstin : '',
+          pan: tenant ? tenant.pan : ''
+        };
+      }
       const sup = await Supplier.findOne({ tenantId: req.user.tenantId, supplierName: inv.supplierName });
       if (sup) {
         inv.supplierAddress = sup.address;
@@ -558,11 +623,18 @@ exports.exportConsolidatedInvoice = async (req, res) => {
       col.width = widths[i];
     });
 
+    let sumOfOriginalSubtotals = 0;
+    shipments.forEach(s => {
+      sumOfOriginalSubtotals += (s.accounting?.baseRateApplied || s.accounting?.subtotal || 0);
+    });
+
+    const subtotalFactor = sumOfOriginalSubtotals > 0 ? (invoice.financials.subtotal / sumOfOriginalSubtotals) : 0;
     const taxRate = invoice.financials.subtotal > 0 ? (invoice.financials.taxAmount / invoice.financials.subtotal) : 0;
 
     // Add data rows
     shipments.forEach((shipment, index) => {
-      const subtotal = shipment.accounting?.baseRateApplied || shipment.accounting?.subtotal || 0;
+      const originalSubtotal = shipment.accounting?.baseRateApplied || shipment.accounting?.subtotal || 0;
+      const subtotal = originalSubtotal * subtotalFactor;
       const amt = subtotal + (subtotal * taxRate);
       
       const dateObj = new Date(shipment.metadata.createdAt);

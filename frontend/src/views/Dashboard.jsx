@@ -5,6 +5,9 @@ import { TenantBrandingContext } from '../context/TenantBrandingContext';
 import IntakeDashboard from './Receptionist/IntakeDashboard';
 import BillingDashboard from './Accountant/BillingDashboard';
 import AccountantPayroll from './Accountant/AccountantPayroll';
+import BookkeepingDashboard from './Accountant/BookkeepingDashboard';
+import BankMatchingDashboard from './Accountant/BankMatchingDashboard';
+import OutstandingDashboard from './Accountant/OutstandingDashboard';
 import YardArrivals from './GateOperations/YardArrivals';
 import { Navigate } from 'react-router-dom';
 
@@ -77,7 +80,7 @@ const Dashboard = () => {
       case 'ACCOUNTANT':
         return (
           <div style={{ marginTop: '24px' }}>
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px', flexWrap: 'wrap' }}>
               <button 
                 onClick={() => setAccountantTab('BILLING')}
                 style={{
@@ -90,7 +93,49 @@ const Dashboard = () => {
                   fontWeight: accountantTab === 'BILLING' ? 'bold' : 'normal'
                 }}
               >
-                Freight Billing
+                Billing & Invoices
+              </button>
+              <button 
+                onClick={() => setAccountantTab('BOOKKEEPING')}
+                style={{
+                  background: accountantTab === 'BOOKKEEPING' ? 'rgba(168, 85, 247, 0.2)' : 'transparent',
+                  border: accountantTab === 'BOOKKEEPING' ? '1px solid #a855f7' : '1px solid transparent',
+                  color: accountantTab === 'BOOKKEEPING' ? '#c084fc' : 'var(--text-secondary)',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: accountantTab === 'BOOKKEEPING' ? 'bold' : 'normal'
+                }}
+              >
+                Expense & Bookkeeping
+              </button>
+              <button 
+                onClick={() => setAccountantTab('BANK_MATCHING')}
+                style={{
+                  background: accountantTab === 'BANK_MATCHING' ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
+                  border: accountantTab === 'BANK_MATCHING' ? '1px solid #6366f1' : '1px solid transparent',
+                  color: accountantTab === 'BANK_MATCHING' ? '#818cf8' : 'var(--text-secondary)',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: accountantTab === 'BANK_MATCHING' ? 'bold' : 'normal'
+                }}
+              >
+                Bank & Matching
+              </button>
+              <button 
+                onClick={() => setAccountantTab('OUTSTANDING')}
+                style={{
+                  background: accountantTab === 'OUTSTANDING' ? 'rgba(245, 158, 11, 0.2)' : 'transparent',
+                  border: accountantTab === 'OUTSTANDING' ? '1px solid #f59e0b' : '1px solid transparent',
+                  color: accountantTab === 'OUTSTANDING' ? '#fbbf24' : 'var(--text-secondary)',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: accountantTab === 'OUTSTANDING' ? 'bold' : 'normal'
+                }}
+              >
+                Outstanding
               </button>
               <button 
                 onClick={() => setAccountantTab('PAYROLL')}
@@ -107,7 +152,11 @@ const Dashboard = () => {
                 Payroll & Salary Slips
               </button>
             </div>
-            {accountantTab === 'BILLING' ? <BillingDashboard /> : <AccountantPayroll />}
+            {accountantTab === 'BILLING' && <BillingDashboard />}
+            {accountantTab === 'BOOKKEEPING' && <BookkeepingDashboard />}
+            {accountantTab === 'BANK_MATCHING' && <BankMatchingDashboard />}
+            {accountantTab === 'OUTSTANDING' && <OutstandingDashboard />}
+            {accountantTab === 'PAYROLL' && <AccountantPayroll />}
           </div>
         );
       default:

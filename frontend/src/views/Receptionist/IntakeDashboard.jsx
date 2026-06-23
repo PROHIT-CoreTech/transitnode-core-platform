@@ -508,16 +508,21 @@ const IntakeDashboard = () => {
                         className={inputClasses('receiverPostalCode')} onFocus={() => setFocusedField('receiverPostalCode')} onBlur={() => setFocusedField(null)} />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 items-center">
-                    <div className="flex items-center gap-2">
-                      <input type="checkbox" id="receiverSelfCollect" name="receiverSelfCollect" checked={formData.receiverSelfCollect} onChange={handleChange} className="w-4 h-4 accent-purple-400 cursor-pointer" />
-                      <label htmlFor="receiverSelfCollect" className="text-xs text-gray-300 font-bold select-none cursor-pointer">Self Collect</label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="relative">
+                      <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-purple-400">Receiver Phone / Gate Contact</label>
+                      <input type="text" name="receiverPhone" value={formData.receiverPhone} onChange={handleChange} required 
+                        className={inputClasses('receiverPhone')} onFocus={() => setFocusedField('receiverPhone')} onBlur={() => setFocusedField(null)} placeholder="e.g. 9876543210" />
                     </div>
                     <div className="relative">
                       <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[8px] font-bold text-purple-400">Client / Store Code</label>
                       <input type="text" name="receiverClientCode" value={formData.receiverClientCode} onChange={handleChange} 
                         className={inputClasses('receiverClientCode')} onFocus={() => setFocusedField('receiverClientCode')} onBlur={() => setFocusedField(null)} placeholder="Optional" />
                     </div>
+                  </div>
+                  <div className="flex items-center gap-2 pt-1">
+                    <input type="checkbox" id="receiverSelfCollect" name="receiverSelfCollect" checked={formData.receiverSelfCollect} onChange={handleChange} className="w-4 h-4 accent-purple-400 cursor-pointer" />
+                    <label htmlFor="receiverSelfCollect" className="text-xs text-gray-300 font-bold select-none cursor-pointer">Self Collect</label>
                   </div>
                 </div>
               </div>

@@ -63,6 +63,7 @@ const shipmentLedgerSchema = new mongoose.Schema(
         driverPhone: { type: String },
         origin: { type: String },
         destination: { type: String },
+        destinationCoords: { type: String },
         commodityType: { type: String },
       },
     },
@@ -101,6 +102,9 @@ const shipmentLedgerSchema = new mongoose.Schema(
       invoiceGeneratedAt: { type: Date },
       generatedDeliveryOtp: { type: String },
       consolidatedInvoiceId: { type: mongoose.Schema.Types.ObjectId, ref: 'ConsolidatedInvoice' },
+      portalStatus: { type: String, enum: ['NOT_UPLOADED', 'UPLOADED', 'DISPUTED'], default: 'NOT_UPLOADED' },
+      portalRefId: { type: String },
+      portalUploadedAt: { type: Date },
     },
     lrCopyUrl: { type: String },
     podStatus: { 

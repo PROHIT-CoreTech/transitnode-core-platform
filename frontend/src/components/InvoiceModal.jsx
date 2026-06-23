@@ -5,21 +5,64 @@ import AccountantInvoiceForm from './AccountantInvoiceForm';
 const InvoiceModal = ({ invoice, orientation = 'landscape', onClose }) => {
   if (!invoice) return null;
 
-  const baseRate = invoice.calculated?.baseFreightRate || invoice.accounting?.subtotal || 0;
+  const baseRate = invoice.calculated?.baseFreightRate || invoice.accounting?.baseRateApplied || invoice.accounting?.subtotal || 0;
   const rcmApplied = invoice.calculated?.rcmApplied || invoice.accounting?.tax?.rcmApplied || false;
   const cgst = invoice.calculated?.cgst || ((invoice.accounting?.tax?.gstAmount || 0) / 2);
   const sgst = invoice.calculated?.sgst || ((invoice.accounting?.tax?.gstAmount || 0) / 2);
+  const gstAmount = invoice.calculated?.gstAmount || invoice.accounting?.tax?.gstAmount || 0;
   const grandTotal = invoice.calculated?.grandTotal || invoice.accounting?.grandTotal || 0;
+
+  const processingCharge = invoice.calculated?.processingCharge || invoice.accounting?.processingCharge || 0;
+  const fuelSurcharge = invoice.calculated?.fuelSurcharge || invoice.accounting?.fuelSurcharge || 0;
+  const rovCharge = invoice.calculated?.rovCharge || invoice.accounting?.rovCharge || 0;
+  const fodCharge = invoice.calculated?.fodCharge || invoice.accounting?.fodCharge || 0;
+  const handlingCharge = invoice.calculated?.handlingCharge || invoice.accounting?.handlingCharge || 0;
+  const codDodCharge = invoice.calculated?.codDodCharge || invoice.accounting?.codDodCharge || 0;
+  const specialDeliveryCharge = invoice.calculated?.specialDeliveryCharge || invoice.accounting?.specialDeliveryCharge || 0;
+  const otherCharges = invoice.calculated?.otherCharges || invoice.accounting?.otherCharges || 0;
+
+  const paymentType = invoice.calculated?.paymentType || invoice.accounting?.paymentType || 'CREDIT';
+  const modeOfPayment = invoice.calculated?.modeOfPayment || invoice.accounting?.modeOfPayment || 'NEFT_RTGS';
+  const chequeNeftNo = invoice.calculated?.chequeNeftNo || invoice.accounting?.chequeNeftNo || '';
+  const bankName = invoice.calculated?.bankName || invoice.accounting?.bankName || '';
+
+  const subTotal = baseRate + Number(processingCharge) + Number(fuelSurcharge) + Number(rovCharge) + Number(fodCharge) + Number(handlingCharge) + Number(codDodCharge) + Number(specialDeliveryCharge) + Number(otherCharges);
 
   const formProps = {
     invoice,
     baseFreightRate: baseRate,
     setBaseFreightRate: () => {},
-    rcmApplied,
-    setRcmApplied: () => {},
+    processingCharge,
+    setProcessingCharge: () => {},
+    fuelSurcharge,
+    setFuelSurcharge: () => {},
+    rovCharge,
+    setRovCharge: () => {},
+    fodCharge,
+    setFodCharge: () => {},
+    handlingCharge,
+    setHandlingCharge: () => {},
+    codDodCharge,
+    setCodDodCharge: () => {},
+    specialDeliveryCharge,
+    setSpecialDeliveryCharge: () => {},
+    otherCharges,
+    setOtherCharges: () => {},
+    paymentType,
+    setPaymentType: () => {},
+    modeOfPayment,
+    setModeOfPayment: () => {},
+    chequeNeftNo,
+    setChequeNeftNo: () => {},
+    bankName,
+    setBankName: () => {},
+    subTotal,
+    gstAmount,
     cgst,
     sgst,
     grandTotal,
+    rcmApplied,
+    setRcmApplied: () => {},
     companyName: invoice.companyId?.companyName || undefined,
     companyAddress: invoice.companyId ? (invoice.companyId.address || "N/A") : undefined,
     companyGstin: invoice.companyId ? (invoice.companyId.gstin || "N/A") : undefined,

@@ -1,5 +1,20 @@
 const ShipmentLedger = require('../models/NoSQL/ShipmentLedger');
 const Device = require('../models/NoSQL/Device');
+const crypto = require('crypto');
+
+const sendTransitSMS = async (receiverPhone, trackingUrl, publicTrackingToken) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      console.log(`\n======================================================`);
+      console.log(`[EXTERNAL SMS GATEWAY MOCK] Dispatching Tracking Link...`);
+      console.log(`To: ${receiverPhone || 'Unknown'}`);
+      console.log(`Message: Your cargo is dispatched and IN_TRANSIT! Track live status here: ${trackingUrl}`);
+      console.log(`[DEBUG LOCAL LINK] http://sarthak.localhost:3001/tracker/${publicTrackingToken}`);
+      console.log(`======================================================\n`);
+      resolve(true);
+    }, 500);
+  });
+};
 
 exports.verifyDeliveryOtp = async (req, res) => {
   try {
@@ -98,6 +113,11 @@ exports.startTrip = async (req, res) => {
       return res.status(400).json({ message: 'Shipment must be READY_FOR_DISPATCH to start trip' });
     }
 
+    // Generate public tracking token if not set
+    if (!shipment.publicTrackingToken) {
+      shipment.publicTrackingToken = crypto.randomBytes(16).toString('hex');
+    }
+
     // Update shipment status
     shipment.status = 'IN_TRANSIT';
     await shipment.save();
@@ -118,6 +138,21 @@ exports.startTrip = async (req, res) => {
         { vehicleRegistration: vehicleReg, tenantId: req.user.tenantId },
         { status: 'ON_TRIP' }
       );
+    }
+
+    // Trigger Automated Tracking Link SMS
+    const trackingUrl = `https://track.transitnode.com/status/${shipment.publicTrackingToken}`;
+    try {
+      const receiverPhone = shipment.logistics?.receiver?.phone;
+      console.log(`[DEBUG] Attempting to send tracking SMS. receiverPhone: ${receiverPhone || 'undefined'}, publicTrackingToken: ${shipment.publicTrackingToken}`);
+      if (receiverPhone) {
+        await sendTransitSMS(receiverPhone, trackingUrl, shipment.publicTrackingToken);
+      } else {
+        console.log(`[WARNING] No receiver phone number found on shipment ${shipment.trackingNumber}. Printing mock SMS to console for local testing.`);
+        await sendTransitSMS('No Recipient Phone (Local Debug Mode)', trackingUrl, shipment.publicTrackingToken);
+      }
+    } catch (smsError) {
+      console.error('Error sending Tracking SMS:', smsError);
     }
 
     res.status(200).json({ message: 'Trip started successfully', shipment });

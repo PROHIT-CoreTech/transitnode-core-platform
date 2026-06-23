@@ -51,7 +51,7 @@ router.get('/active-trip', verifyToken, async (req, res) => {
       commodity: activeShipment.logistics?.transport?.commodityType || 'General Cargo',
       advanceCash: activeShipment.accounting?.driverAdvanceCash || 0,
       status: activeShipment.status,
-      destinationCoords: '18.5204,73.8567' // Mock coordinates for Pune (or dynamic)
+      destinationCoords: activeShipment.logistics?.transport?.destinationCoords || '18.5204,73.8567'
     };
 
     return res.status(200).json({ data: formattedTrip });
