@@ -159,10 +159,8 @@ const PricingPortal = () => {
             Start 10-Day Trial
           </button>
         </nav>
-      </div>
-
-      {/* Hero Segment */}
-      <header className="container mx-auto px-6 py-16 md:py-24 text-center max-w-5xl relative">
+      </div>      {/* Hero Segment */}
+      <header className="container mx-auto px-6 pt-16 pb-8 md:pt-24 md:pb-12 text-center max-w-5xl relative">
         <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px]"></div>
         
         <div className="inline-block mb-4 px-5 py-2 rounded-full bg-slate-900/80 border border-teal-500/20 text-teal-400 text-sm font-bold tracking-widest shadow-sm uppercase">
@@ -180,9 +178,9 @@ const PricingPortal = () => {
           Scale your operations with automated telemetry tracking, localized multi-language driver applications, and direct corporate Tally ERP export files.
         </p>
       </header>
-
+ 
       {/* Fleet Pricing Section */}
-      <section className="container mx-auto px-6 py-16 md:py-20 relative z-10">
+      <section className="container mx-auto px-6 pt-8 pb-16 md:pt-10 md:pb-20 relative z-10">
         <div className="text-center mb-12 max-w-2xl mx-auto">
           <div className="inline-block mb-4 px-5 py-2 rounded-full bg-slate-800/80 border border-teal-500/20 text-teal-400 text-sm font-bold tracking-widest uppercase">
             Fleet Subscription Tiers
