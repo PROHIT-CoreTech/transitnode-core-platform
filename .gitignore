@@ -67,8 +67,8 @@ web_modules/
 
 # Block configuration profiles from accidentally leaking onto public GitHub repos
 .env
-.env.local
-.env.staging
+.env.*
+!.env.example
 node_modules/
 
 # parcel-bundler cache (https://parceljs.org/)

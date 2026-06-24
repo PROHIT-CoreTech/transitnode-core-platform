@@ -8,13 +8,24 @@ mongoose.plugin(tenantGuard);
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI, {
-      // These options are now default in Mongoose 6+, but good for documentation
-      // maxPoolSize: 10
-    });
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    let mongoUri = process.env.MONGO_URI;
+    const env = process.env.NODE_ENV || 'development';
+    
+    if (mongoUri && mongoUri.includes('.mongodb.net/')) {
+      const dbNameMap = {
+        development: 'transitnode-dev',
+        staging: 'transitnode-staging',
+        production: 'transitnode-prod'
+      };
+      const dbName = dbNameMap[env] || 'transitnode-dev';
+      // Replaces the database name segment in the connection string
+      mongoUri = mongoUri.replace(/\.mongodb\.net\/([^?]+)/, `.mongodb.net/${dbName}`);
+    }
+
+    const conn = await mongoose.connect(mongoUri);
+    console.log(`MongoDB Connected [${env.toUpperCase()}]: ${conn.connection.host}/${conn.connection.name}`);
   } catch (error) {
-    console.error(`Error connecting to MongoDB: ${error.message}`);
+    console.error(`Error connecting to MongoDB [${process.env.NODE_ENV}]: ${error.message}`);
     process.exit(1);
   }
 };
