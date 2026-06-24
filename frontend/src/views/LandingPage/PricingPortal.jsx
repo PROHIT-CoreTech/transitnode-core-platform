@@ -153,7 +153,7 @@ const PricingPortal = () => {
         <nav className="container mx-auto px-4 md:px-6 py-3 md:py-4 flex justify-between items-center">
           <div className="flex items-center space-x-2 md:space-x-3 min-w-0">
             <BrandLogo className="h-8 md:h-10 w-auto object-contain flex-shrink-0" />
-            <img src={brandName} alt="PROHIT CoreTech" className="h-6 md:h-8 w-auto object-contain hidden sm:block" style={{ transform: 'scaleX(1.25)', transformOrigin: 'left center' }} />
+            <img src={brandName} alt="PROHIT CoreTech" className="h-5 sm:h-6 md:h-8 w-auto object-contain" style={{ transform: 'scaleX(1.25)', transformOrigin: 'left center' }} />
           </div>
           <button onClick={() => { setSelectedPlan('free'); setShowModal(true); }} className="bg-teal-600 hover:bg-teal-500 text-white px-4 md:px-7 py-2 md:py-2.5 rounded-full font-bold transition-all duration-300 shadow-lg shadow-teal-600/30 active:scale-95 text-xs md:text-sm whitespace-nowrap flex-shrink-0">
             Start 10-Day Trial
