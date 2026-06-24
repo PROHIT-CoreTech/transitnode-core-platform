@@ -114,13 +114,18 @@ const AppRouter = () => {
   return (
     <React.Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f8fafc' }}><span className="text-slate-500 font-medium">Loading Interface...</span></div>}>
       <Routes>
-        <Route path="/" element={
-          tenantState === 'MAIN_LANDING_PAGE' ? (
-             user ? <Navigate to="/dashboard" /> : <PricingPortal />
-          ) : (
-             user ? <Navigate to="/dashboard" /> : <Navigate to="/login" />
-          )
-        } />
+        <Route path="/" element={(() => {
+          const hostname = window.location.hostname;
+          const subdomain = hostname.split('.')[0];
+          if (tenantState === 'MAIN_LANDING_PAGE') {
+            return user
+              ? (subdomain === 'masteradmin' ? <Navigate to="/master-admin" /> : <Navigate to="/dashboard" />)
+              : <PricingPortal />;
+          }
+          return user
+            ? (subdomain === 'masteradmin' ? <Navigate to="/master-admin" /> : <Navigate to="/dashboard" />)
+            : <Navigate to="/login" />;
+        })()} />
         <Route path="/login" element={<Login />} />
         <Route path="/magic-login/:token" element={<MagicLogin />} />
         <Route path="/tracker/:trackingId" element={<PublicTracker />} />

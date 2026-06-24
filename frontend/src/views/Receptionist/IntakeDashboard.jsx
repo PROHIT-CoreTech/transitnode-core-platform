@@ -455,7 +455,7 @@ const IntakeDashboard = () => {
                     <input type="text" name="senderAddress" value={formData.senderAddress} onChange={handleChange} required 
                       className={inputClasses('senderAddress')} onFocus={() => setFocusedField('senderAddress')} onBlur={() => setFocusedField(null)} />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="relative">
                       <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-cyan-400">GST No. (Optional)</label>
                       <input type="text" name="senderGstin" value={formData.senderGstin} onChange={handleChange} 
@@ -496,7 +496,7 @@ const IntakeDashboard = () => {
                     <input type="text" name="receiverAddress" value={formData.receiverAddress} onChange={handleChange} required 
                       className={inputClasses('receiverAddress')} onFocus={() => setFocusedField('receiverAddress')} onBlur={() => setFocusedField(null)} />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="relative">
                       <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-purple-400">GST No. (Optional)</label>
                       <input type="text" name="receiverGstin" value={formData.receiverGstin} onChange={handleChange} 
@@ -508,7 +508,7 @@ const IntakeDashboard = () => {
                         className={inputClasses('receiverPostalCode')} onFocus={() => setFocusedField('receiverPostalCode')} onBlur={() => setFocusedField(null)} />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="relative">
                       <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-purple-400">Receiver Phone / Gate Contact</label>
                       <input type="text" name="receiverPhone" value={formData.receiverPhone} onChange={handleChange} required 

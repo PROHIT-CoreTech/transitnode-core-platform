@@ -194,20 +194,20 @@ const MasterAdminDashboard = () => {
   }) || [];
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 p-8">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 p-4 md:p-8">
       
       {/* Header */}
-      <div className="flex justify-between items-center mb-8 bg-slate-900 text-white p-6 rounded-xl shadow-lg">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Global Command Center</h1>
-          <p className="text-slate-400 mt-1">Master User Interface</p>
+      <div className="flex justify-between items-center mb-6 md:mb-8 bg-slate-900 text-white p-4 md:p-6 rounded-xl shadow-lg">
+        <div className="min-w-0 flex-1 mr-4">
+          <h1 className="text-xl md:text-3xl font-bold tracking-tight truncate">Global Command Center</h1>
+          <p className="text-slate-400 mt-1 text-xs md:text-sm">Master User Interface</p>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3 flex-shrink-0">
           <div className="text-right hidden sm:block">
             <p className="font-semibold text-sm">{user?.name}</p>
             <p className="text-xs text-indigo-400">Owner</p>
           </div>
-          <button onClick={logout} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+          <button onClick={logout} className="bg-red-500 hover:bg-red-600 text-white px-3 md:px-4 py-2 rounded-lg text-sm font-medium transition-colors">
             Logout
           </button>
         </div>
@@ -504,7 +504,7 @@ const MasterAdminDashboard = () => {
                 <input type="text" required value={manualForm.registeredMobile} onChange={e => setManualForm({...manualForm, registeredMobile: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 border bg-white" placeholder="10-digit number" />
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Plan Type</label>
                   <select value={manualForm.planType} onChange={e => setManualForm({...manualForm, planType: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 border bg-white">
@@ -520,7 +520,7 @@ const MasterAdminDashboard = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Custom Max Companies Allowed (Optional)</label>
                   <input type="number" value={manualForm.customMaxCompanies} onChange={e => setManualForm({...manualForm, customMaxCompanies: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 border bg-white" placeholder="Defaults to 1 or 3 based on plan" />
@@ -711,6 +711,37 @@ const MasterAdminDashboard = () => {
                       <p className="text-xs font-bold text-slate-500 uppercase">Active Vehicles</p>
                       <p className="text-lg font-black text-slate-800 mt-1">{tenantDetails.metrics.activeVehicles}</p>
                     </div>
+                  </div>
+
+                  {/* Subdomain URL */}
+                  <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center gap-3">
+                    <div className="flex-shrink-0 w-9 h-9 bg-indigo-50 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-0.5">Subdomain URL</p>
+                      <a
+                        href={`http://${tenantDetails.tenant.customSubdomain}.localhost:3001`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-indigo-600 hover:text-indigo-800 font-semibold text-sm underline underline-offset-2 truncate block transition-colors"
+                      >
+                        {tenantDetails.tenant.customSubdomain}.localhost:3001
+                      </a>
+                    </div>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`http://${tenantDetails.tenant.customSubdomain}.localhost:3001`);
+                      }}
+                      title="Copy URL"
+                      className="flex-shrink-0 p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </button>
                   </div>
 
                   {/* Registered Workspaces/Companies */}

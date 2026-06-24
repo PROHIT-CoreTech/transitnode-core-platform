@@ -64,6 +64,12 @@ h1 {
   -webkit-text-fill-color: transparent;
 }
 
+@media (max-width: 640px) {
+  h1 {
+    font-size: 2rem;
+  }
+}
+
 /* Buttons */
 .btn-primary {
   background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-purple) 100%);

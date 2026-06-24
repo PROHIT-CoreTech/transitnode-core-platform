@@ -150,12 +150,12 @@ const PricingPortal = () => {
 
       {/* Navigation — sticky with solid background so it's always visible over the canvas */}
       <div className="sticky top-0 z-50 w-full bg-slate-950 border-b-2 border-teal-600/50 shadow-lg shadow-slate-950/80 backdrop-blur-md">
-        <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <BrandLogo />
-            <img src={brandName} alt="PROHIT CoreTech" className="h-8 w-auto object-contain" style={{ transform: 'scaleX(1.25)', transformOrigin: 'left center' }} />
+        <nav className="container mx-auto px-4 md:px-6 py-3 md:py-4 flex justify-between items-center">
+          <div className="flex items-center space-x-2 md:space-x-3 min-w-0">
+            <BrandLogo className="h-8 md:h-10 w-auto object-contain flex-shrink-0" />
+            <img src={brandName} alt="PROHIT CoreTech" className="h-6 md:h-8 w-auto object-contain hidden sm:block" style={{ transform: 'scaleX(1.25)', transformOrigin: 'left center' }} />
           </div>
-          <button onClick={() => { setSelectedPlan('free'); setShowModal(true); }} className="bg-teal-600 hover:bg-teal-500 text-white px-7 py-2.5 rounded-full font-bold transition-all duration-300 shadow-lg shadow-teal-600/30 active:scale-95 text-sm">
+          <button onClick={() => { setSelectedPlan('free'); setShowModal(true); }} className="bg-teal-600 hover:bg-teal-500 text-white px-4 md:px-7 py-2 md:py-2.5 rounded-full font-bold transition-all duration-300 shadow-lg shadow-teal-600/30 active:scale-95 text-xs md:text-sm whitespace-nowrap flex-shrink-0">
             Start 10-Day Trial
           </button>
         </nav>
@@ -388,7 +388,7 @@ const PricingPortal = () => {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4">
           <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-lg overflow-hidden shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-10">
+            <div className="p-6 sm:p-10">
               <h3 className="text-3xl font-extrabold mb-3 text-slate-900">Start Your Registration</h3>
               <p className="text-slate-500 mb-8 text-lg">
                 Provision your dedicated tenant workspace instantly.
@@ -419,7 +419,7 @@ const PricingPortal = () => {
                     <label className="block text-sm font-bold text-slate-700 mb-2 tracking-wide uppercase">Target Subdomain</label>
                     <div className="flex shadow-sm rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-teal-500/20 focus-within:border-teal-500">
                       <input required type="text" value={formData.customSubdomain} onChange={e => setFormData({...formData, customSubdomain: e.target.value})} className="w-full bg-slate-50 border border-slate-200 border-r-0 px-5 py-4 text-slate-900 focus:bg-white focus:outline-none transition-all" placeholder="acme" />
-                      <span className="bg-slate-100 border border-slate-200 border-l-0 text-slate-500 px-5 py-4 font-medium flex items-center">.prohitcoretech.in</span>
+                      <span className="bg-slate-100 border border-slate-200 border-l-0 text-slate-500 px-3 md:px-5 py-4 font-medium flex items-center text-xs md:text-sm whitespace-nowrap">.prohitcoretech.in</span>
                     </div>
                   </div>
                   <div className="pt-8 flex items-center justify-end space-x-4 border-t border-slate-100">

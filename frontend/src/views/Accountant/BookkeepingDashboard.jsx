@@ -328,7 +328,7 @@ const BookkeepingDashboard = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Date</label>
                   <input
@@ -350,7 +350,7 @@ const BookkeepingDashboard = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Subtotal (₹)</label>
                   <input
@@ -385,7 +385,7 @@ const BookkeepingDashboard = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Status</label>
                   <select

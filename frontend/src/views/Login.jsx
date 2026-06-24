@@ -33,8 +33,11 @@ const Login = () => {
 
       login(token, user);
       
-      // Route based on role
-      if (user.role === 'ADMIN') {
+      // Route based on subdomain first, then role
+      // Master admin portal lives on the "masteradmin" subdomain
+      if (subdomain === 'masteradmin') {
+        navigate('/master-admin');
+      } else if (user.role === 'ADMIN') {
         navigate('/admin');
       } else {
         navigate('/dashboard');
@@ -100,15 +103,9 @@ const Login = () => {
           </button>
         </form>
 
-        <div style={{ marginTop: '24px', textAlign: 'center' }}>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-            Looking for a shipment? <br/>
-            <span 
-              onClick={() => navigate('/tracker/demo')} 
-              style={{ color: 'var(--accent-cyan)', cursor: 'pointer', fontWeight: '500' }}
-            >
-              Go to Public Tracker
-            </span>
+        <div style={{ marginTop: '28px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.72rem', letterSpacing: '0.02em', opacity: 0.6 }}>
+            © 2026 PROHIT CoreTech — All Rights Reserved.
           </p>
         </div>
       </div>
