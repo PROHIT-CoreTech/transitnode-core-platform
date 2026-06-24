@@ -162,7 +162,7 @@ const PricingPortal = () => {
       </div>
 
       {/* Hero Segment */}
-      <header className="container mx-auto px-6 py-10 text-center max-w-5xl relative">
+      <header className="container mx-auto px-6 py-16 md:py-24 text-center max-w-5xl relative">
         <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px]"></div>
         
         <div className="inline-block mb-4 px-5 py-2 rounded-full bg-slate-900/80 border border-teal-500/20 text-teal-400 text-sm font-bold tracking-widest shadow-sm uppercase">
@@ -182,8 +182,8 @@ const PricingPortal = () => {
       </header>
 
       {/* Fleet Pricing Section */}
-      <section className="container mx-auto px-6 py-5 relative z-10">
-        <div className="text-center mb-8 max-w-2xl mx-auto">
+      <section className="container mx-auto px-6 py-16 md:py-20 relative z-10">
+        <div className="text-center mb-12 max-w-2xl mx-auto">
           <div className="inline-block mb-4 px-5 py-2 rounded-full bg-slate-800/80 border border-teal-500/20 text-teal-400 text-sm font-bold tracking-widest uppercase">
             Fleet Subscription Tiers
           </div>
@@ -298,7 +298,7 @@ const PricingPortal = () => {
       </section>
 
       {/* Testimonials */}
-      <section className="container mx-auto px-6 py-5 relative z-10">
+      <section className="container mx-auto px-6 py-16 md:py-20 relative z-10">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10">
@@ -447,8 +447,8 @@ const PricingPortal = () => {
       <footer className="relative z-10 bg-slate-900 border-t-2 border-slate-700 text-white">
 
         {/* Main Footer Grid */}
-        <div className="container mx-auto px-6 max-w-7xl py-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-6">
+        <div className="container mx-auto px-6 max-w-7xl py-12 md:py-16">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
 
             {/* Brand Block */}
             <div className="col-span-1 md:col-span-2">
@@ -501,8 +501,8 @@ const PricingPortal = () => {
         {/* Copyright Bar — solid dark background with guaranteed white text */}
         <div className="bg-slate-800 border-t-2 border-teal-500">
           <div className="h-[3px] bg-gradient-to-r from-teal-500 via-teal-300 to-emerald-400 w-full"></div>
-          <div className="container mx-auto px-6 max-w-7xl py-5">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-5">
+          <div className="container mx-auto px-6 max-w-7xl" style={{ paddingTop: '28px', paddingBottom: '28px' }}>
+            <div className="flex flex-col md:flex-row justify-between items-center gap-8">
 
               {/* Left: Copyright + Product */}
               <div className="flex flex-col items-center md:items-start gap-1.5">
