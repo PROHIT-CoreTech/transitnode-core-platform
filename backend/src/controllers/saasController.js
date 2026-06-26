@@ -6,7 +6,7 @@ const { verifyWebhookSignature } = require('../config/cashfree');
 
 exports.registerTenant = async (req, res) => {
   try {
-    const { companyName, registeredMobile, customSubdomain, planTier } = req.body;
+    const { companyName, registeredMobile, customSubdomain, planTier, logoUrl, dominantHexColor } = req.body;
 
     if (!companyName || !registeredMobile || !customSubdomain) {
       return res.status(400).json({ error: 'companyName, registeredMobile, and customSubdomain are required' });
@@ -48,7 +48,11 @@ exports.registerTenant = async (req, res) => {
       fullLoginUrl,
       planType: mappedPlanType,
       licenseExpiresAt,
-      paymentStatus: mappedPlanType === 'TRIAL' ? 'PAID' : 'PENDING'
+      paymentStatus: mappedPlanType === 'TRIAL' ? 'PAID' : 'PENDING',
+      brandingOptions: {
+        logoUrl: logoUrl || null,
+        dominantHexColor: dominantHexColor || '#3b82f6',
+      }
     });
 
     await newTenant.save();
@@ -353,7 +357,7 @@ exports.updateTenantProfile = async (req, res) => {
     console.log('req.user:', req.user);
     console.log('tenantId:', tenantId);
     
-    const { companyName, gstin, pan, address, state, stateCode, contactNumber } = req.body;
+    const { companyName, gstin, pan, address, state, stateCode, contactNumber, logoUrl, dominantHexColor } = req.body;
 
     const tenant = await Tenant.findById(tenantId);
     console.log('Found tenant:', tenant ? tenant._id : 'NOT FOUND');
@@ -368,6 +372,13 @@ exports.updateTenantProfile = async (req, res) => {
     if (state !== undefined) tenant.state = state;
     if (stateCode !== undefined) tenant.stateCode = stateCode;
     if (contactNumber !== undefined) tenant.contactNumber = contactNumber;
+    
+    // Update brandingOptions if provided
+    if (logoUrl !== undefined || dominantHexColor !== undefined) {
+      tenant.brandingOptions = tenant.brandingOptions || {};
+      if (logoUrl !== undefined) tenant.brandingOptions.logoUrl = logoUrl || null;
+      if (dominantHexColor !== undefined) tenant.brandingOptions.dominantHexColor = dominantHexColor || '#3b82f6';
+    }
 
     await tenant.save();
 

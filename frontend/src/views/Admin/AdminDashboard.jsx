@@ -47,7 +47,7 @@ const AdminDashboard = () => {
   const [sisterCompanyForm, setSisterCompanyForm] = useState({ companyName: '', gstin: '', pan: '', address: '', state: '', stateCode: '', contactNumber: '', invoiceTemplate: null });
   const [sisterCompanyLoading, setSisterCompanyLoading] = useState(false);
   const [editingWorkspace, setEditingWorkspace] = useState(null);
-  const [editWorkspaceForm, setEditWorkspaceForm] = useState({ companyName: '', gstin: '', pan: '', address: '', state: '', stateCode: '', contactNumber: '' });
+  const [editWorkspaceForm, setEditWorkspaceForm] = useState({ companyName: '', gstin: '', pan: '', address: '', state: '', stateCode: '', contactNumber: '', logoUrl: '', dominantHexColor: '' });
   const [editWorkspaceLoading, setEditWorkspaceLoading] = useState(false);
 
   // Subscription State
@@ -1634,7 +1634,9 @@ const AdminDashboard = () => {
                               address: subscriptionDetails.address || '',
                               state: subscriptionDetails.state || '',
                               stateCode: subscriptionDetails.stateCode || '',
-                              contactNumber: (subscriptionDetails.contactNumber && subscriptionDetails.contactNumber.trim() !== '') ? subscriptionDetails.contactNumber : (subscriptionDetails.registeredMobile || '')
+                              contactNumber: (subscriptionDetails.contactNumber && subscriptionDetails.contactNumber.trim() !== '') ? subscriptionDetails.contactNumber : (subscriptionDetails.registeredMobile || ''),
+                              logoUrl: subscriptionDetails.brandingOptions?.logoUrl || '',
+                              dominantHexColor: subscriptionDetails.brandingOptions?.dominantHexColor || '#3b82f6'
                             });
                           }} className="text-indigo-600 hover:text-indigo-900 font-medium mr-4">Edit</button>
                         </td>
@@ -1714,6 +1716,24 @@ const AdminDashboard = () => {
                             <input type="text" value={editWorkspaceForm.contactNumber} onChange={e => setEditWorkspaceForm({...editWorkspaceForm, contactNumber: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
                           </div>
                         </div>
+                        {editingWorkspace.isPrimary && (
+                          <div className="mt-4 pt-4 border-t border-slate-200">
+                            <h4 className="text-sm font-semibold text-slate-800 mb-3">Branding Options</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Corporate Logo URL</label>
+                                <input type="url" placeholder="https://example.com/logo.png" value={editWorkspaceForm.logoUrl} onChange={e => setEditWorkspaceForm({...editWorkspaceForm, logoUrl: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Theme Hex Color</label>
+                                <div className="flex gap-2">
+                                  <input type="color" value={editWorkspaceForm.dominantHexColor} onChange={e => setEditWorkspaceForm({...editWorkspaceForm, dominantHexColor: e.target.value})} className="h-9 w-9 rounded border-0 p-0 cursor-pointer" />
+                                  <input type="text" placeholder="#3b82f6" value={editWorkspaceForm.dominantHexColor} onChange={e => setEditWorkspaceForm({...editWorkspaceForm, dominantHexColor: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                         {subscriptionDetails.planType === 'LIFETIME' && (
                           <div className="mt-4 pt-4 border-t border-slate-200">
                             <label className="block text-sm font-medium text-slate-700 mb-1">Custom Invoice Template (PDF)</label>
