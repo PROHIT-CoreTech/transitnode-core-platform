@@ -35,7 +35,7 @@ router.post('/checkout', authGuard, saasController.processCheckout);
 // @route   PUT /api/saas/tenant-profile
 // @desc    Update tenant profile details
 // @access  Private
-router.put('/tenant-profile', authGuard, saasController.updateTenantProfile);
+router.put('/tenant-profile', authGuard, upload.single('logoFile'), saasController.updateTenantProfile);
 
 // @route   PUT /api/saas/tenant-profile/invoice-format
 // @desc    Update tenant custom invoice template

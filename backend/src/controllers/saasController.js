@@ -374,10 +374,16 @@ exports.updateTenantProfile = async (req, res) => {
     if (contactNumber !== undefined) tenant.contactNumber = contactNumber;
     
     // Update brandingOptions if provided
-    if (logoUrl !== undefined || dominantHexColor !== undefined) {
+    if (req.file || logoUrl !== undefined || dominantHexColor !== undefined) {
       tenant.brandingOptions = tenant.brandingOptions || {};
-      if (logoUrl !== undefined) tenant.brandingOptions.logoUrl = logoUrl || null;
-      if (dominantHexColor !== undefined) tenant.brandingOptions.dominantHexColor = dominantHexColor || '#3b82f6';
+      if (req.file) {
+        tenant.brandingOptions.logoUrl = `/uploads/${req.file.filename}`;
+      } else if (logoUrl !== undefined) {
+        tenant.brandingOptions.logoUrl = logoUrl || null;
+      }
+      if (dominantHexColor !== undefined) {
+        tenant.brandingOptions.dominantHexColor = dominantHexColor || '#3b82f6';
+      }
     }
 
     await tenant.save();

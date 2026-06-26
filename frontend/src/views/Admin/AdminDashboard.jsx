@@ -47,7 +47,7 @@ const AdminDashboard = () => {
   const [sisterCompanyForm, setSisterCompanyForm] = useState({ companyName: '', gstin: '', pan: '', address: '', state: '', stateCode: '', contactNumber: '', invoiceTemplate: null });
   const [sisterCompanyLoading, setSisterCompanyLoading] = useState(false);
   const [editingWorkspace, setEditingWorkspace] = useState(null);
-  const [editWorkspaceForm, setEditWorkspaceForm] = useState({ companyName: '', gstin: '', pan: '', address: '', state: '', stateCode: '', contactNumber: '', logoUrl: '', dominantHexColor: '' });
+  const [editWorkspaceForm, setEditWorkspaceForm] = useState({ companyName: '', gstin: '', pan: '', address: '', state: '', stateCode: '', contactNumber: '', logoUrl: '', logoFile: null, dominantHexColor: '' });
   const [editWorkspaceLoading, setEditWorkspaceLoading] = useState(false);
 
   // Subscription State
@@ -379,8 +379,20 @@ const AdminDashboard = () => {
     setEditWorkspaceLoading(true);
     try {
       if (editingWorkspace.isPrimary) {
-        await axios.put(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/saas/tenant-profile`, editWorkspaceForm, {
-          headers: { Authorization: `Bearer ${token}` }
+        const formData = new FormData();
+        Object.keys(editWorkspaceForm).forEach(key => {
+          if (key !== 'logoFile' && editWorkspaceForm[key] !== null && editWorkspaceForm[key] !== undefined) {
+            formData.append(key, editWorkspaceForm[key]);
+          }
+        });
+        if (editWorkspaceForm.logoFile) {
+          formData.append('logoFile', editWorkspaceForm.logoFile);
+        }
+        await axios.put(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/saas/tenant-profile`, formData, {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
         });
         fetchSubscription();
       } else {
@@ -1636,6 +1648,7 @@ const AdminDashboard = () => {
                               stateCode: subscriptionDetails.stateCode || '',
                               contactNumber: (subscriptionDetails.contactNumber && subscriptionDetails.contactNumber.trim() !== '') ? subscriptionDetails.contactNumber : (subscriptionDetails.registeredMobile || ''),
                               logoUrl: subscriptionDetails.brandingOptions?.logoUrl || '',
+                              logoFile: null,
                               dominantHexColor: subscriptionDetails.brandingOptions?.dominantHexColor || '#3b82f6'
                             });
                           }} className="text-indigo-600 hover:text-indigo-900 font-medium mr-4">Edit</button>
@@ -1721,8 +1734,12 @@ const AdminDashboard = () => {
                             <h4 className="text-sm font-semibold text-slate-800 mb-3">Branding Options</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Corporate Logo URL</label>
-                                <input type="url" placeholder="https://example.com/logo.png" value={editWorkspaceForm.logoUrl} onChange={e => setEditWorkspaceForm({...editWorkspaceForm, logoUrl: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Corporate Logo</label>
+                                <div className="flex flex-col gap-2">
+                                  <input type="url" placeholder="URL: https://example.com/logo.png" value={editWorkspaceForm.logoUrl} onChange={e => setEditWorkspaceForm({...editWorkspaceForm, logoUrl: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                                  <span className="text-xs text-slate-500 text-center">- OR UPLOAD -</span>
+                                  <input type="file" accept="image/*" onChange={e => setEditWorkspaceForm({...editWorkspaceForm, logoFile: e.target.files[0]})} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                                </div>
                               </div>
                               <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">Theme Hex Color</label>
