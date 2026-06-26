@@ -629,7 +629,8 @@ exports.getSubscriptionDetails = async (req, res) => {
       address: tenant.address,
       state: tenant.state,
       stateCode: tenant.stateCode,
-      contactNumber: tenant.contactNumber
+      contactNumber: (tenant.contactNumber && tenant.contactNumber.trim() !== '') ? tenant.contactNumber.trim() : tenant.registeredMobile,
+      registeredMobile: tenant.registeredMobile
     });
   } catch (error) {
     console.error('Error fetching subscription:', error);

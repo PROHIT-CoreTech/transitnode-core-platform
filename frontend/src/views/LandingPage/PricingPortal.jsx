@@ -93,7 +93,27 @@ const PricingPortal = () => {
     try {
       const apiUrl = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000';
       const response = await axios.post(`${apiUrl}/api/saas/register-tenant`, { ...formData, planTier: selectedPlan });
-      setResult({ success: true, message: response.data.message });
+      
+      if (response.data.requiresPayment && response.data.orderSessionId) {
+        if (window.Cashfree) {
+          const mode = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'sandbox' : 'production';
+          const cashfree = window.Cashfree({ mode });
+          
+          cashfree.checkout({
+            paymentSessionId: response.data.orderSessionId,
+            redirectTarget: "_self"
+          });
+        } else {
+          setResult({ success: false, message: 'Cashfree payment gateway SDK failed to load. Please refresh and try again.' });
+        }
+      } else {
+        setResult({ 
+          success: true, 
+          message: response.data.message,
+          magicLink: response.data.magicLink,
+          fullLoginUrl: response.data.fullLoginUrl
+        });
+      }
     } catch (err) {
       setResult({ success: false, message: err.response?.data?.error || 'Registration failed' });
     } finally {
@@ -400,8 +420,18 @@ const PricingPortal = () => {
               ) : null}
 
               {result?.success ? (
-                <div className="pt-6 flex justify-end">
-                  <button type="button" onClick={() => setShowModal(false)} className="bg-teal-600 hover:bg-teal-500 text-white px-8 py-3 rounded-xl font-bold transition-all text-center shadow-lg shadow-teal-600/25 text-lg">Done</button>
+                <div className="pt-6 flex flex-col items-center space-y-4 w-full">
+                  {result.magicLink && (
+                    <a 
+                      href={result.magicLink} 
+                      className="w-full bg-teal-600 hover:bg-teal-500 text-white px-8 py-3 rounded-xl font-bold transition-all text-center shadow-lg shadow-teal-600/25 text-lg block"
+                    >
+                      Go to Workspace Dashboard
+                    </a>
+                  )}
+                  <button type="button" onClick={() => { setShowModal(false); setResult(null); }} className="px-6 py-2 font-semibold text-slate-500 hover:text-slate-900 transition-all text-sm">
+                    Close
+                  </button>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">

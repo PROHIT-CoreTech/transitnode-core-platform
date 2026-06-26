@@ -21,7 +21,11 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-workspace-id', 'x-master-admin-key']
 }));
-app.use(express.json());
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
 
 // Log all incoming requests
 app.use((req, res, next) => {
@@ -55,6 +59,7 @@ const saasRoutes = require('./routes/saas');
 const companyRoutes = require('./routes/companyRoutes');
 const masterAdminRoutes = require('./routes/masterAdminRoutes');
 const accountingRoutes = require('./routes/accounting');
+const telemetryRoutes = require('./routes/telemetry');
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/shipments', shipmentRoutes);
@@ -68,6 +73,7 @@ app.use('/api/saas', saasRoutes);
 app.use('/api/companies', companyRoutes);
 app.use('/api/master-admin', masterAdminRoutes);
 app.use('/api/accounting', accountingRoutes);
+app.use('/api/telemetry', telemetryRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

@@ -42,4 +42,9 @@ router.put('/tenant-profile', authGuard, saasController.updateTenantProfile);
 // @access  Private
 router.put('/tenant-profile/invoice-format', authGuard, ensureLifetimeTier, upload.single('invoiceTemplate'), saasController.updateInvoiceFormat);
 
+// @route   POST /api/saas/cashfree-webhook
+// @desc    Webhook receiver for Cashfree payment status updates
+// @access  Public
+router.post('/cashfree-webhook', saasController.cashfreeWebhook);
+
 module.exports = router;

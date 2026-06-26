@@ -60,7 +60,7 @@ const getWorkspaces = async (req, res) => {
         stateCode: tenant.stateCode,
         gstin: tenant.gstin,
         pan: tenant.pan,
-        contactNumber: tenant.contactNumber,
+        contactNumber: (tenant.contactNumber && tenant.contactNumber.trim() !== '') ? tenant.contactNumber.trim() : tenant.registeredMobile,
         isMainTenant: true
       });
     }

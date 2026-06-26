@@ -12,6 +12,13 @@ const Login = () => {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
+  const [successMessage, setSuccessMessage] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('payment_success') === 'true'
+      ? 'Payment successful! Your workspace has been activated. Please check your registered mobile/email for the magic login link.'
+      : '';
+  });
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
@@ -61,6 +68,12 @@ const Login = () => {
           <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>TransitNode</h1>
           <p style={{ color: 'var(--text-secondary)' }}>Logistics Management System</p>
         </div>
+
+        {successMessage && (
+          <div style={{ backgroundColor: 'rgba(20, 184, 166, 0.1)', border: '1px solid rgba(20, 184, 166, 0.3)', color: '#2dd4bf', padding: '12px', borderRadius: '8px', marginBottom: '24px', fontSize: '0.875rem' }}>
+            {successMessage}
+          </div>
+        )}
 
         {error && (
           <div style={{ backgroundColor: 'rgba(255, 50, 50, 0.1)', border: '1px solid rgba(255, 50, 50, 0.3)', color: '#ff6b6b', padding: '12px', borderRadius: '8px', marginBottom: '24px', fontSize: '0.875rem' }}>

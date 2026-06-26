@@ -1623,7 +1623,7 @@ const AdminDashboard = () => {
                         </td>
                         <td className="px-6 py-4"><span className="bg-indigo-100 text-indigo-700 text-xs font-semibold px-2 py-0.5 rounded">Primary</span></td>
                         <td className="px-6 py-4 text-slate-500">{subscriptionDetails.gstin || '-'}</td>
-                        <td className="px-6 py-4 text-slate-500">{subscriptionDetails.contactNumber || '-'}</td>
+                        <td className="px-6 py-4 text-slate-500">{subscriptionDetails.contactNumber || subscriptionDetails.registeredMobile || '-'}</td>
                         <td className="px-6 py-4 text-right">
                           <button onClick={() => {
                             setEditingWorkspace({...subscriptionDetails, isPrimary: true});
@@ -1634,7 +1634,7 @@ const AdminDashboard = () => {
                               address: subscriptionDetails.address || '',
                               state: subscriptionDetails.state || '',
                               stateCode: subscriptionDetails.stateCode || '',
-                              contactNumber: subscriptionDetails.contactNumber || ''
+                              contactNumber: (subscriptionDetails.contactNumber && subscriptionDetails.contactNumber.trim() !== '') ? subscriptionDetails.contactNumber : (subscriptionDetails.registeredMobile || '')
                             });
                           }} className="text-indigo-600 hover:text-indigo-900 font-medium mr-4">Edit</button>
                         </td>
@@ -1659,7 +1659,7 @@ const AdminDashboard = () => {
                                 address: ws.address || '',
                                 state: ws.state || '',
                                 stateCode: ws.stateCode || '',
-                                contactNumber: ws.contactNumber || ''
+                                contactNumber: (ws.contactNumber && ws.contactNumber.trim() !== '') ? ws.contactNumber : (subscriptionDetails.registeredMobile || '')
                               });
                             }} className="text-indigo-600 hover:text-indigo-900 font-medium mr-4">Edit</button>
                             <button onClick={() => handleDeleteWorkspace(ws._id)} className="text-red-600 hover:text-red-900 font-medium">Delete</button>

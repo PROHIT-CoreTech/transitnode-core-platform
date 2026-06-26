@@ -112,6 +112,12 @@ const shipmentLedgerSchema = new mongoose.Schema(
       enum: ['PENDING', 'COLLECTED', 'VERIFIED'], 
       default: 'PENDING' 
     },
+    // Coordinate tracking & Geofence
+    destinationLat: { type: Number, required: true },
+    destinationLng: { type: Number, required: true },
+    geofenceBreached: { type: Boolean, default: false },
+    gateVerificationOTP: { type: String },
+    otpGeneratedAt: { type: Date },
     exceptions: [
       {
         issueType: { type: String },

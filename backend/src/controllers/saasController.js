@@ -2,6 +2,7 @@ const Tenant = require('../models/NoSQL/Tenant');
 const User = require('../models/NoSQL/User');
 const SubscriptionTransaction = require('../models/NoSQL/SubscriptionTransaction');
 const crypto = require('crypto');
+const { verifyWebhookSignature } = require('../config/cashfree');
 
 exports.registerTenant = async (req, res) => {
   try {
@@ -17,17 +18,28 @@ exports.registerTenant = async (req, res) => {
       return res.status(400).json({ error: 'Subdomain is already registered' });
     }
 
-    // Set 10 days expiry for trial, or handle differently for paid
+    // Check if user with this mobile number already exists
+    const existingUser = await User.findOne({ username: registeredMobile });
+    if (existingUser) {
+      return res.status(400).json({ error: 'A user with this mobile number is already registered' });
+    }
+
+    const upperPlanTier = planTier ? planTier.toUpperCase() : 'TRIAL';
+    const mappedPlanType = upperPlanTier === 'FREE' ? 'TRIAL' : upperPlanTier;
+
+    // Set 10 days expiry for trial, or 1 day (grace period/unpaid) for paid plans
     const licenseExpiresAt = new Date();
-    licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 10);
+    if (mappedPlanType === 'TRIAL') {
+      licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 10);
+    } else {
+      // 1 day grace period for payment
+      licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 1);
+    }
     
     // Generate the full login URL dynamically based on environment
     const frontendDomain = process.env.FRONTEND_DOMAIN || 'localhost:3001';
     const protocol = frontendDomain.includes('localhost') ? 'http' : 'https';
     const fullLoginUrl = `${protocol}://${customSubdomain}.${frontendDomain}/login`;
-
-    const upperPlanTier = planTier ? planTier.toUpperCase() : 'TRIAL';
-    const mappedPlanType = upperPlanTier === 'FREE' ? 'TRIAL' : upperPlanTier;
 
     const newTenant = new Tenant({
       companyName,
@@ -36,67 +48,163 @@ exports.registerTenant = async (req, res) => {
       fullLoginUrl,
       planType: mappedPlanType,
       licenseExpiresAt,
+      paymentStatus: mappedPlanType === 'TRIAL' ? 'PAID' : 'PENDING'
     });
 
     await newTenant.save();
 
-    // Log the initial transaction if it's a paid plan
-    const SubscriptionTransaction = require('../models/NoSQL/SubscriptionTransaction');
-    let amount = 0;
-    const pType = newTenant.planType;
-    if (pType === 'LIFETIME') amount = 500000;
-    else if (pType === 'PLATINUM') amount = 100000;
-    else if (pType === 'SILVER') amount = 50000;
+    // Create the admin user
+    let newAdmin;
+    const magicToken = crypto.randomBytes(32).toString('hex');
+    try {
+      const bcrypt = require('bcrypt');
+      const fallbackPassword = crypto.randomBytes(16).toString('hex'); // Long secure fallback
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(fallbackPassword, salt);
+      
+      const magicLinkExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    if (amount > 0) {
-      const transaction = new SubscriptionTransaction({
+      newAdmin = new User({
         tenantId: newTenant._id,
-        planType: pType,
-        amount: amount,
-        paymentMethod: 'ONLINE_CHECKOUT'
+        username: registeredMobile,
+        email: `admin@${customSubdomain}.prohitcoretech.in`,
+        mobileNumber: registeredMobile,
+        password: hashedPassword,
+        name: `Admin - ${companyName}`,
+        role: 'ADMIN',
+        magicLinkToken: magicToken,
+        magicLinkExpires: magicLinkExpires
       });
-      await transaction.save();
+
+      await newAdmin.save();
+    } catch (userError) {
+      // Clean up the created tenant so the subdomain isn't locked up
+      await Tenant.deleteOne({ _id: newTenant._id });
+      throw userError;
     }
 
-    const bcrypt = require('bcrypt');
-    const fallbackPassword = crypto.randomBytes(16).toString('hex'); // Long secure fallback
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(fallbackPassword, salt);
+    // If it's a FREE trial, send magic link and return success immediately
+    if (mappedPlanType === 'TRIAL') {
+      // MOCK EMAIL SENDING
+      console.log('\n======================================================');
+      console.log('MOCK EMAIL SENT TO:', `admin@${customSubdomain}.prohitcoretech.in`);
+      console.log('SUBJECT: Welcome to PROHIT CoreTech - Your Workspace is Ready');
+      console.log(`MAGIC LOGIN LINK:`);
+      console.log(`${protocol}://${customSubdomain}.${frontendDomain}/magic-login/${magicToken}`);
+      console.log('======================================================\n');
+
+      return res.status(201).json({
+        message: 'Tenant registered successfully. A magic login link has been sent to your email/mobile.',
+        tenantId: newTenant._id,
+        magicLink: `${protocol}://${customSubdomain}.${frontendDomain}/magic-login/${magicToken}`,
+        fullLoginUrl: newTenant.fullLoginUrl
+      });
+    }
+
+    // For paid plans, create Cashfree Order first
+    let amount = 0;
+    if (mappedPlanType === 'LIFETIME') amount = 500000;
+    else if (mappedPlanType === 'PLATINUM') amount = 100000;
+    else if (mappedPlanType === 'SILVER') amount = 50000;
+
+    const { createCashfreeOrder } = require('../config/cashfree');
+    const orderId = `order_tenant_${newTenant._id}`;
     
-    const magicToken = crypto.randomBytes(32).toString('hex');
-    const magicLinkExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const returnUrl = `${newTenant.fullLoginUrl}?payment_success=true`;
 
-    const newAdmin = new User({
-      tenantId: newTenant._id,
-      username: registeredMobile,
-      email: `admin@${customSubdomain}.prohitcoretech.in`,
-      mobileNumber: registeredMobile,
-      password: hashedPassword,
-      name: `Admin - ${companyName}`,
-      role: 'ADMIN',
-      magicLinkToken: magicToken,
-      magicLinkExpires: magicLinkExpires
-    });
+    try {
+      const cfOrder = await createCashfreeOrder(
+        orderId, 
+        amount, 
+        {
+          id: newTenant._id.toString(),
+          phone: registeredMobile,
+          name: companyName,
+          email: `admin@${customSubdomain}.prohitcoretech.in`,
+          subdomain: customSubdomain
+        }, 
+        returnUrl
+      );
 
-    await newAdmin.save();
-
-    // MOCK EMAIL SENDING
-    console.log('\n======================================================');
-    console.log('MOCK EMAIL SENT TO:', `admin@${customSubdomain}.prohitcoretech.in`);
-    console.log('SUBJECT: Welcome to PROHIT CoreTech - Your Workspace is Ready');
-    console.log(`MAGIC LOGIN LINK:`);
-    console.log(`${protocol}://${customSubdomain}.${frontendDomain}/magic-login/${magicToken}`);
-    console.log('======================================================\n');
-
-    return res.status(201).json({
-      message: 'Tenant registered successfully. A magic login link has been sent to your email/mobile.',
-      tenantId: newTenant._id,
-    });
+      return res.status(201).json({
+        message: 'Tenant registration initiated. Complete payment to activate workspace.',
+        tenantId: newTenant._id,
+        orderSessionId: cfOrder.payment_session_id,
+        cfOrderId: cfOrder.order_id,
+        requiresPayment: true
+      });
+    } catch (cfError) {
+      console.error('Cashfree order creation failed:', cfError);
+      // Clean up the created tenant so they can try again with the same subdomain
+      await User.deleteOne({ _id: newAdmin._id });
+      await Tenant.deleteOne({ _id: newTenant._id });
+      return res.status(500).json({ error: `Payment gateway initialization failed: ${cfError.message}` });
+    }
   } catch (error) {
     console.error('Error in registerTenant:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+exports.cashfreeWebhook = async (req, res) => {
+  try {
+    const signature = req.headers['x-webhook-signature'];
+    const timestamp = req.headers['x-webhook-timestamp'];
+    const rawBody = req.rawBody;
+
+    if (!verifyWebhookSignature(signature, timestamp, rawBody)) {
+      console.error('[CASHFREE WEBHOOK] Invalid webhook signature');
+      return res.status(400).json({ error: 'Invalid signature' });
+    }
+
+    const { event, data } = req.body;
+    console.log(`[CASHFREE WEBHOOK] Event received: ${event}`);
+
+    if (event === 'ORDER_PAID') {
+      const orderId = data.order.order_id;
+      const amount = data.order.order_amount;
+      const paymentMethod = data.payment?.payment_method ? Object.keys(data.payment.payment_method)[0] : 'unknown';
+
+      if (orderId && orderId.startsWith('order_tenant_')) {
+        const tenantId = orderId.replace('order_tenant_', '');
+        const tenant = await Tenant.findById(tenantId);
+        
+        if (tenant && tenant.paymentStatus !== 'PAID') {
+          // Calculate license expiration based on plan
+          const licenseExpiresAt = new Date();
+          if (tenant.planType === 'LIFETIME') {
+            licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 100);
+          } else if (tenant.planType === 'PLATINUM') {
+            licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 5);
+          } else if (tenant.planType === 'SILVER') {
+            licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 3);
+          }
+
+          tenant.paymentStatus = 'PAID';
+          tenant.licenseExpiresAt = licenseExpiresAt;
+          await tenant.save();
+
+          // Create the SubscriptionTransaction record
+          const transaction = new SubscriptionTransaction({
+            tenantId: tenant._id,
+            planType: tenant.planType,
+            amount: amount,
+            paymentMethod: `CASHFREE_${paymentMethod.toUpperCase()}`
+          });
+          await transaction.save();
+          
+          console.log(`[CASHFREE WEBHOOK] Tenant ${tenant.companyName} marked as PAID. Plan: ${tenant.planType}`);
+        }
+      }
+    }
+
+    return res.status(200).send('OK');
+  } catch (error) {
+    console.error('Error in cashfreeWebhook:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
 exports.getTenantProfile = async (req, res) => {
   try {
     const { subdomain } = req.query;
@@ -107,6 +215,59 @@ exports.getTenantProfile = async (req, res) => {
     const tenant = await Tenant.findOne({ customSubdomain: subdomain });
     if (!tenant) {
       return res.status(404).json({ error: 'Tenant not found' });
+    }
+
+    // If payment status is PENDING and it is a paid plan, check Cashfree order directly (fallback/local development)
+    if (tenant.paymentStatus === 'PENDING' && tenant.planType !== 'TRIAL') {
+      try {
+        const { getCashfreeOrder } = require('../config/cashfree');
+        const orderId = `order_tenant_${tenant._id}`;
+        const cfOrder = await getCashfreeOrder(orderId);
+        
+        if (cfOrder && cfOrder.order_status === 'PAID') {
+          const licenseExpiresAt = new Date();
+          if (tenant.planType === 'LIFETIME') {
+            licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 100);
+          } else if (tenant.planType === 'PLATINUM') {
+            licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 5);
+          } else if (tenant.planType === 'SILVER') {
+            licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 3);
+          }
+
+          tenant.paymentStatus = 'PAID';
+          tenant.licenseExpiresAt = licenseExpiresAt;
+          await tenant.save();
+
+          // Create the SubscriptionTransaction record if it doesn't exist
+          const SubscriptionTransaction = require('../models/NoSQL/SubscriptionTransaction');
+          const existingTx = await SubscriptionTransaction.findOne({ tenantId: tenant._id });
+          if (!existingTx) {
+            let paymentMethod = 'unknown';
+            try {
+              const { getCashfreeOrderPayments } = require('../config/cashfree');
+              const payments = await getCashfreeOrderPayments(orderId);
+              const successPayment = payments && payments.find ? payments.find(p => p.payment_status === 'SUCCESS') : null;
+              if (successPayment && successPayment.payment_method) {
+                paymentMethod = Object.keys(successPayment.payment_method)[0] || 'unknown';
+              }
+            } catch (payError) {
+              console.error(`[GET PROFILE FALLBACK] Failed to check Cashfree payments list:`, payError.message);
+            }
+            
+            const transaction = new SubscriptionTransaction({
+              tenantId: tenant._id,
+              planType: tenant.planType,
+              amount: cfOrder.order_amount,
+              paymentMethod: `CASHFREE_${paymentMethod.toUpperCase()}`
+            });
+            await transaction.save();
+          }
+
+          console.log(`[GET PROFILE FALLBACK] Tenant ${tenant.companyName} dynamically marked as PAID via Cashfree API check.`);
+        }
+      } catch (cfError) {
+        console.error(`[GET PROFILE FALLBACK] Failed to check Cashfree order status for tenant ${tenant._id}:`, cfError.message);
+      }
     }
 
     // Verify license status
