@@ -11,9 +11,12 @@ const tenantResolver = async (req, res, next) => {
       if (parts.length > 2) {
         // e.g. shree.transitnode.in -> subdomain is 'shree'
         const customSubdomain = parts[0];
-        const tenant = await Tenant.findOne({ customSubdomain });
-        if (tenant) {
-          tenantId = tenant._id.toString();
+        const isMainSubdomain = ['www', 'transitnode', 'prohitcoretech', 'corematrix'].includes(customSubdomain.toLowerCase());
+        if (!isMainSubdomain) {
+          const tenant = await Tenant.findOne({ customSubdomain });
+          if (tenant) {
+            tenantId = tenant._id.toString();
+          }
         }
       }
     }

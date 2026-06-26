@@ -28,11 +28,13 @@ const Login = () => {
       const hostname = window.location.hostname;
       const subdomain = hostname.split('.')[0];
       
+      const isMainSubdomain = ['www', 'localhost', '127', 'transitnode', 'prohitcoretech', 'corematrix'].includes(subdomain.toLowerCase());
+      
       // Proxied request
       const response = await axios.post('/api/auth/login', {
         email,
         password,
-        subdomain: subdomain !== 'www' && subdomain !== 'localhost' ? subdomain : undefined
+        subdomain: !isMainSubdomain ? subdomain : undefined
       });
 
       const token = response.data.token;

@@ -12,7 +12,6 @@ export const TenantBrandingProvider = ({ children }) => {
     const initializeTenant = async () => {
       const hostname = window.location.hostname;
       
-      // We identify main domain patterns. (Vercel wildcard is typically *.domain.com)
       const isMainDomain = 
         hostname === 'localhost' || 
         hostname === '127.0.0.1' || 
@@ -22,6 +21,10 @@ export const TenantBrandingProvider = ({ children }) => {
         hostname === 'www.corematrix.in' ||
         hostname === 'prohitcoretech.in' ||
         hostname === 'www.prohitcoretech.in' ||
+        hostname === 'prohitcoretech.com' ||
+        hostname === 'www.prohitcoretech.com' ||
+        hostname === 'transitnode.prohitcoretech.com' ||
+        hostname === 'www.transitnode.prohitcoretech.com' ||
         hostname.endsWith('.vercel.app');
 
       if (isMainDomain) {
