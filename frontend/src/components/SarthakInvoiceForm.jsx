@@ -179,24 +179,24 @@ const SarthakInvoiceForm = ({
         
         <div className="w-2/6">
           <div className="flex border-b border-black">
-            <div className="w-2/3 p-1 border-r border-black">Net Amount Rs.</div>
-            <div className="w-1/3 p-1 text-right">{baseFreightRate.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+            <div className="w-[58%] p-1 border-r border-black">Net Amount Rs.</div>
+            <div className="w-[42%] p-1 text-right">{baseFreightRate.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
           </div>
           <div className="flex border-b border-black">
-            <div className="w-2/3 p-1 border-r border-black">CGST @{cgst === 0 ? '0%' : (rcmApplied ? '2.5%' : '9%')}</div>
-            <div className="w-1/3 p-1 text-right">{cgst.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+            <div className="w-[58%] p-1 border-r border-black">CGST @{cgst === 0 ? '0%' : (rcmApplied ? '2.5%' : '9%')}</div>
+            <div className="w-[42%] p-1 text-right">{cgst.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
           </div>
           <div className="flex border-b border-black">
-            <div className="w-2/3 p-1 border-r border-black">SGST @{sgst === 0 ? '0%' : (rcmApplied ? '2.5%' : '9%')}</div>
-            <div className="w-1/3 p-1 text-right">{sgst.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+            <div className="w-[58%] p-1 border-r border-black">SGST @{sgst === 0 ? '0%' : (rcmApplied ? '2.5%' : '9%')}</div>
+            <div className="w-[42%] p-1 text-right">{sgst.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
           </div>
           <div className="flex border-b border-black">
-            <div className="w-2/3 p-1 border-r border-black font-bold">Gross Total Amt. Rs.</div>
-            <div className="w-1/3 p-1 text-right font-bold">{grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+            <div className="w-[58%] p-1 border-r border-black font-bold">Gross Total Amt. Rs.</div>
+            <div className="w-[42%] p-1 text-right font-bold">{grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
           </div>
           <div className="flex">
-            <div className="w-2/3 p-1 border-r border-black">Rounded off Amt. Rs.</div>
-            <div className="w-1/3 p-1 text-right">-</div>
+            <div className="w-[58%] p-1 border-r border-black">Rounded off Amt. Rs.</div>
+            <div className="w-[42%] p-1 text-right">-</div>
           </div>
         </div>
       </div>

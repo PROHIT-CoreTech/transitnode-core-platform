@@ -13,11 +13,12 @@ const connectDB = async () => {
     
     if (mongoUri && mongoUri.includes('.mongodb.net/')) {
       const dbNameMap = {
+        localhost: 'transitnode',
         development: 'transitnode-dev',
         staging: 'transitnode-staging',
         production: 'transitnode-prod'
       };
-      const dbName = dbNameMap[env] || 'transitnode-dev';
+      const dbName = dbNameMap[env] || 'transitnode';
       // Replaces the database name segment in the connection string
       mongoUri = mongoUri.replace(/\.mongodb\.net\/([^?]+)/, `.mongodb.net/${dbName}`);
     }

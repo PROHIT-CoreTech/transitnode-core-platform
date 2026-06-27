@@ -136,6 +136,31 @@ const shipmentLedgerSchema = new mongoose.Schema(
 // Compound index
 shipmentLedgerSchema.index({ trackingNumber: 1, 'metadata.createdAt': -1 });
 
+// Pre-validate hook to parse destinationCoords to destinationLat/destinationLng and handle legacy/missing data
+shipmentLedgerSchema.pre('validate', function (next) {
+  if (this.destinationLat === undefined || this.destinationLat === null || this.destinationLng === undefined || this.destinationLng === null) {
+    const coordsStr = this.logistics?.transport?.destinationCoords;
+    if (coordsStr && coordsStr.includes(',')) {
+      const [latStr, lngStr] = coordsStr.split(',');
+      const lat = parseFloat(latStr);
+      const lng = parseFloat(lngStr);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        this.destinationLat = lat;
+        this.destinationLng = lng;
+      }
+    }
+  }
+
+  // Final fallback to prevent validation errors for legacy data
+  if (this.destinationLat === undefined || this.destinationLat === null) {
+    this.destinationLat = 19.0760;
+  }
+  if (this.destinationLng === undefined || this.destinationLng === null) {
+    this.destinationLng = 72.8777;
+  }
+  next();
+});
+
 // Pre-save hook to update the updated_at metadata
 shipmentLedgerSchema.pre('save', function (next) {
   this.metadata.updatedAt = Date.now();

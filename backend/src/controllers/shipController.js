@@ -105,9 +105,19 @@ exports.createShipment = async (req, res) => {
     // Dynamically resolve destination coordinates (using exact consignee address with hub name fallback)
     const destinationCoords = await geocodeAddress(receiverAddress || destination);
     
+    let lat = 19.0760;
+    let lng = 72.8777;
+    if (destinationCoords && destinationCoords.includes(',')) {
+      const [latStr, lngStr] = destinationCoords.split(',');
+      lat = parseFloat(latStr) || 19.0760;
+      lng = parseFloat(lngStr) || 72.8777;
+    }
+    
     const newShipment = await ShipmentLedger.create({
       tenantId: req.user.tenantId, companyId: req.workspaceId,
       trackingNumber,
+      destinationLat: lat,
+      destinationLng: lng,
       status: 'READY_FOR_DISPATCH',
       lrCopyUrl: 'ONLINE',
       podStatus: 'COLLECTED',
