@@ -182,7 +182,7 @@ exports.dashboardSummary = async (req, res) => {
     });
 
     // 4. List of all Tenants
-    const allTenants = await Tenant.find({}, 'companyName planType registeredMobile customSubdomain licenseExpiresAt createdAt').sort({ createdAt: -1 });
+    const allTenants = await Tenant.find({}, 'companyName planType registeredMobile customSubdomain licenseExpiresAt createdAt isSuspended').sort({ createdAt: -1 });
 
     // 5. Total SaaS Revenue
     const SubscriptionTransaction = require('../models/NoSQL/SubscriptionTransaction');
