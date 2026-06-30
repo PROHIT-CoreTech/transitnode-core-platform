@@ -1,5 +1,6 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
+const connectDB = require('../src/config/nosql');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const User = require('../src/models/NoSQL/User');
@@ -8,7 +9,7 @@ async function resetPassword() {
   const newPassword = process.argv[2] || 'admin123';
   try {
     console.log('Connecting to MongoDB...');
-    await mongoose.connect(process.env.MONGO_URI);
+    await connectDB();
     console.log('Connected to MongoDB.');
 
     const email = 'master@transitnode.com';

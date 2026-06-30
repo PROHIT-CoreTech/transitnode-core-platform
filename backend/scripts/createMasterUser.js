@@ -1,5 +1,6 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
+const connectDB = require('../src/config/nosql');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const Tenant = require('../src/models/NoSQL/Tenant');
@@ -9,10 +10,7 @@ const User = require('../src/models/NoSQL/User');
 const createMasterUser = async () => {
   try {
     console.log('Connecting to MongoDB...');
-    await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await connectDB();
     console.log('Connected to MongoDB.');
 
     const companyName = 'Master Admin Corp';
