@@ -65,6 +65,45 @@ const MasterAdminDashboard = () => {
     };
   };
 
+  const handleToggleSuspension = async () => {
+    if (!tenantDetails || !tenantDetails.tenant) return;
+    const isCurrentlySuspended = !!tenantDetails.tenant.isSuspended;
+    const actionText = isCurrentlySuspended ? 'activate' : 'suspend';
+    if (!window.confirm(`Are you sure you want to ${actionText} this tenant account?`)) {
+      return;
+    }
+
+    try {
+      const response = await axios.put(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/master-admin/tenant/${tenantDetails.tenant._id}/suspend`,
+        { isSuspended: !isCurrentlySuspended },
+        { headers: getHeaders() }
+      );
+      
+      // Update tenant details in modal
+      setTenantDetails(prev => ({
+        ...prev,
+        tenant: response.data.tenant
+      }));
+      
+      // Update tenant directory in summary
+      setSummary(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          allTenants: prev.allTenants.map(t => 
+            t._id === tenantDetails.tenant._id ? response.data.tenant : t
+          )
+        };
+      });
+
+      alert(response.data.message);
+    } catch (error) {
+      console.error('Failed to toggle tenant suspension:', error);
+      alert(error.response?.data?.error || 'Failed to toggle tenant suspension.');
+    }
+  };
+
   const fetchDashboardSummary = async () => {
     try {
       setLoading(true);
@@ -781,13 +820,29 @@ const MasterAdminDashboard = () => {
                     </div>
                   </div>
 
-                  {/* Danger Zone (Future use) */}
+                  {/* Danger Zone */}
                   <div className="mt-8 pt-6 border-t border-red-100">
                     <h3 className="text-sm font-bold text-red-500 uppercase tracking-wide mb-4">Danger Zone</h3>
-                    <button className="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold py-2 px-4 rounded-lg text-sm transition-colors opacity-50 cursor-not-allowed" disabled>
-                      Suspend Tenant Account
-                    </button>
-                    <p className="text-xs text-slate-500 mt-2">Suspension features are currently disabled.</p>
+                    {tenantDetails.tenant.isSuspended ? (
+                      <button
+                        onClick={handleToggleSuspension}
+                        className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold py-2 px-4 rounded-lg text-sm transition-colors cursor-pointer"
+                      >
+                        Activate Tenant Account
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleToggleSuspension}
+                        className="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold py-2 px-4 rounded-lg text-sm transition-colors cursor-pointer"
+                      >
+                        Suspend Tenant Account
+                      </button>
+                    )}
+                    <p className="text-xs text-slate-500 mt-2">
+                      {tenantDetails.tenant.isSuspended 
+                        ? "This account is currently suspended. Activating will restore access." 
+                        : "Suspended accounts will not be able to log in or use any workspace portals."}
+                    </p>
                   </div>
 
                 </div>

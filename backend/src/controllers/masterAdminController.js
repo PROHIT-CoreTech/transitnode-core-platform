@@ -317,3 +317,31 @@ exports.setupFirstUser = async (req, res) => {
     return res.status(500).json({ error: 'Internal server error during master user initialization.' });
   }
 };
+
+// PUT /api/master-admin/tenant/:tenantId/suspend
+exports.toggleTenantSuspension = async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+    const { isSuspended } = req.body;
+
+    if (typeof isSuspended !== 'boolean') {
+      return res.status(400).json({ error: 'isSuspended must be a boolean value' });
+    }
+
+    const tenant = await Tenant.findById(tenantId);
+    if (!tenant) {
+      return res.status(404).json({ error: 'Tenant not found' });
+    }
+
+    tenant.isSuspended = isSuspended;
+    await tenant.save();
+
+    return res.status(200).json({
+      message: `Tenant has been successfully ${isSuspended ? 'suspended' : 'activated'}.`,
+      tenant
+    });
+  } catch (error) {
+    console.error('[MasterAdmin] toggleTenantSuspension error:', error);
+    return res.status(500).json({ error: 'Internal server error toggling tenant suspension.' });
+  }
+};

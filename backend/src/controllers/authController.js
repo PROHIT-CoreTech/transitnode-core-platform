@@ -63,6 +63,9 @@ exports.login = async (req, res) => {
       if (!tenant) {
         return res.status(401).json({ message: 'Invalid company portal URL' });
       }
+      if (tenant.isSuspended) {
+        return res.status(403).json({ message: 'This tenant account has been suspended by the administrator.' });
+      }
       filter.tenantId = tenant._id;
     }
 

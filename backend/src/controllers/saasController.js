@@ -276,6 +276,9 @@ exports.getTenantProfile = async (req, res) => {
 
     // Verify license status
     const now = new Date();
+    if (tenant.isSuspended) {
+      return res.status(403).json({ error: 'Tenant subscription has expired or is suspended' });
+    }
     if (tenant.licenseExpiresAt && tenant.licenseExpiresAt < now) {
       return res.status(403).json({ error: 'Tenant subscription has expired or is suspended' });
     }
