@@ -8,9 +8,14 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [initLoading, setInitLoading] = useState(false);
   
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  const hostname = window.location.hostname;
+  const subdomain = hostname.split('.')[0];
+  const isMasterAdminPortal = subdomain.toLowerCase() === 'masteradmin';
 
   const [successMessage, setSuccessMessage] = useState(() => {
     const params = new URLSearchParams(window.location.search);
@@ -19,22 +24,42 @@ const Login = () => {
       : '';
   });
 
+  const handleInitMasterUser = async () => {
+    if (!window.confirm('Are you sure you want to initialize the Master Admin tenant and user? This will create master@transitnode.com with the default password.')) {
+      return;
+    }
+    setInitLoading(true);
+    setError('');
+    setSuccessMessage('');
+    try {
+      const response = await axios.post('/api/master-admin/setup-first-user', {}, {
+        headers: {
+          'x-master-admin-key': process.env.REACT_APP_MASTER_KEY || 'transitnode-master-key'
+        }
+      });
+      setSuccessMessage(`${response.data.message}. You can now sign in with username: ${response.data.email} and password: ${response.data.password}`);
+    } catch (err) {
+      if (err.response) {
+        setError(`Initialization Failed: ${err.response.data?.error || 'Unknown error'}`);
+      } else {
+        setError(`Network Error: ${err.message}`);
+      }
+    } finally {
+      setInitLoading(false);
+    }
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const hostname = window.location.hostname;
-      const subdomain = hostname.split('.')[0];
-      
-      const isMainSubdomain = ['www', 'localhost', '127', 'transitnode', 'prohitcoretech', 'corematrix'].includes(subdomain.toLowerCase());
-      
       // Proxied request
       const response = await axios.post('/api/auth/login', {
         email,
         password,
-        subdomain: !isMainSubdomain ? subdomain : undefined
+        subdomain: isMasterAdminPortal ? undefined : subdomain
       });
 
       const token = response.data.token;
@@ -117,6 +142,30 @@ const Login = () => {
             {loading ? 'Authenticating...' : 'Sign In'}
           </button>
         </form>
+
+        {isMasterAdminPortal && (
+          <div style={{ marginTop: '16px' }}>
+            <button
+              type="button"
+              style={{
+                width: '100%',
+                backgroundColor: 'rgba(234, 179, 8, 0.1)',
+                border: '1px dashed #eab308',
+                color: '#facc15',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: '0.85rem',
+                transition: 'all 0.3s ease'
+              }}
+              disabled={initLoading || loading}
+              onClick={handleInitMasterUser}
+            >
+              {initLoading ? 'Initializing Master User...' : 'Initialize Master User'}
+            </button>
+          </div>
+        )}
 
         <div style={{ marginTop: '28px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.72rem', letterSpacing: '0.02em', opacity: 0.6 }}>

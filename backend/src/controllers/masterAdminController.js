@@ -249,3 +249,71 @@ exports.getTenantDetails = async (req, res) => {
     return res.status(500).json({ error: 'Internal server error fetching tenant details.' });
   }
 };
+
+// POST /api/master-admin/setup-first-user
+exports.setupFirstUser = async (req, res) => {
+  try {
+    const companyName = 'Master Admin Corp';
+    const email = 'master@transitnode.com';
+    const mobileNumber = '9999999999';
+    const passwordPlain = req.body.password || 'admin123';
+
+    // 1. Check if Master Tenant already exists
+    let tenant = await Tenant.findOne({ customSubdomain: 'masteradmin' });
+    let user;
+
+    if (tenant) {
+      // Check if user exists
+      user = await User.findOne({ email, tenantId: tenant._id });
+      if (user) {
+        return res.status(400).json({ error: 'Master admin user already exists' });
+      }
+    } else {
+      // Create Tenant
+      tenant = new Tenant({
+        companyName,
+        registeredMobile: mobileNumber,
+        customSubdomain: 'masteradmin',
+        planType: 'LIFETIME',
+        licenseExpiresAt: new Date(new Date().setFullYear(new Date().getFullYear() + 100)), // 100 years
+        adminSetupComplete: true,
+        maxCompaniesAllowed: 999
+      });
+      await tenant.save();
+      
+      // Create Company
+      const company = new Company({
+        tenantId: tenant._id,
+        companyName,
+        address: 'Global HQ',
+        contactNumber: mobileNumber
+      });
+      await company.save();
+    }
+
+    // 2. Create User
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(passwordPlain, salt);
+
+    user = new User({
+      tenantId: tenant._id,
+      username: email,
+      email,
+      mobileNumber,
+      password: hashedPassword,
+      name: 'Master User',
+      role: 'ADMIN'
+    });
+    await user.save();
+
+    return res.status(201).json({
+      message: 'Master admin user initialized successfully',
+      email,
+      password: passwordPlain
+    });
+
+  } catch (error) {
+    console.error('[MasterAdmin] setupFirstUser error:', error);
+    return res.status(500).json({ error: 'Internal server error during master user initialization.' });
+  }
+};

@@ -10,5 +10,6 @@ router.post('/onboard-automated', masterAdminController.onboardAutomated);
 router.post('/onboard-manual', masterAdminController.onboardManual);
 router.get('/dashboard-summary', masterAdminController.dashboardSummary);
 router.get('/tenant/:tenantId', masterAdminController.getTenantDetails);
+router.post('/setup-first-user', masterAdminController.setupFirstUser);
 
 module.exports = router;
