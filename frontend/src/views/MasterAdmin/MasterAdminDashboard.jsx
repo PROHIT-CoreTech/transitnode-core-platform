@@ -11,6 +11,23 @@ const MasterAdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
+
+  const getTenantUrl = (customSubdomain) => {
+    if (!customSubdomain) return '';
+    const hostname = window.location.hostname;
+    const port = window.location.port;
+    if (hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
+      return `http://${customSubdomain}.localhost:${port || '3001'}`;
+    }
+    const segments = hostname.split('.');
+    if (segments[0] === 'masteradmin') {
+      segments[0] = customSubdomain;
+    } else {
+      segments.unshift(customSubdomain);
+    }
+    const protocol = window.location.protocol;
+    return `${protocol}//${segments.join('.')}`;
+  };
   
   const [manualForm, setManualForm] = useState({
     companyName: '',
@@ -723,17 +740,17 @@ const MasterAdminDashboard = () => {
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-0.5">Subdomain URL</p>
                       <a
-                        href={`http://${tenantDetails.tenant.customSubdomain}.localhost:3001`}
+                        href={getTenantUrl(tenantDetails.tenant.customSubdomain)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-indigo-600 hover:text-indigo-800 font-semibold text-sm underline underline-offset-2 truncate block transition-colors"
                       >
-                        {tenantDetails.tenant.customSubdomain}.localhost:3001
+                        {getTenantUrl(tenantDetails.tenant.customSubdomain).replace(/^https?:\/\//, '')}
                       </a>
                     </div>
                     <button
                       onClick={() => {
-                        navigator.clipboard.writeText(`http://${tenantDetails.tenant.customSubdomain}.localhost:3001`);
+                        navigator.clipboard.writeText(getTenantUrl(tenantDetails.tenant.customSubdomain));
                       }}
                       title="Copy URL"
                       className="flex-shrink-0 p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
