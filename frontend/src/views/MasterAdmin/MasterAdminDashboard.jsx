@@ -51,6 +51,7 @@ const MasterAdminDashboard = () => {
   // Filter States for Tenants Directory
   const [tenantSearch, setTenantSearch] = useState('');
   const [planFilter, setPlanFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
 
   // Filter States for Transactions History
   const [txSearch, setTxSearch] = useState('');
@@ -227,8 +228,13 @@ const MasterAdminDashboard = () => {
     const matchesPlan = 
       planFilter === 'ALL' || 
       tenant.planType === planFilter;
+
+    const matchesStatus =
+      statusFilter === 'ALL' ||
+      (statusFilter === 'SUSPENDED' && tenant.isSuspended === true) ||
+      (statusFilter === 'ACTIVE' && !tenant.isSuspended);
       
-    return matchesSearch && matchesPlan;
+    return matchesSearch && matchesPlan && matchesStatus;
   }) || [];
 
   // 4. Filtered list for Transactions History
@@ -481,6 +487,15 @@ const MasterAdminDashboard = () => {
                   <option value="PLATINUM">Platinum</option>
                   <option value="LIFETIME">Lifetime</option>
                 </select>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-900 font-medium"
+                >
+                  <option value="ALL">All Statuses</option>
+                  <option value="ACTIVE">Active Only</option>
+                  <option value="SUSPENDED">Suspended Only</option>
+                </select>
               </div>
             </div>
             <div className="overflow-x-auto">
@@ -500,7 +515,14 @@ const MasterAdminDashboard = () => {
                   {filteredTenants.length > 0 ? (
                     filteredTenants.map((tenant) => (
                       <tr key={tenant._id} className="hover:bg-slate-50 transition-colors">
-                        <td className="p-4 font-medium text-slate-900">{tenant.companyName}</td>
+                        <td className="p-4 font-medium text-slate-900">
+                          <div className="flex items-center gap-2">
+                            <span>{tenant.companyName}</span>
+                            {tenant.isSuspended && (
+                              <span className="bg-red-100 text-red-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Suspended</span>
+                            )}
+                          </div>
+                        </td>
                         <td className="p-4 text-indigo-600">{tenant.customSubdomain}</td>
                         <td className="p-4">
                           <span className={`px-2 py-1 rounded text-xs font-bold ${
