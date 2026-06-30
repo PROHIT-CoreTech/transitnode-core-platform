@@ -10,6 +10,8 @@ import BankMatchingDashboard from './Accountant/BankMatchingDashboard';
 import OutstandingDashboard from './Accountant/OutstandingDashboard';
 import YardArrivals from './GateOperations/YardArrivals';
 import { Navigate } from 'react-router-dom';
+import FlipkartMisEntry from '../components/FlipkartMisEntry';
+import FlipkartMisAccountant from '../components/FlipkartMisAccountant';
 
 const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
@@ -44,7 +46,7 @@ const Dashboard = () => {
       case 'OPERATION_EXECUTIVE':
         return (
           <div style={{ marginTop: '24px' }}>
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px', flexWrap: 'wrap' }}>
               <button 
                 onClick={() => setReceptionistTab('INTAKE')}
                 style={{
@@ -73,8 +75,24 @@ const Dashboard = () => {
               >
                 Yard Arrivals & OTP
               </button>
+              <button 
+                onClick={() => setReceptionistTab('FLIPKART_MIS')}
+                style={{
+                  background: receptionistTab === 'FLIPKART_MIS' ? 'rgba(234, 179, 8, 0.2)' : 'transparent',
+                  border: receptionistTab === 'FLIPKART_MIS' ? '1px solid #eab308' : '1px solid transparent',
+                  color: receptionistTab === 'FLIPKART_MIS' ? '#facc15' : 'var(--text-secondary)',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: receptionistTab === 'FLIPKART_MIS' ? 'bold' : 'normal'
+                }}
+              >
+                Flipkart MIS
+              </button>
             </div>
-            {receptionistTab === 'INTAKE' ? <IntakeDashboard /> : <YardArrivals />}
+            {receptionistTab === 'INTAKE' && <IntakeDashboard />}
+            {receptionistTab === 'YARD' && <YardArrivals />}
+            {receptionistTab === 'FLIPKART_MIS' && <FlipkartMisEntry />}
           </div>
         );
       case 'ACCOUNTANT':
@@ -137,6 +155,7 @@ const Dashboard = () => {
               >
                 Outstanding
               </button>
+              {/* Commented out Payroll & Salary Slips as requested
               <button 
                 onClick={() => setAccountantTab('PAYROLL')}
                 style={{
@@ -151,12 +170,30 @@ const Dashboard = () => {
               >
                 Payroll & Salary Slips
               </button>
+              */}
+              <button 
+                onClick={() => setAccountantTab('FLIPKART_MIS')}
+                style={{
+                  background: accountantTab === 'FLIPKART_MIS' ? 'rgba(234, 179, 8, 0.2)' : 'transparent',
+                  border: accountantTab === 'FLIPKART_MIS' ? '1px solid #eab308' : '1px solid transparent',
+                  color: accountantTab === 'FLIPKART_MIS' ? '#facc15' : 'var(--text-secondary)',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: accountantTab === 'FLIPKART_MIS' ? 'bold' : 'normal'
+                }}
+              >
+                Flipkart MIS
+              </button>
             </div>
             {accountantTab === 'BILLING' && <BillingDashboard />}
             {accountantTab === 'BOOKKEEPING' && <BookkeepingDashboard />}
             {accountantTab === 'BANK_MATCHING' && <BankMatchingDashboard />}
             {accountantTab === 'OUTSTANDING' && <OutstandingDashboard />}
+            {/* Commented out Payroll & Salary Slips as requested
             {accountantTab === 'PAYROLL' && <AccountantPayroll />}
+            */}
+            {accountantTab === 'FLIPKART_MIS' && <FlipkartMisAccountant />}
           </div>
         );
       default:

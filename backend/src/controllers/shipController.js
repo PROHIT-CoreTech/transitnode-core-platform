@@ -81,6 +81,14 @@ exports.createShipment = async (req, res) => {
       invoiceNo, invoiceDate, invoiceValue, ewayBillNo, riskCoverage,
       vehicleNumber, vehicleType, driverName, driverPhone, origin, destination, commodityType 
     } = req.body;
+
+    const isFlipkartSelected = receiverName && (
+      receiverName.toLowerCase().includes('flipkart') ||
+      receiverName.toLowerCase().includes('fliptkart')
+    );
+    if (isFlipkartSelected && (!receiverClientCode || !receiverClientCode.trim())) {
+      return res.status(400).json({ message: 'Store Code is required when Flipkart is selected as the supplier.' });
+    }
     
     // Query the latest shipment tracking ID for the current year to determine the next sequential number
     const currentYear = new Date().getFullYear();

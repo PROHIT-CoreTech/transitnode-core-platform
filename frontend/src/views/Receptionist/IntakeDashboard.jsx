@@ -34,6 +34,11 @@ const IntakeDashboard = () => {
   const [uploadingLr, setUploadingLr] = useState(false);
   const [viewingLrShipment, setViewingLrShipment] = useState(null);
 
+  const isFlipkartSelected = formData.receiverName && (
+    formData.receiverName.toLowerCase().includes('flipkart') ||
+    formData.receiverName.toLowerCase().includes('fliptkart')
+  );
+
   useEffect(() => {
     fetchRecentShipments();
     fetchDrivers();
@@ -346,6 +351,12 @@ const IntakeDashboard = () => {
     setLoading(true);
     setError('');
 
+    if (isFlipkartSelected && !formData.receiverClientCode?.trim()) {
+      setError('Store Code is required when Flipkart is selected as the supplier.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const selectedWorkspace = workspaces.find(w => w.companyName === formData.senderName);
       const workspaceId = selectedWorkspace ? selectedWorkspace._id : 'MAIN';
@@ -515,9 +526,13 @@ const IntakeDashboard = () => {
                         className={inputClasses('receiverPhone')} onFocus={() => setFocusedField('receiverPhone')} onBlur={() => setFocusedField(null)} placeholder="e.g. 9876543210" />
                     </div>
                     <div className="relative">
-                      <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[8px] font-bold text-purple-400">Client / Store Code</label>
+                      <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[8px] font-bold text-purple-400">
+                        Client / Store Code {isFlipkartSelected && <span className="text-red-500">*</span>}
+                      </label>
                       <input type="text" name="receiverClientCode" value={formData.receiverClientCode} onChange={handleChange} 
-                        className={inputClasses('receiverClientCode')} onFocus={() => setFocusedField('receiverClientCode')} onBlur={() => setFocusedField(null)} placeholder="Optional" />
+                        required={isFlipkartSelected}
+                        className={inputClasses('receiverClientCode')} onFocus={() => setFocusedField('receiverClientCode')} onBlur={() => setFocusedField(null)} 
+                        placeholder={isFlipkartSelected ? "Compulsory for Flipkart" : "Optional"} />
                     </div>
                   </div>
                   <div className="flex items-center gap-2 pt-1">

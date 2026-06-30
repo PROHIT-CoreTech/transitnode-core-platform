@@ -60,6 +60,7 @@ const companyRoutes = require('./routes/companyRoutes');
 const masterAdminRoutes = require('./routes/masterAdminRoutes');
 const accountingRoutes = require('./routes/accounting');
 const telemetryRoutes = require('./routes/telemetry');
+const flipkartMisRoutes = require('./routes/flipkartMis');
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/shipments', shipmentRoutes);
@@ -74,6 +75,7 @@ app.use('/api/companies', companyRoutes);
 app.use('/api/master-admin', masterAdminRoutes);
 app.use('/api/accounting', accountingRoutes);
 app.use('/api/telemetry', telemetryRoutes);
+app.use('/api/flipkart-mis', flipkartMisRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
