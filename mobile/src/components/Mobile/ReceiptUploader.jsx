@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import axios from 'axios';
+import apiConfig from '../../config/apiConfig';
 import { I18nContext, DriverAuthContext } from '../../App';
 
 const ReceiptUploader = ({ tripId }) => {
@@ -26,7 +26,7 @@ const ReceiptUploader = ({ tripId }) => {
     formData.append('expiryDate', new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]); // Dummy expiry 1 year from now
 
     try {
-      await axios.post('http://192.168.29.237:3000/api/admin/compliance/upload', formData, {
+      await apiConfig.post('/admin/compliance/upload', formData, {
         headers: { 
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${driverToken}`

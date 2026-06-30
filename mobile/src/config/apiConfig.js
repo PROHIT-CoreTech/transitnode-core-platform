@@ -1,10 +1,13 @@
 import axios from 'axios';
 
-// Centralized Axios base URLs targeting port 3000/api (assuming backend runs on 3000)
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://192.168.29.237:3000/api';
+// Dynamic API Base URL construction
+let apiURL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+if (!apiURL.endsWith('/api')) {
+  apiURL = `${apiURL}/api`;
+}
 
 const apiConfig = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: apiURL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+import apiConfig from '../config/apiConfig';
 import { I18nContext, DriverAuthContext } from '../App';
 import ReceiptUploader from '../components/Mobile/ReceiptUploader';
 import DeliveryVerifyScreen from './DeliveryVerifyScreen';
@@ -14,7 +14,7 @@ const DashboardScreen = () => {
 
   const fetchActiveTrip = async () => {
     try {
-      const res = await axios.get('http://192.168.29.237:3000/api/transports/active-trip', {
+      const res = await apiConfig.get('/transports/active-trip', {
         headers: { Authorization: `Bearer ${driverToken}` }
       });
       setTrip(res.data.data);
@@ -66,7 +66,7 @@ const DashboardScreen = () => {
 
   const handleStartTrip = async () => {
     try {
-      await axios.post('http://192.168.29.237:3000/api/transports/driver/start-trip', {
+      await apiConfig.post('/transports/driver/start-trip', {
         trackingNumber: displayTrip.trackingCode
       }, {
         headers: { Authorization: `Bearer ${driverToken}` }

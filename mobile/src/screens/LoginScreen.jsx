@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import axios from 'axios';
+import apiConfig from '../config/apiConfig';
 import { I18nContext, DriverAuthContext } from '../App';
 
 const LoginScreen = () => {
@@ -24,7 +24,7 @@ const LoginScreen = () => {
 
     setLoading(true);
     try {
-      await axios.post('http://192.168.29.237:3000/api/auth/send-otp', {
+      await apiConfig.post('/auth/send-otp', {
         mobileNumber: phone
       });
       setStep(2);
@@ -50,7 +50,7 @@ const LoginScreen = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post('http://192.168.29.237:3000/api/auth/verify-otp', {
+      const response = await apiConfig.post('/auth/verify-otp', {
         mobileNumber: phone,
         otp: otp
       });

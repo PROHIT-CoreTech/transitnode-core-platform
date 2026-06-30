@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+import apiConfig from '../config/apiConfig';
 import { I18nContext, DriverAuthContext } from '../App';
 
 const DeliveryVerifyScreen = ({ tripId, currentStatus }) => {
@@ -48,7 +48,7 @@ const DeliveryVerifyScreen = ({ tripId, currentStatus }) => {
     setError('');
 
     try {
-      await axios.post('http://192.168.29.237:3000/api/transports/verify-delivery', {
+      await apiConfig.post('/transports/verify-delivery', {
         tripId,
         otp
       }, {
