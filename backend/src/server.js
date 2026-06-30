@@ -79,7 +79,11 @@ app.use('/api/flipkart-mis', flipkartMisRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
-  res.send('TransitNode ERP Backend API is running');
+  res.json({
+    message: 'TransitNode ERP Backend API is running',
+    nodeEnv: process.env.NODE_ENV,
+    mongoUri: process.env.MONGO_URI ? process.env.MONGO_URI.replace(/:([^@]+)@/, ':****@') : null
+  });
 });
 
 // Real-time sockets
