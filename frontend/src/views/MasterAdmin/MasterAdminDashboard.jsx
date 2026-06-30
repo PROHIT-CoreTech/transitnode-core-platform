@@ -514,16 +514,25 @@ const MasterAdminDashboard = () => {
                 <tbody className="text-sm divide-y divide-slate-100">
                   {filteredTenants.length > 0 ? (
                     filteredTenants.map((tenant) => (
-                      <tr key={tenant._id} className="hover:bg-slate-50 transition-colors">
+                      <tr 
+                        key={tenant._id} 
+                        className={`transition-colors ${
+                          tenant.isSuspended 
+                            ? 'bg-red-50/40 hover:bg-red-50/60 text-slate-500' 
+                            : 'hover:bg-slate-50 text-slate-700'
+                        }`}
+                      >
                         <td className="p-4 font-medium text-slate-900">
                           <div className="flex items-center gap-2">
-                            <span>{tenant.companyName}</span>
+                            <span className={tenant.isSuspended ? 'text-slate-500 line-through' : ''}>{tenant.companyName}</span>
                             {tenant.isSuspended && (
                               <span className="bg-red-100 text-red-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Suspended</span>
                             )}
                           </div>
                         </td>
-                        <td className="p-4 text-indigo-600">{tenant.customSubdomain}</td>
+                        <td className={`p-4 font-semibold ${tenant.isSuspended ? 'text-red-400 line-through' : 'text-indigo-600'}`}>
+                          {tenant.customSubdomain}
+                        </td>
                         <td className="p-4">
                           <span className={`px-2 py-1 rounded text-xs font-bold ${
                             tenant.planType === 'LIFETIME' ? 'bg-purple-100 text-purple-800' :
