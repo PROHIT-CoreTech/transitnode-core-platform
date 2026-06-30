@@ -7,6 +7,7 @@ import { Analytics } from '@vercel/analytics/react';
 import './index.css';
 
 const App = () => {
+  console.log("TransitNode ERP App Initialized");
   return (
     <AuthProvider>
       <TenantBrandingProvider>
