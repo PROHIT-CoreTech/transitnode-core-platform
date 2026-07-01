@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+require('./env_selector');
 const tenantPlugin = require('../models/plugins/tenantPlugin');
 const tenantGuard = require('../models/NoSQL/plugins/tenantGuard');
 

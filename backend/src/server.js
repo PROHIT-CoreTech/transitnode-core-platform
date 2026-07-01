@@ -1,5 +1,6 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
+require('./config/env_selector');
 const { validateEnvironment } = require('./config/environment');
 validateEnvironment();
 const express = require('express');

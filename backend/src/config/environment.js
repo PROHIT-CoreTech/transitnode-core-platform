@@ -3,6 +3,8 @@
  * Validates critical environment variables at startup.
  */
 
+require('./env_selector');
+
 const validateEnvironment = () => {
   // Validate JWT Secret
   if (!process.env.JWT_SECRET || process.env.JWT_SECRET.trim() === '') {
