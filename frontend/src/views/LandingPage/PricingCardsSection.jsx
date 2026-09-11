@@ -2,17 +2,19 @@ import React from 'react';
 
 const PricingCardsSection = ({ openRegisterModal }) => {
   return (
-    <section id="pricing" className="container mx-auto px-6 py-20 lg:py-24 relative z-10 border-t border-slate-100 scroll-mt-24">
-      <div className="text-center mb-16 space-y-2">
-        <h2 className="font-['Inter'] font-extrabold text-[26px] sm:text-[35px] leading-none text-center" style={{ color: 'rgba(0, 0, 0, 1)' }}>
+    <section id="pricing" className="container mx-auto px-4 sm:px-6 py-20 lg:py-24 relative z-10 border-t border-slate-100 scroll-mt-24">
+      <div className="text-center mb-12 sm:mb-16 space-y-2">
+        <h2 className="font-['Inter'] font-extrabold text-[24px] sm:text-[35px] leading-snug sm:leading-none text-center" style={{ color: 'rgba(0, 0, 0, 1)' }}>
           SELECT YOUR OPERATIONAL VOLUME TIER
         </h2>
+        <p className="text-xs text-slate-400 md:hidden font-medium">Swipe cards horizontally →</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+      {/* Mobile Horizontal Carousel Marquee / Desktop 4-Column Grid */}
+      <div className="flex md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 max-w-7xl mx-auto overflow-x-auto md:overflow-visible snap-x snap-mandatory pb-6 md:pb-0 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
         
         {/* Card 1 - Blue Accent */}
-        <div className="bg-white border-2 border-blue-500/80 rounded-2xl p-6 flex flex-col justify-between shadow-md hover:shadow-xl transition-all duration-300 relative group">
+        <div className="flex-shrink-0 w-[85%] sm:w-[290px] md:w-auto snap-center bg-white border-2 border-blue-500/80 rounded-2xl p-6 flex flex-col justify-between shadow-md hover:shadow-xl transition-all duration-300 relative group">
           <div>
             <div className="text-[11px] font-bold text-blue-600 uppercase tracking-wider mb-1">TRANCEZARDS</div>
             <h3 className="text-xl font-bold text-slate-900 mb-3">10 Day Exploration</h3>
@@ -46,7 +48,7 @@ const PricingCardsSection = ({ openRegisterModal }) => {
         </div>
 
         {/* Card 2 - Emerald/Teal Accent */}
-        <div className="bg-white border-2 border-emerald-500/80 rounded-2xl p-6 flex flex-col justify-between shadow-md hover:shadow-xl transition-all duration-300 relative group">
+        <div className="flex-shrink-0 w-[85%] sm:w-[290px] md:w-auto snap-center bg-white border-2 border-emerald-500/80 rounded-2xl p-6 flex flex-col justify-between shadow-md hover:shadow-xl transition-all duration-300 relative group">
           <div>
             <div className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider mb-1">TRANCEZARDS</div>
             <h3 className="text-xl font-bold text-slate-900 mb-3">10 Day Exploration</h3>
@@ -80,7 +82,7 @@ const PricingCardsSection = ({ openRegisterModal }) => {
         </div>
 
         {/* Card 3 - Orange/Amber Accent */}
-        <div className="bg-white border-2 border-amber-500/80 rounded-2xl p-6 flex flex-col justify-between shadow-md hover:shadow-xl transition-all duration-300 relative group">
+        <div className="flex-shrink-0 w-[85%] sm:w-[290px] md:w-auto snap-center bg-white border-2 border-amber-500/80 rounded-2xl p-6 flex flex-col justify-between shadow-md hover:shadow-xl transition-all duration-300 relative group">
           <div>
             <div className="text-[11px] font-bold text-amber-600 uppercase tracking-wider mb-1">TRANCEZARDS</div>
             <h3 className="text-xl font-bold text-slate-900 mb-3">10 Day Exploration</h3>
@@ -114,7 +116,7 @@ const PricingCardsSection = ({ openRegisterModal }) => {
         </div>
 
         {/* Card 4 - Purple Accent */}
-        <div className="bg-white border-2 border-purple-500/80 rounded-2xl p-6 flex flex-col justify-between shadow-md hover:shadow-xl transition-all duration-300 relative group">
+        <div className="flex-shrink-0 w-[85%] sm:w-[290px] md:w-auto snap-center bg-white border-2 border-purple-500/80 rounded-2xl p-6 flex flex-col justify-between shadow-md hover:shadow-xl transition-all duration-300 relative group">
           <div>
             <div className="text-[11px] font-bold text-purple-600 uppercase tracking-wider mb-1">TRANCEZARDS</div>
             <h3 className="text-xl font-bold text-slate-900 mb-3">10 Day Exploration</h3>
