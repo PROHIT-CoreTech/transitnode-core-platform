@@ -166,32 +166,34 @@ const PricingPortal = () => {
       {/* Light Gradient Subtle Highlights */}
       <div className="fixed top-0 right-0 w-[800px] h-[600px] bg-gradient-to-b from-sky-100/60 via-blue-50/40 to-transparent blur-3xl pointer-events-none z-0"></div>
       
-      {/* Header Navigation */}
-      <nav className="container mx-auto px-6 py-5 flex justify-between items-center relative z-40 bg-white/80 backdrop-blur-md border-b border-slate-100">
-        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => window.location.href = '/'}>
-          <img src={brandLogo} alt="TransitNode Logo" className="h-8 w-auto object-contain" />
-          <span className="text-xl font-extrabold tracking-tight text-slate-900">Transit<span className="text-[#187baa]">Node</span></span>
-        </div>
+      {/* Fixed Sticky Header Navigation */}
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm w-full">
+        <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => window.location.href = '/'}>
+            <img src={brandLogo} alt="TransitNode Logo" className="h-8 w-auto object-contain" />
+            <span className="text-xl font-extrabold tracking-tight text-slate-900">Transit<span className="text-[#187baa]">Node</span></span>
+          </div>
 
-        <div className="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-600">
-          <a href="#features" className="hover:text-[#187baa] transition-colors">Page 1</a>
-          <a href="#solutions" className="hover:text-[#187baa] transition-colors">Page 1</a>
-          <a href="#tracking" className="hover:text-[#187baa] transition-colors">Page 1</a>
-          <a href="#pricing" className="hover:text-[#187baa] transition-colors">Page 1</a>
-          <a href="#about" className="hover:text-[#187baa] transition-colors">Page 1</a>
-        </div>
+          <div className="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-600">
+            <a href="#features" className="hover:text-[#187baa] transition-colors">Page 1</a>
+            <a href="#solutions" className="hover:text-[#187baa] transition-colors">Page 1</a>
+            <a href="#tracking" className="hover:text-[#187baa] transition-colors">Page 1</a>
+            <a href="#pricing" className="hover:text-[#187baa] transition-colors">Page 1</a>
+            <a href="#about" className="hover:text-[#187baa] transition-colors">Page 1</a>
+          </div>
 
-        <div className="flex items-center space-x-5">
-          <a href="/login" className="text-sm font-semibold text-slate-700 hover:text-[#187baa] transition-colors">Log In</a>
-          <button 
-            onClick={() => openRegisterModal('free')}
-            className="bg-[#187baa] hover:bg-[#14668f] text-white font-semibold text-sm px-6 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center space-x-2"
-          >
-            <span>Start Free Trial</span>
-            <span>→</span>
-          </button>
-        </div>
-      </nav>
+          <div className="flex items-center space-x-5">
+            <a href="/login" className="text-sm font-semibold text-slate-700 hover:text-[#187baa] transition-colors">Log In</a>
+            <button 
+              onClick={() => openRegisterModal('free')}
+              className="bg-[#187baa] hover:bg-[#14668f] text-white font-semibold text-sm px-6 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center space-x-2"
+            >
+              <span>Start Free Trial</span>
+              <span>→</span>
+            </button>
+          </div>
+        </nav>
+      </header>
 
       {/* Hero Section */}
       <section className="container mx-auto px-6 pt-12 pb-16 relative z-10">
@@ -199,15 +201,15 @@ const PricingPortal = () => {
           
           {/* Left Hero Copy */}
           <div className="lg:col-span-6 flex flex-col space-y-6">
-            <div className="inline-block text-[#187baa] text-xs font-bold uppercase tracking-wider">
+            <div className="font-['Inter'] font-semibold text-[15px] leading-none uppercase" style={{ color: 'rgba(19, 107, 207, 1)' }}>
               GLOBAL LOGISTICS. SMARTER TOMORROW
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 leading-[1.1] uppercase tracking-tight">
+            <h1 className="font-['Inter'] font-extrabold text-[38px] sm:text-[48px] lg:text-[55px] leading-none uppercase tracking-normal" style={{ color: 'rgba(0, 0, 0, 1)' }}>
               ENTERPRISE FLEET CONTROL. ZERO FRICTION.
             </h1>
 
-            <p className="text-slate-600 text-base sm:text-lg leading-relaxed max-w-xl font-normal">
+            <p className="font-['Inter'] font-normal text-[18px] leading-[150%] max-w-xl" style={{ color: 'rgba(0, 0, 0, 0.6)' }}>
               Enjoy your speakers and hard, predesignat language, applying, and client corporate. 70 suspects.
             </p>
 
@@ -220,9 +222,11 @@ const PricingPortal = () => {
                 'Connected vehicles',
                 'International routes'
               ].map((item, i) => (
-                <div key={i} className="flex items-center text-slate-700 font-medium text-sm">
-                  <SolidCheckIcon />
-                  <span>{item}</span>
+                <div key={i} className="flex items-center space-x-3">
+                  <img src="/check_circle.svg" alt="Check Icon" className="w-5 h-5 flex-shrink-0" />
+                  <span className="font-['Inter'] font-normal text-[15px] leading-[150%]" style={{ color: 'rgba(0, 0, 0, 0.6)' }}>
+                    {item}
+                  </span>
                 </div>
               ))}
             </div>
@@ -239,12 +243,12 @@ const PricingPortal = () => {
 
               <button 
                 onClick={() => openRegisterModal('free')}
-                className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold text-sm px-6 py-3.5 rounded-lg shadow-sm transition-all flex items-center space-x-2"
+                className="bg-transparent hover:opacity-80 transition-all flex items-center space-x-2 py-2"
               >
-                <div className="w-6 h-6 rounded-full border border-[#187baa] flex items-center justify-center text-[#187baa] text-xs">
-                  ▶
-                </div>
-                <span>Watch Overview</span>
+                <img src="/play_circle.svg" alt="Play Icon" className="w-7 h-7 flex-shrink-0" />
+                <span className="font-['Inter'] font-normal text-[15px] leading-[150%]" style={{ color: 'rgba(28, 27, 31, 1)' }}>
+                  Watch Overview
+                </span>
               </button>
             </div>
           </div>
@@ -266,20 +270,20 @@ const PricingPortal = () => {
         {/* KPI Counter Stats Strip */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pt-16 border-t border-slate-100 mt-16 max-w-5xl">
           <div>
-            <div className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-1">1M+</div>
-            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">Vehicles Connected</div>
+            <div className="font-['Inter'] font-semibold text-[25px] leading-[150%]" style={{ color: 'rgba(0, 0, 0, 1)' }}>1M+</div>
+            <div className="font-['Inter'] font-normal text-[15px] leading-[150%]" style={{ color: 'rgba(28, 27, 31, 1)' }}>Vehicles Connected</div>
           </div>
           <div>
-            <div className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-1">150+</div>
-            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">Vehicles Connected</div>
+            <div className="font-['Inter'] font-semibold text-[25px] leading-[150%]" style={{ color: 'rgba(0, 0, 0, 1)' }}>150+</div>
+            <div className="font-['Inter'] font-normal text-[15px] leading-[150%]" style={{ color: 'rgba(28, 27, 31, 1)' }}>Vehicles Connected</div>
           </div>
           <div>
-            <div className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-1">99.9%</div>
-            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">Vehicles Connected</div>
+            <div className="font-['Inter'] font-semibold text-[25px] leading-[150%]" style={{ color: 'rgba(0, 0, 0, 1)' }}>99.9%</div>
+            <div className="font-['Inter'] font-normal text-[15px] leading-[150%]" style={{ color: 'rgba(28, 27, 31, 1)' }}>Vehicles Connected</div>
           </div>
           <div>
-            <div className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-1">24/7</div>
-            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">Vehicles Connected</div>
+            <div className="font-['Inter'] font-semibold text-[25px] leading-[150%]" style={{ color: 'rgba(0, 0, 0, 1)' }}>24/7</div>
+            <div className="font-['Inter'] font-normal text-[15px] leading-[150%]" style={{ color: 'rgba(28, 27, 31, 1)' }}>Vehicles Connected</div>
           </div>
         </div>
       </section>
@@ -287,10 +291,10 @@ const PricingPortal = () => {
       {/* Operational Volume Tier Pricing Section */}
       <section id="pricing" className="container mx-auto px-6 py-20 relative z-10 border-t border-slate-100">
         <div className="text-center mb-16 space-y-2">
-          <div className="text-[#187baa] text-xs font-bold uppercase tracking-wider">
+          <div className="font-['Inter'] font-semibold text-[15px] leading-none uppercase text-center" style={{ color: 'rgba(19, 107, 207, 1)' }}>
             FLEXIBLE PLANING FOR EVERY STAGE
           </div>
-          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 uppercase tracking-tight">
+          <h2 className="font-['Inter'] font-extrabold text-[26px] sm:text-[35px] leading-none text-center" style={{ color: 'rgba(0, 0, 0, 1)' }}>
             SELECT YOUR OPERATIONAL VOLUME TIER
           </h2>
         </div>
@@ -439,10 +443,10 @@ const PricingPortal = () => {
       {/* Testimonials Review Cards Section */}
       <section className="container mx-auto px-6 py-20 relative z-10 border-t border-slate-100">
         <div className="text-center mb-16 space-y-2">
-          <div className="text-[#187baa] text-xs font-bold uppercase tracking-wider">
+          <div className="font-['Inter'] font-semibold text-[15px] leading-none uppercase text-center" style={{ color: 'rgba(19, 107, 207, 1)' }}>
             FLEXIBLE PLANING FOR EVERY STAGE
           </div>
-          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 uppercase tracking-tight">
+          <h2 className="font-['Inter'] font-extrabold text-[26px] sm:text-[35px] leading-none text-center" style={{ color: 'rgba(0, 0, 0, 1)' }}>
             SELECT YOUR OPERATIONAL VOLUME TIER
           </h2>
         </div>
