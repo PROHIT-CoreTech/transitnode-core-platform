@@ -2,10 +2,37 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import brandLogo from '../../assets/brand_logo.png';
 
-const CheckIcon = ({ className = "w-4 h-4 text-slate-400 mr-2 flex-shrink-0 mt-0.5" }) => (
+const CheckIcon = ({ className = "w-4 h-4 text-blue-600 mr-2 flex-shrink-0" }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path>
   </svg>
+);
+
+const SolidCheckIcon = ({ className = "w-4 h-4 text-white" }) => (
+  <div className="w-5 h-5 rounded-full bg-[#187baa] flex items-center justify-center flex-shrink-0 mr-3">
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+    </svg>
+  </div>
+);
+
+const StarIcon = ({ className = "w-4 h-4 text-amber-400 fill-current" }) => (
+  <svg className={className} viewBox="0 0 20 20">
+    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+  </svg>
+);
+
+const HalfStarIcon = ({ className = "w-4 h-4 text-amber-400 fill-current" }) => (
+  <div className="relative w-4 h-4">
+    <svg className="w-4 h-4 text-slate-300 fill-current" viewBox="0 0 20 20">
+      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+    </svg>
+    <div className="absolute inset-0 overflow-hidden w-1/2">
+      <svg className="w-4 h-4 text-amber-400 fill-current" viewBox="0 0 20 20">
+        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+      </svg>
+    </div>
+  </div>
 );
 
 const PricingPortal = () => {
@@ -15,12 +42,13 @@ const PricingPortal = () => {
 
   const [showModal, setShowModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState('free');
+  const [useSvg, setUseSvg] = useState(true);
   const [formData, setFormData] = useState({
     companyName: '',
     registeredMobile: '',
     customSubdomain: ''
   });
-  const [currentStep, setCurrentStep] = useState('WORKSPACE'); // 'WORKSPACE', 'PAYMENT', 'ADMIN_SETUP', 'COMPLETE'
+  const [currentStep, setCurrentStep] = useState('WORKSPACE');
   const [tenantInfo, setTenantInfo] = useState(null);
   const [adminData, setAdminData] = useState({
     username: '',
@@ -33,36 +61,22 @@ const PricingPortal = () => {
 
   const testimonials = [
     {
-      name: "William Alex",
-      role: "Supply Chain Director",
-      image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80",
-      avatar: "https://i.pravatar.cc/150?img=11",
-      text: "\"Supply chain optimization ROI went through the roof since our deployment of TransitNode. Best effort.\"",
-      company: "Global Supply"
+      name: "Anis S.",
+      role: "Head of Operations, Indigo",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+      quote: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip"
     },
     {
-      name: "Madhu Mia",
-      role: "Global Logistics Manager",
-      image: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=400&q=80",
-      avatar: "https://i.pravatar.cc/150?img=68",
-      text: "\"The multi-language support allowed our drivers across different states to adopt the app immediately.\"",
-      company: "Cargo Logistics Board"
+      name: "Anis S.",
+      role: "Head of Operations, Indigo",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
+      quote: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip"
     },
     {
-      name: "Sarah Jenkins",
-      role: "Global Logistics Manager",
-      image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80",
-      avatar: "https://i.pravatar.cc/150?img=47",
-      text: "\"Using the direct Tally ERP export has saved our accounting team hundreds of hours each month.\"",
-      company: "Cargo Logistics Group"
-    },
-    {
-      name: "Emma Stone",
-      role: "Supply Chain Director",
-      image: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=400&q=80",
-      avatar: "https://i.pravatar.cc/150?img=32",
-      text: "\"The compliance vault ensures we never miss a vehicle renewal date again. Absolute game changer.\"",
-      company: "Cargo Logistics"
+      name: "Anis S.",
+      role: "Head of Operations, Indigo",
+      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80",
+      quote: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip"
     }
   ];
 
@@ -92,7 +106,7 @@ const PricingPortal = () => {
     }
   };
 
-  // Step 2: Payment Integration (Cashfree)
+  // Step 2: Payment Integration
   const handlePayment = async () => {
     if (tenantInfo?.orderSessionId && window.Cashfree) {
       const mode = isLocalhost ? 'sandbox' : 'production';
@@ -102,12 +116,11 @@ const PricingPortal = () => {
         redirectTarget: "_self"
       });
     } else {
-      // Simulate / complete payment step in dev mode and proceed to admin setup
       setCurrentStep('ADMIN_SETUP');
     }
   };
 
-  // Step 3: Admin Setup (First User Create)
+  // Step 3: Admin Setup
   const handleAdminSetup = async (e) => {
     e.preventDefault();
     if (adminData.password !== adminData.confirmPassword) {
@@ -142,301 +155,421 @@ const PricingPortal = () => {
     }
   };
 
+  const openRegisterModal = (plan = 'free') => {
+    setSelectedPlan(plan);
+    setShowModal(true);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0c10] via-[#101524] to-[#050608] text-slate-100 font-inter selection:bg-amber-500/30 overflow-x-hidden">
+    <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-blue-500/20 overflow-x-hidden">
       
-      {/* Background glow effects */}
-      <div className="fixed top-1/4 left-1/4 w-[500px] h-[500px] bg-slate-800/20 rounded-full blur-[150px] pointer-events-none z-0"></div>
-      <div className="fixed bottom-1/4 right-1/4 w-[500px] h-[500px] bg-indigo-900/10 rounded-full blur-[150px] pointer-events-none z-0"></div>
+      {/* Light Gradient Subtle Highlights */}
+      <div className="fixed top-0 right-0 w-[800px] h-[600px] bg-gradient-to-b from-sky-100/60 via-blue-50/40 to-transparent blur-3xl pointer-events-none z-0"></div>
       
-      {/* Navbar */}
-      <nav className="container mx-auto px-6 py-6 flex justify-between items-center relative z-50">
-        <div className="flex items-center space-x-3">
-          <img src={brandLogo} alt="TransitNode Logo" className="h-7 w-auto object-contain brightness-0 invert opacity-90" />
-          <span className="text-lg font-semibold tracking-wide text-white">TransitNode</span>
+      {/* Header Navigation */}
+      <nav className="container mx-auto px-6 py-5 flex justify-between items-center relative z-40 bg-white/80 backdrop-blur-md border-b border-slate-100">
+        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => window.location.href = '/'}>
+          <img src={brandLogo} alt="TransitNode Logo" className="h-8 w-auto object-contain" />
+          <span className="text-xl font-extrabold tracking-tight text-slate-900">Transit<span className="text-[#187baa]">Node</span></span>
         </div>
-        <button 
-          onClick={() => { setSelectedPlan('free'); setShowModal(true); }}
-          className="font-montserrat font-medium uppercase tracking-tight bg-gradient-to-b from-gray-200 to-gray-400 hover:from-white hover:to-gray-300 text-slate-900 px-6 py-2.5 rounded-full transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] text-sm"
-        >
-          Start Free Trial
-        </button>
+
+        <div className="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-600">
+          <a href="#features" className="hover:text-[#187baa] transition-colors">Page 1</a>
+          <a href="#solutions" className="hover:text-[#187baa] transition-colors">Page 1</a>
+          <a href="#tracking" className="hover:text-[#187baa] transition-colors">Page 1</a>
+          <a href="#pricing" className="hover:text-[#187baa] transition-colors">Page 1</a>
+          <a href="#about" className="hover:text-[#187baa] transition-colors">Page 1</a>
+        </div>
+
+        <div className="flex items-center space-x-5">
+          <a href="/login" className="text-sm font-semibold text-slate-700 hover:text-[#187baa] transition-colors">Log In</a>
+          <button 
+            onClick={() => openRegisterModal('free')}
+            className="bg-[#187baa] hover:bg-[#14668f] text-white font-semibold text-sm px-6 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center space-x-2"
+          >
+            <span>Start Free Trial</span>
+            <span>→</span>
+          </button>
+        </div>
       </nav>
 
-      {/* Hero Segment */}
-      <header className="container mx-auto px-6 pt-12 pb-32 relative z-10 flex flex-col lg:flex-row items-start">
-        <div className="w-full lg:w-1/2 lg:pr-10 z-20 flex flex-col gap-6">
-          <h1 className="font-cinzel text-5xl md:text-6xl lg:text-[64px] font-bold tracking-[0.1em] mb-4 leading-[1.15] text-white uppercase drop-shadow-xl">
-            ENTERPRISE <br /> FLEET CONTROL. <br /> ZERO FRICTION.
-          </h1>
-          <p className="font-inter text-lg text-slate-400 mb-6 leading-relaxed font-light max-w-lg">
-            Enjoy your spreadsheet and hard, piecemeal legacy applications, and client corporate SO suspects.
-          </p>
-          <div className="font-cormorant text-lg font-medium text-[#e2d5c3] tracking-[0.15em] leading-loose uppercase">
-            SCALE GLOBAL LOGISTICS.<br/>
-            PRECISE TELEMATICS.<br/>
-            MULTI-LANGUAGE APPS.<br/>
-            ALL-IN-ONE PLATFORM.
-          </div>
-        </div>
-        <div className="w-full lg:w-1/2 relative mt-16 lg:mt-0 z-10 flex justify-center lg:justify-end min-h-[400px] lg:absolute lg:right-0 lg:top-0 lg:h-full lg:pointer-events-none overflow-hidden">
-          <img 
-            src="/hero_background.png" 
-            alt="Global Logistics Map" 
-            className="w-full h-auto object-cover max-w-[800px] lg:max-w-none lg:w-[120%] lg:-mr-[10%] opacity-80 mix-blend-screen drop-shadow-2xl"
-          />
-        </div>
-      </header>
-
-      {/* Pricing Section */}
-      <section className="container mx-auto px-6 py-16 relative z-10 space-y-16">
-        <div className="text-center mb-16">
-          <h2 className="font-cormorant text-2xl md:text-3xl font-medium tracking-[0.15em] text-[#e2d5c3] uppercase drop-shadow-md">
-            SELECT YOUR OPERATIONAL<br/>VOLUME TIER
-          </h2>
-        </div>
-        
-        <div className="max-w-4xl mx-auto flex flex-col space-y-10">
+      {/* Hero Section */}
+      <section className="container mx-auto px-6 pt-12 pb-16 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           
-          {/* Card 1: 10-Day Exploration (Blue Tier - Carbon Fiber Weave) */}
-          <div className="flex flex-col md:flex-row items-stretch gap-0 relative shadow-2xl rounded-xl overflow-hidden ring-1 ring-white/10" style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/carbon-fibre.png'), linear-gradient(to right, #0f172a, #1e293b)", backgroundBlendMode: "overlay" }}>
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent pointer-events-none"></div>
-            <div className="flex-1 p-8 relative flex flex-col justify-between backdrop-blur-sm shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] border-r border-white/5">
-              <div className="absolute top-0 left-8 w-16 h-[3px] bg-blue-500 rounded-b-sm shadow-[0_0_12px_rgba(59,130,246,0.8)]"></div>
-              
-              <div className="flex justify-between items-start mb-8 mt-2">
-                <div>
-                  <h3 className="font-inter font-medium text-2xl text-white mb-2 tracking-tight">10-Day Exploration</h3>
-                  <p className="font-inter text-slate-400 text-sm font-light">Enjoy free learning on five pre-built fleet tools.</p>
-                </div>
-                <div className="w-12 h-12 rounded-full border-[3px] border-slate-600/50 shadow-[inset_0_0_10px_rgba(255,255,255,0.1)]"></div>
-              </div>
-              
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm text-slate-300 mb-8 font-inter font-light">
-                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-blue-400 mr-3 flex-shrink-0" /> Full fleet supply chain options</li>
-                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-blue-400 mr-3 flex-shrink-0" /> 1 Lesson payment</li>
-              </ul>
-              
-              <div className="flex justify-between items-end mt-auto">
-                <div className="text-xs text-slate-500 max-w-[60%] leading-relaxed"></div>
-                <button onClick={() => { setSelectedPlan('free'); setShowModal(true); }} className="font-montserrat px-6 py-3 rounded-lg border border-white/10 hover:bg-white/5 transition-colors text-sm font-medium uppercase tracking-tight text-white shadow-[0_4px_14px_0_rgba(0,0,0,0.39)]">
-                  Start Free Trial
-                </button>
-              </div>
+          {/* Left Hero Copy */}
+          <div className="lg:col-span-6 flex flex-col space-y-6">
+            <div className="inline-block text-[#187baa] text-xs font-bold uppercase tracking-wider">
+              GLOBAL LOGISTICS. SMARTER TOMORROW
             </div>
-            
-            <div className="w-full md:w-64 p-8 flex flex-col items-center justify-center text-center relative backdrop-blur-sm bg-black/20 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]">
-              <div className="absolute inset-0 bg-gradient-to-b from-blue-900/10 to-transparent pointer-events-none"></div>
-              <div className="font-cormorant bg-slate-800/80 border border-slate-600/50 text-blue-300 text-xs px-4 py-1.5 rounded-full mb-6 font-semibold tracking-[0.1em] uppercase relative z-10 shadow-lg">BEGINNER TIER</div>
-              <div className="font-inter font-semibold text-5xl text-white mb-2 relative z-10 drop-shadow-lg">₹0</div>
-              <div className="font-inter text-slate-400 text-xs uppercase font-medium relative z-10 mt-1 tracking-widest">Price</div>
+
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 leading-[1.1] uppercase tracking-tight">
+              ENTERPRISE FLEET CONTROL. ZERO FRICTION.
+            </h1>
+
+            <p className="text-slate-600 text-base sm:text-lg leading-relaxed max-w-xl font-normal">
+              Enjoy your speakers and hard, predesignat language, applying, and client corporate. 70 suspects.
+            </p>
+
+            {/* Checklist */}
+            <div className="space-y-3 pt-2">
+              {[
+                'Scale Global Logistics',
+                'Fleet management',
+                'Logistics networks',
+                'Connected vehicles',
+                'International routes'
+              ].map((item, i) => (
+                <div key={i} className="flex items-center text-slate-700 font-medium text-sm">
+                  <SolidCheckIcon />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* CTA Action Row */}
+            <div className="flex flex-wrap items-center gap-4 pt-4">
+              <button 
+                onClick={() => openRegisterModal('free')}
+                className="bg-[#187baa] hover:bg-[#14668f] text-white font-semibold text-sm px-7 py-3.5 rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center space-x-2"
+              >
+                <span>Start Free Trial</span>
+                <span>→</span>
+              </button>
+
+              <button 
+                onClick={() => openRegisterModal('free')}
+                className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold text-sm px-6 py-3.5 rounded-lg shadow-sm transition-all flex items-center space-x-2"
+              >
+                <div className="w-6 h-6 rounded-full border border-[#187baa] flex items-center justify-center text-[#187baa] text-xs">
+                  ▶
+                </div>
+                <span>Watch Overview</span>
+              </button>
             </div>
           </div>
 
-          {/* Card 2: 3-Year Acceleration (Green Tier - Emerald Marble) */}
-          <div className="flex flex-col md:flex-row items-stretch gap-0 relative shadow-[0_20px_50px_rgba(4,47,46,0.5)] rounded-xl overflow-hidden ring-1 ring-[#059669]/30" style={{ backgroundImage: "linear-gradient(to right, rgba(2, 44, 34, 0.95), rgba(2, 44, 34, 0.8)), url('https://images.unsplash.com/photo-1596160522500-1c4627b0c306?q=80&w=800&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent pointer-events-none"></div>
-            <div className="flex-1 p-8 relative flex flex-col justify-between backdrop-blur-md shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] border-r border-[#059669]/20">
-              <div className="absolute top-0 left-8 w-16 h-[3px] bg-emerald-400 rounded-b-sm shadow-[0_0_12px_rgba(52,211,153,0.8)]"></div>
-              
-              <div className="flex justify-between items-start mb-8 mt-2">
-                <div>
-                  <h3 className="font-inter font-medium text-2xl text-white mb-2 tracking-tight">3-Year Acceleration</h3>
-                  <p className="font-inter text-emerald-100/70 text-sm font-light">Give your supply team massive data opportunity leverage.</p>
-                </div>
-                <div className="w-12 h-12 rounded-full border-[3px] border-emerald-900/50 shadow-[inset_0_0_10px_rgba(16,185,129,0.2)] relative">
-                  <div className="absolute inset-[-3px] rounded-full border-[3px] border-emerald-400 border-l-transparent border-b-transparent transform rotate-45 shadow-[0_0_12px_rgba(52,211,153,0.4)]"></div>
-                </div>
-              </div>
-              
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm text-slate-100 mb-8 font-inter font-light">
-                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-emerald-400 mr-3 flex-shrink-0" /> Flexible access matrix</li>
-                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-emerald-400 mr-3 flex-shrink-0" /> Full Tally XML integration</li>
-                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-emerald-400 mr-3 flex-shrink-0" /> 10 m/s and fast tracking nodes</li>
-                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-emerald-400 mr-3 flex-shrink-0" /> Standard email access</li>
-              </ul>
-              
-              <div className="flex justify-between items-end mt-auto">
-                <div className="text-xs text-emerald-100/50 max-w-[60%] leading-relaxed font-light">Quantitatively accurate out of interception track line logging interfaces.</div>
-                <button onClick={() => { setSelectedPlan('silver'); setShowModal(true); }} className="font-montserrat px-6 py-3 rounded-lg border border-emerald-400/30 hover:bg-emerald-400/10 hover:border-emerald-400/60 transition-colors text-sm font-medium uppercase tracking-tight text-white shadow-[0_4px_14px_0_rgba(4,47,46,0.39)]">
-                  Upgrade to 3 Year
-                </button>
-              </div>
-            </div>
-            
-            <div className="w-full md:w-64 p-8 flex flex-col items-center justify-center text-center relative backdrop-blur-md bg-black/30 shadow-[inset_0_0_30px_rgba(0,0,0,0.5)]">
-              <div className="absolute inset-0 bg-gradient-to-b from-emerald-900/20 to-transparent pointer-events-none"></div>
-              <div className="font-cormorant bg-emerald-950/60 border border-emerald-700/50 text-emerald-300 text-xs px-4 py-1.5 rounded-full mb-6 font-semibold tracking-[0.1em] uppercase relative z-10 shadow-lg">GROWTH PHASE</div>
-              <div className="font-inter text-emerald-100/60 text-[10px] uppercase font-semibold mb-2 relative z-10 tracking-widest">SILVER PRICE POINT</div>
-              <div className="font-inter font-semibold text-5xl text-white mb-2 relative z-10 drop-shadow-lg">₹50k</div>
-              <div className="font-inter text-emerald-400/80 text-xs font-medium relative z-10">/ 36 Months upfront</div>
+          {/* Right Hero Graphic */}
+          <div className="lg:col-span-6 flex justify-center lg:justify-end">
+            <div className="relative w-full max-w-2xl drop-shadow-xl">
+              <img 
+                src={useSvg ? "/hero_display.svg" : "/hero_display.png"} 
+                onError={() => setUseSvg(false)} 
+                alt="Enterprise Fleet Control Display" 
+                className="w-full h-auto object-contain rounded-2xl"
+              />
             </div>
           </div>
 
-          {/* Card 3: 5-Year Control Tower (Orange/Gold Tier - Walnut Wood) */}
-          <div className="flex flex-col md:flex-row items-stretch gap-0 relative shadow-[0_20px_50px_rgba(67,30,15,0.5)] rounded-xl overflow-hidden ring-1 ring-[#f59e0b]/30" style={{ backgroundImage: "linear-gradient(to right, rgba(67, 30, 15, 0.95), rgba(67, 30, 15, 0.8)), url('https://images.unsplash.com/photo-1546413240-54a858140409?q=80&w=800&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
-            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-transparent pointer-events-none"></div>
-            <div className="flex-1 p-8 relative flex flex-col justify-between backdrop-blur-md shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] border-r border-[#f59e0b]/20">
-              <div className="absolute top-0 left-8 w-16 h-[3px] bg-amber-400 rounded-b-sm shadow-[0_0_12px_rgba(251,191,36,0.8)]"></div>
-              
-              <div className="flex justify-between items-start mb-8 mt-2">
-                <div>
-                  <h3 className="font-inter font-medium text-2xl text-white mb-2 tracking-tight">5-Year Control Tower</h3>
-                  <p className="font-inter text-amber-100/70 text-sm font-light">Accessible access to the out of spectrum industry traits.</p>
-                </div>
-                <div className="w-12 h-12 rounded-full border-[3px] border-amber-900/50 shadow-[inset_0_0_10px_rgba(245,158,11,0.2)] relative">
-                  <div className="absolute inset-[-3px] rounded-full border-[3px] border-amber-400 border-b-transparent transform rotate-12 shadow-[0_0_12px_rgba(251,191,36,0.4)]"></div>
-                </div>
-              </div>
-              
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm text-slate-100 mb-8 font-inter font-light">
-                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-amber-400 mr-3 flex-shrink-0" /> 4 Teams cross & from rounds</li>
-                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-amber-400 mr-3 flex-shrink-0" /> Core audit compliance vaults</li>
-                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-amber-400 mr-3 flex-shrink-0" /> Full system cost on availability</li>
-                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-amber-400 mr-3 flex-shrink-0" /> Privacy and access spaces</li>
-              </ul>
-              
-              <div className="flex justify-between items-end mt-auto">
-                <div className="text-xs text-amber-100/50 max-w-[60%] leading-relaxed font-light">Available in a step set up room call which track your line and instruction.</div>
-                <button onClick={() => { setSelectedPlan('platinum'); setShowModal(true); }} className="font-montserrat px-6 py-3 rounded-lg border border-amber-400/30 hover:bg-amber-400/10 hover:border-amber-400/60 transition-colors text-sm font-medium uppercase tracking-tight text-white shadow-[0_4px_14px_0_rgba(67,30,15,0.39)]">
-                  Select Advanced Tier
-                </button>
-              </div>
-            </div>
-            
-            <div className="w-full md:w-64 p-8 flex flex-col items-center justify-center text-center relative backdrop-blur-md bg-black/30 shadow-[inset_0_0_30px_rgba(0,0,0,0.5)]">
-              <div className="absolute inset-0 bg-gradient-to-b from-amber-900/20 to-transparent pointer-events-none"></div>
-              <div className="font-cormorant bg-amber-950/60 border border-amber-700/50 text-amber-300 text-xs px-4 py-1.5 rounded-full mb-6 font-semibold tracking-[0.1em] uppercase relative z-10 shadow-lg">FULL DATA TRACK LIMIT</div>
-              <div className="font-inter text-amber-100/60 text-[10px] uppercase font-semibold mb-2 relative z-10 tracking-widest">BUDGET TEMA PRICE</div>
-              <div className="font-inter font-semibold text-5xl text-white mb-2 relative z-10 drop-shadow-lg">₹1.00L</div>
-              <div className="font-inter text-amber-400/80 text-xs font-medium relative z-10">/ 60 Months upfront</div>
-            </div>
-          </div>
+        </div>
 
-          {/* Card 4: Lifetime Ownership (Purple Tier - Violet Velvet) */}
-          <div className="flex flex-col md:flex-row items-stretch gap-0 relative shadow-[0_20px_50px_rgba(46,16,101,0.5)] rounded-xl overflow-hidden ring-1 ring-[#8b5cf6]/30" style={{ backgroundImage: "linear-gradient(to right, rgba(46, 16, 101, 0.95), rgba(46, 16, 101, 0.8)), url('https://images.unsplash.com/photo-1627914041793-010530752591?q=80&w=800&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-transparent pointer-events-none"></div>
-            <div className="flex-1 p-8 relative flex flex-col justify-between backdrop-blur-md shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] border-r border-[#8b5cf6]/20">
-              <div className="absolute top-0 left-8 w-16 h-[3px] bg-violet-400 rounded-b-sm shadow-[0_0_12px_rgba(139,92,246,0.8)]"></div>
-              
-              <div className="flex justify-between items-start mb-8 mt-2">
-                <div>
-                  <h3 className="font-inter font-medium text-2xl text-white mb-2 tracking-tight">Lifetime Ownership</h3>
-                  <p className="font-inter text-violet-100/70 text-sm font-light">The best, last update. used in Partner Manufacturing tool.</p>
-                </div>
-                <div className="w-12 h-12 rounded-full border-[3px] border-violet-900/50 shadow-[inset_0_0_10px_rgba(139,92,246,0.2)] relative">
-                  <div className="absolute inset-[-3px] rounded-full border-[3px] border-violet-400 border-l-transparent border-t-transparent transform rotate-45 shadow-[0_0_12px_rgba(139,92,246,0.4)]"></div>
-                </div>
-              </div>
-              
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm text-slate-100 mb-8 font-inter font-light">
-                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-violet-400 mr-3 flex-shrink-0" /> And a gear set / ** ***** ****</li>
-                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-violet-400 mr-3 flex-shrink-0" /> Authentication options</li>
-                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-violet-400 mr-3 flex-shrink-0" /> Full prime q/m & accessibility</li>
-                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-violet-400 mr-3 flex-shrink-0" /> Adaptable telemetry partners manage</li>
-              </ul>
-              
-              <div className="flex justify-between items-end mt-auto">
-                <div className="text-xs text-violet-100/50 max-w-[60%] leading-relaxed font-light">Unavailable on sub rather our clean call which track part logistical repository.</div>
-                <button onClick={() => { setSelectedPlan('lifetime'); setShowModal(true); }} className="font-montserrat px-6 py-3 rounded-lg border border-violet-400/30 hover:bg-violet-400/10 hover:border-violet-400/60 transition-colors text-sm font-medium uppercase tracking-tight text-white shadow-[0_4px_14px_0_rgba(46,16,101,0.39)]">
-                  Check Out & Now
-                </button>
-              </div>
-            </div>
-            
-            <div className="w-full md:w-64 p-8 flex flex-col items-center justify-center text-center relative backdrop-blur-md bg-black/30 shadow-[inset_0_0_30px_rgba(0,0,0,0.5)]">
-              <div className="absolute inset-0 bg-gradient-to-b from-violet-900/20 to-transparent pointer-events-none"></div>
-              <div className="font-cormorant bg-violet-950/60 border border-violet-700/50 text-violet-300 text-xs px-4 py-1.5 rounded-full mb-6 font-semibold tracking-[0.1em] uppercase relative z-10 shadow-lg">MAX DATA LIMITING</div>
-              <div className="font-inter text-violet-100/60 text-[10px] uppercase font-semibold mb-2 relative z-10 tracking-widest">TIER 5 + EXCLUSIVE</div>
-              <div className="font-inter font-semibold text-5xl text-white mb-2 relative z-10 drop-shadow-lg">₹5.00L</div>
-              <div className="font-inter text-violet-400/80 text-xs font-medium relative z-10">Lifetime</div>
-            </div>
+        {/* KPI Counter Stats Strip */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pt-16 border-t border-slate-100 mt-16 max-w-5xl">
+          <div>
+            <div className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-1">1M+</div>
+            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">Vehicles Connected</div>
           </div>
-          
+          <div>
+            <div className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-1">150+</div>
+            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">Vehicles Connected</div>
+          </div>
+          <div>
+            <div className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-1">99.9%</div>
+            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">Vehicles Connected</div>
+          </div>
+          <div>
+            <div className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-1">24/7</div>
+            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">Vehicles Connected</div>
+          </div>
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="container mx-auto px-6 py-24 relative z-10 mt-16">
-        <div className="text-center mb-16">
-          <h2 className="font-cormorant text-2xl md:text-3xl font-medium tracking-[0.15em] text-[#e2d5c3] uppercase drop-shadow-md">
-            Trusted by Industry Leaders
+      {/* Operational Volume Tier Pricing Section */}
+      <section id="pricing" className="container mx-auto px-6 py-20 relative z-10 border-t border-slate-100">
+        <div className="text-center mb-16 space-y-2">
+          <div className="text-[#187baa] text-xs font-bold uppercase tracking-wider">
+            FLEXIBLE PLANING FOR EVERY STAGE
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 uppercase tracking-tight">
+            SELECT YOUR OPERATIONAL VOLUME TIER
           </h2>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-[1200px] mx-auto">
-          {testimonials.map((t, idx) => (
-            <div key={idx} className="backdrop-blur-sm border border-white/20 rounded-xl overflow-hidden flex flex-col group hover:-translate-y-1 transition-transform duration-500 shadow-2xl ring-1 ring-white/10" style={{ backgroundImage: "linear-gradient(to bottom, rgba(255, 255, 255, 0.95), rgba(240, 240, 245, 0.98)), url('https://images.unsplash.com/photo-1601657805126-7f4f6e1f06f5?q=80&w=800&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
-              <div className="h-48 w-full overflow-hidden border-b border-slate-200/50">
-                 <img src={t.image} alt={t.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+          
+          {/* Card 1 - Blue Accent */}
+          <div className="bg-white border-2 border-blue-500/80 rounded-2xl p-6 flex flex-col justify-between shadow-md hover:shadow-xl transition-all duration-300 relative group">
+            <div>
+              <div className="text-[11px] font-bold text-blue-600 uppercase tracking-wider mb-1">TRANCEZARDS</div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">10 Day Exploration</h3>
+              <p className="text-slate-500 text-xs leading-relaxed mb-6 font-normal">
+                Baila hold denning fast fine glara from free tosed soce.
+              </p>
+
+              <div className="space-y-3 mb-8">
+                <div className="flex items-center text-xs font-medium text-slate-700">
+                  <div className="w-4 h-4 rounded-full bg-blue-500 text-white flex items-center justify-center text-[10px] mr-2 flex-shrink-0">✓</div>
+                  <span>Scale Global Logistics</span>
+                </div>
+                <div className="flex items-center text-xs font-medium text-slate-700">
+                  <div className="w-4 h-4 rounded-full bg-blue-500 text-white flex items-center justify-center text-[10px] mr-2 flex-shrink-0">✓</div>
+                  <span>Fleet management</span>
+                </div>
               </div>
-              <div className="p-7 flex-1 flex flex-col relative text-slate-800">
-                 <div className="flex space-x-1 text-amber-500 mb-4 drop-shadow-sm">
-                    {[...Array(5)].map((_, i) => (
-                      <svg key={i} className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                    ))}
-                 </div>
-                 <h4 className="font-inter font-semibold text-slate-900 text-sm mb-3 uppercase tracking-wider">{t.role}</h4>
-                 <p className="font-inter text-slate-600 text-[13px] leading-relaxed mb-8 font-light flex-1 italic">
-                   {t.text}
-                 </p>
-                 <div className="flex items-center space-x-4 pt-5 border-t border-slate-300/50">
-                    <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden ring-2 ring-white shadow-md">
-                       <img src={t.avatar} alt="Avatar" className="w-full h-full object-cover" />
-                    </div>
-                    <div>
-                      <div className="font-inter text-[11px] font-bold text-slate-900 uppercase tracking-widest">{t.name}</div>
-                      <div className="font-inter text-[10px] text-slate-500 font-medium uppercase tracking-wider mt-0.5">{t.company}</div>
-                    </div>
-                 </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100">
+              <div className="text-[10px] text-slate-400 uppercase font-semibold mb-1">Price</div>
+              <div className="text-3xl font-extrabold text-slate-900 mb-5">₹0</div>
+              <button 
+                onClick={() => openRegisterModal('free')}
+                className="w-full bg-[#187baa] hover:bg-[#14668f] text-white font-semibold text-xs py-3 rounded-lg shadow transition-all flex items-center justify-center space-x-1"
+              >
+                <span>Start Free Trial</span>
+                <span>→</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Card 2 - Emerald/Teal Accent */}
+          <div className="bg-white border-2 border-emerald-500/80 rounded-2xl p-6 flex flex-col justify-between shadow-md hover:shadow-xl transition-all duration-300 relative group">
+            <div>
+              <div className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider mb-1">TRANCEZARDS</div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">10 Day Exploration</h3>
+              <p className="text-slate-500 text-xs leading-relaxed mb-6 font-normal">
+                Baila hold denning fast fine glara from free tosed soce.
+              </p>
+
+              <div className="space-y-3 mb-8">
+                <div className="flex items-center text-xs font-medium text-slate-700">
+                  <div className="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] mr-2 flex-shrink-0">✓</div>
+                  <span>Scale Global Logistics</span>
+                </div>
+                <div className="flex items-center text-xs font-medium text-slate-700">
+                  <div className="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] mr-2 flex-shrink-0">✓</div>
+                  <span>Fleet management</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100">
+              <div className="text-[10px] text-slate-400 uppercase font-semibold mb-1">Price</div>
+              <div className="text-3xl font-extrabold text-slate-900 mb-5">₹50k</div>
+              <button 
+                onClick={() => openRegisterModal('silver')}
+                className="w-full bg-[#0d9488] hover:bg-[#0f766e] text-white font-semibold text-xs py-3 rounded-lg shadow transition-all flex items-center justify-center space-x-1"
+              >
+                <span>Upgrade to 1 Year</span>
+                <span>→</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Card 3 - Orange/Amber Accent */}
+          <div className="bg-white border-2 border-amber-500/80 rounded-2xl p-6 flex flex-col justify-between shadow-md hover:shadow-xl transition-all duration-300 relative group">
+            <div>
+              <div className="text-[11px] font-bold text-amber-600 uppercase tracking-wider mb-1">TRANCEZARDS</div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">10 Day Exploration</h3>
+              <p className="text-slate-500 text-xs leading-relaxed mb-6 font-normal">
+                Baila hold denning fast fine glara from free tosed soce.
+              </p>
+
+              <div className="space-y-3 mb-8">
+                <div className="flex items-center text-xs font-medium text-slate-700">
+                  <div className="w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center text-[10px] mr-2 flex-shrink-0">✓</div>
+                  <span>Scale Global Logistics</span>
+                </div>
+                <div className="flex items-center text-xs font-medium text-slate-700">
+                  <div className="w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center text-[10px] mr-2 flex-shrink-0">✓</div>
+                  <span>Fleet management</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100">
+              <div className="text-[10px] text-slate-400 uppercase font-semibold mb-1">Price</div>
+              <div className="text-3xl font-extrabold text-slate-900 mb-5">₹50k</div>
+              <button 
+                onClick={() => openRegisterModal('platinum')}
+                className="w-full bg-[#d97706] hover:bg-[#b45309] text-white font-semibold text-xs py-3 rounded-lg shadow transition-all flex items-center justify-center space-x-1"
+              >
+                <span>Upgrade to 1 Year</span>
+                <span>→</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Card 4 - Purple Accent */}
+          <div className="bg-white border-2 border-purple-500/80 rounded-2xl p-6 flex flex-col justify-between shadow-md hover:shadow-xl transition-all duration-300 relative group">
+            <div>
+              <div className="text-[11px] font-bold text-purple-600 uppercase tracking-wider mb-1">TRANCEZARDS</div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">10 Day Exploration</h3>
+              <p className="text-slate-500 text-xs leading-relaxed mb-6 font-normal">
+                Baila hold denning fast fine glara from free tosed soce.
+              </p>
+
+              <div className="space-y-3 mb-8">
+                <div className="flex items-center text-xs font-medium text-slate-700">
+                  <div className="w-4 h-4 rounded-full bg-purple-500 text-white flex items-center justify-center text-[10px] mr-2 flex-shrink-0">✓</div>
+                  <span>Scale Global Logistics</span>
+                </div>
+                <div className="flex items-center text-xs font-medium text-slate-700">
+                  <div className="w-4 h-4 rounded-full bg-purple-500 text-white flex items-center justify-center text-[10px] mr-2 flex-shrink-0">✓</div>
+                  <span>Fleet management</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100">
+              <div className="text-[10px] text-slate-400 uppercase font-semibold mb-1">Price</div>
+              <div className="text-3xl font-extrabold text-slate-900 mb-5">₹50k</div>
+              <button 
+                onClick={() => openRegisterModal('lifetime')}
+                className="w-full bg-[#6d28d9] hover:bg-[#5b21b6] text-white font-semibold text-xs py-3 rounded-lg shadow transition-all flex items-center justify-center space-x-1"
+              >
+                <span>Upgrade to 1 Year</span>
+                <span>→</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* Testimonials Review Cards Section */}
+      <section className="container mx-auto px-6 py-20 relative z-10 border-t border-slate-100">
+        <div className="text-center mb-16 space-y-2">
+          <div className="text-[#187baa] text-xs font-bold uppercase tracking-wider">
+            FLEXIBLE PLANING FOR EVERY STAGE
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 uppercase tracking-tight">
+            SELECT YOUR OPERATIONAL VOLUME TIER
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {testimonials.map((t, idx) => (
+            <div key={idx} className="bg-white border border-slate-200 rounded-2xl p-7 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+              <div>
+                {/* 4.5 Star Rating */}
+                <div className="flex items-center space-x-1 mb-5">
+                  <StarIcon />
+                  <StarIcon />
+                  <StarIcon />
+                  <StarIcon />
+                  <HalfStarIcon />
+                </div>
+
+                <p className="text-slate-600 text-xs sm:text-sm leading-relaxed mb-8 font-normal">
+                  {t.quote}
+                </p>
+              </div>
+
+              <div className="flex items-center space-x-4 pt-4 border-t border-slate-100">
+                <img src={t.avatar} alt={t.name} className="w-10 h-10 rounded-full object-cover border border-slate-200" />
+                <div>
+                  <div className="font-bold text-slate-900 text-xs">{t.name}</div>
+                  <div className="text-slate-500 text-[11px] font-medium">{t.role}</div>
+                </div>
               </div>
             </div>
           ))}
         </div>
-        
-        {/* Pagination Dots Indicator */}
-        <div className="flex justify-center mt-12 space-x-1.5">
-           <div className="w-4 h-1 bg-slate-600 rounded-full"></div>
-           <div className="w-1 h-1 bg-slate-800 rounded-full"></div>
-           <div className="w-1 h-1 bg-slate-800 rounded-full"></div>
-        </div>
       </section>
 
-      {/* Footer minimal representation */}
-      <footer className="container mx-auto px-6 py-16 border-t border-slate-800 mt-20 flex flex-col md:flex-row justify-between items-start md:items-center text-sm text-slate-500 gap-10 relative z-10">
-        <div className="flex flex-col gap-4">
-           <div className="flex items-center space-x-3 mb-2">
-              <img src={brandLogo} alt="Logo" className="h-6 w-auto opacity-70 brightness-0 invert" />
-              <span className="font-montserrat font-bold tracking-[0.2em] uppercase text-slate-300 text-xs">TransitNode</span>
-           </div>
-           <p className="font-inter max-w-sm text-xs leading-loose text-slate-500 font-light">We proudly present more open solutions up to start that the initial step through process parameters provides operation easily minimal.</p>
+      {/* Footer */}
+      <footer className="bg-white border-t border-slate-200 pt-16 pb-12 relative z-10 text-slate-600 text-xs">
+        <div className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-slate-100">
+          
+          {/* Col 1: About Us */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <img src={brandLogo} alt="TransitNode Logo" className="h-7 w-auto object-contain" />
+              <span className="text-lg font-extrabold text-slate-900 tracking-tight">Transit<span className="text-[#187baa]">Node</span></span>
+            </div>
+            <div className="font-bold text-slate-900 text-xs uppercase tracking-wider">About Us</div>
+            <p className="text-slate-500 text-xs leading-relaxed font-normal">
+              We are a growing logistics and transportation company committed to providing reliable, efficient and customer-focused logistics solutions across worldwide.
+            </p>
+            <a href="#about" className="inline-block text-[#187baa] font-semibold text-xs hover:underline">Learn More</a>
+          </div>
+
+          {/* Col 2: Contacts */}
+          <div className="space-y-3">
+            <div className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-2">Contacts</div>
+            <div className="text-slate-700 font-semibold">+91 757 839 7539</div>
+            <div>
+              <a href="mailto:connect@gmail.com" className="text-[#187baa] underline hover:text-[#14668f]">connect@gmail.com</a>
+            </div>
+            <p className="text-slate-500 leading-relaxed">
+              Plot No. D68/30, Near Ganapati Temple, Kharghar, Sector 12, Navi Mumbai - 410210
+            </p>
+          </div>
+
+          {/* Col 3: Main Links */}
+          <div className="space-y-3">
+            <div className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-2">Main Links</div>
+            <ul className="space-y-2 font-medium">
+              <li><a href="#why-us" className="hover:text-[#187baa] transition-colors">Why Us?</a></li>
+              <li><a href="#about" className="hover:text-[#187baa] transition-colors">About Us</a></li>
+              <li><a href="#contact" className="hover:text-[#187baa] transition-colors">Contact Us</a></li>
+              <li><a href="#partner" className="hover:text-[#187baa] transition-colors">Become a Partner</a></li>
+            </ul>
+          </div>
+
+          {/* Col 4: Social */}
+          <div className="space-y-4">
+            <div className="font-bold text-slate-900 text-xs uppercase tracking-wider">Social</div>
+            <div className="flex items-center space-x-3">
+              <a href="#" className="w-8 h-8 rounded-lg bg-[#187baa] text-white flex items-center justify-center font-bold text-xs hover:bg-[#14668f] transition-colors">f</a>
+              <a href="#" className="w-8 h-8 rounded-lg bg-[#187baa] text-white flex items-center justify-center font-bold text-xs hover:bg-[#14668f] transition-colors">in</a>
+              <a href="#" className="w-8 h-8 rounded-lg bg-[#187baa] text-white flex items-center justify-center font-bold text-xs hover:bg-[#14668f] transition-colors">tw</a>
+              <a href="#" className="w-8 h-8 rounded-lg bg-[#187baa] text-white flex items-center justify-center font-bold text-xs hover:bg-[#14668f] transition-colors">yt</a>
+            </div>
+          </div>
+
         </div>
-        <div className="grid grid-cols-2 gap-16 text-slate-400 text-xs">
-           <div>
-              <ul className="space-y-4 font-montserrat uppercase tracking-wider font-medium text-[10px]">
-                 <li className="hover:text-white cursor-pointer transition-colors">Privacy Policy</li>
-                 <li className="hover:text-white cursor-pointer transition-colors">Terms of Use</li>
-              </ul>
-           </div>
+
+        {/* Bottom copyright bar */}
+        <div className="container mx-auto px-6 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-[11px] text-slate-500">
+          <div className="flex flex-wrap items-center gap-6">
+            <span>© 2026 GoSky</span>
+            <a href="#" className="hover:text-slate-800">Sitemap</a>
+            <a href="/terms-of-service" className="hover:text-slate-800">Terms of Use</a>
+            <a href="/privacy-policy" className="hover:text-slate-800">Privacy and Data Protection Notice</a>
+            <a href="#" className="hover:text-slate-800">Cookie Settings</a>
+          </div>
+
+          <div className="flex items-center space-x-6">
+            <div className="flex space-x-2 text-slate-600 font-bold">
+              <span>in</span>
+              <span>f</span>
+              <span>tw</span>
+              <span>yt</span>
+            </div>
+            <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="text-[#187baa] font-semibold hover:underline">
+              Back to top ↑
+            </button>
+          </div>
         </div>
       </footer>
       
-      {/* Big Screen Registration Portal */}
+      {/* Interactive SaaS Registration Portal Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 md:p-10 bg-slate-950/90 backdrop-blur-md overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-700/80 rounded-3xl w-full max-w-4xl overflow-hidden relative shadow-[0_25px_70px_rgba(0,0,0,0.8)] grid grid-cols-1 md:grid-cols-12 min-h-[580px]">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 md:p-10 bg-slate-950/70 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-4xl overflow-hidden relative shadow-2xl grid grid-cols-1 md:grid-cols-12 min-h-[580px]">
             
             {/* Left Hero Sidebar */}
-            <div className="md:col-span-5 bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 p-8 flex flex-col justify-between border-r border-slate-700/60 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-teal-500/10 via-transparent to-transparent pointer-events-none"></div>
+            <div className="md:col-span-5 bg-gradient-to-br from-slate-900 via-slate-800 to-[#187baa] p-8 flex flex-col justify-between border-r border-slate-700/60 relative overflow-hidden text-white">
+              <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-500/10 via-transparent to-transparent pointer-events-none"></div>
               
               <div>
                 <div className="flex items-center space-x-3 mb-8">
                   <img src={brandLogo} alt="Logo" className="h-6 w-auto brightness-0 invert opacity-90" />
-                  <span className="font-montserrat font-bold tracking-[0.2em] uppercase text-slate-200 text-xs">TransitNode</span>
+                  <span className="font-bold tracking-tight uppercase text-white text-xs">TransitNode</span>
                 </div>
                 
-                <div className="inline-block bg-teal-950/80 border border-teal-600/50 text-teal-300 text-xs px-3 py-1 rounded-full font-semibold uppercase tracking-wider mb-4">
+                <div className="inline-block bg-blue-950/80 border border-blue-400/50 text-blue-200 text-xs px-3 py-1 rounded-full font-semibold uppercase tracking-wider mb-4">
                   {selectedPlan} Plan Workspace Setup
                 </div>
 
@@ -446,28 +579,28 @@ const PricingPortal = () => {
                 </p>
 
                 <ul className="space-y-3 text-xs text-slate-300">
-                  <li className="flex items-center"><CheckIcon className="w-4 h-4 text-teal-400 mr-2" /> Dedicated Subdomain Provisioning</li>
-                  <li className="flex items-center"><CheckIcon className="w-4 h-4 text-teal-400 mr-2" /> Multi-Tenant Role Isolation</li>
-                  <li className="flex items-center"><CheckIcon className="w-4 h-4 text-teal-400 mr-2" /> Cashfree Gateway Integration</li>
-                  <li className="flex items-center"><CheckIcon className="w-4 h-4 text-teal-400 mr-2" /> Single Sign-On (SSO) Magic Link</li>
+                  <li className="flex items-center"><CheckIcon className="w-4 h-4 text-blue-400 mr-2" /> Dedicated Subdomain Provisioning</li>
+                  <li className="flex items-center"><CheckIcon className="w-4 h-4 text-blue-400 mr-2" /> Multi-Tenant Role Isolation</li>
+                  <li className="flex items-center"><CheckIcon className="w-4 h-4 text-blue-400 mr-2" /> Cashfree Gateway Integration</li>
+                  <li className="flex items-center"><CheckIcon className="w-4 h-4 text-blue-400 mr-2" /> Single Sign-On (SSO) Magic Link</li>
                 </ul>
               </div>
 
-              <div className="pt-6 border-t border-slate-700/60 text-[11px] text-slate-400 flex items-center justify-between">
+              <div className="pt-6 border-t border-slate-700/60 text-[11px] text-slate-300 flex items-center justify-between">
                 <span>🔒 256-Bit Encrypted Portal</span>
-                <span className="font-mono text-teal-400 font-semibold">{isLocalhost ? 'Localhost Dev' : 'Production'}</span>
+                <span className="font-mono text-blue-300 font-semibold">{isLocalhost ? 'Localhost Dev' : 'Production'}</span>
               </div>
             </div>
 
             {/* Right Interactive Form Area */}
-            <div className="md:col-span-7 p-8 md:p-10 flex flex-col justify-between relative bg-slate-900">
+            <div className="md:col-span-7 p-8 md:p-10 flex flex-col justify-between relative bg-white">
               <button 
                 onClick={() => {
                   setShowModal(false);
                   setCurrentStep('WORKSPACE');
                   setResult(null);
                 }} 
-                className="absolute top-6 right-6 text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-700 p-2 rounded-full transition-colors"
+                className="absolute top-6 right-6 text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 p-2 rounded-full transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
               </button>
@@ -476,14 +609,14 @@ const PricingPortal = () => {
                 {/* Step Progress Header */}
                 <div className="mb-8 pr-8">
                   <div className="flex justify-between items-center text-xs font-semibold uppercase tracking-wider mb-2 text-slate-400">
-                    <span className={currentStep === 'WORKSPACE' ? 'text-teal-400 font-bold' : ''}>1. Workspace</span>
-                    <span className={currentStep === 'PAYMENT' ? 'text-teal-400 font-bold' : ''}>2. Payment</span>
-                    <span className={currentStep === 'ADMIN_SETUP' ? 'text-teal-400 font-bold' : ''}>3. Admin Setup</span>
-                    <span className={currentStep === 'COMPLETE' ? 'text-teal-400 font-bold' : ''}>4. Launch</span>
+                    <span className={currentStep === 'WORKSPACE' ? 'text-[#187baa] font-bold' : ''}>1. Workspace</span>
+                    <span className={currentStep === 'PAYMENT' ? 'text-[#187baa] font-bold' : ''}>2. Payment</span>
+                    <span className={currentStep === 'ADMIN_SETUP' ? 'text-[#187baa] font-bold' : ''}>3. Admin Setup</span>
+                    <span className={currentStep === 'COMPLETE' ? 'text-[#187baa] font-bold' : ''}>4. Launch</span>
                   </div>
-                  <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                     <div 
-                      className="bg-gradient-to-r from-teal-500 to-emerald-400 h-full transition-all duration-500"
+                      className="bg-[#187baa] h-full transition-all duration-500"
                       style={{
                         width: currentStep === 'WORKSPACE' ? '25%' : currentStep === 'PAYMENT' ? '50%' : currentStep === 'ADMIN_SETUP' ? '75%' : '100%'
                       }}
@@ -494,27 +627,27 @@ const PricingPortal = () => {
                 {/* STEP 1: CREATE WORKSPACE */}
                 {currentStep === 'WORKSPACE' && (
                   <>
-                    <h3 className="text-2xl font-bold text-white mb-1">Create Workspace</h3>
-                    <p className="text-slate-400 text-xs mb-6">Enter your organization details to reserve your dedicated logistics subdomain.</p>
+                    <h3 className="text-2xl font-bold text-slate-900 mb-1">Create Workspace</h3>
+                    <p className="text-slate-500 text-xs mb-6">Enter your organization details to reserve your dedicated logistics subdomain.</p>
                     
                     <form onSubmit={handleCreateWorkspace} className="space-y-5">
                       <div>
-                        <label className="block text-slate-300 text-xs font-medium mb-1.5">Company Name</label>
-                        <input required type="text" value={formData.companyName} onChange={e => setFormData({...formData, companyName: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-teal-500 focus:outline-none text-sm" placeholder="e.g. Koyala Logistics Inc" />
+                        <label className="block text-slate-700 text-xs font-medium mb-1.5">Company Name</label>
+                        <input required type="text" value={formData.companyName} onChange={e => setFormData({...formData, companyName: e.target.value})} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" placeholder="e.g. Koyala Logistics Inc" />
                       </div>
                       <div>
-                        <label className="block text-slate-300 text-xs font-medium mb-1.5">Registered Mobile Number</label>
-                        <input required type="tel" value={formData.registeredMobile} onChange={e => setFormData({...formData, registeredMobile: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-teal-500 focus:outline-none text-sm" placeholder="+91 9876543210" />
+                        <label className="block text-slate-700 text-xs font-medium mb-1.5">Registered Mobile Number</label>
+                        <input required type="tel" value={formData.registeredMobile} onChange={e => setFormData({...formData, registeredMobile: e.target.value})} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" placeholder="+91 9876543210" />
                       </div>
                       <div>
-                        <label className="block text-slate-300 text-xs font-medium mb-1.5">Custom Workspace Domain</label>
+                        <label className="block text-slate-700 text-xs font-medium mb-1.5">Custom Workspace Domain</label>
                         <div className="flex">
-                          <input required type="text" value={formData.customSubdomain} onChange={e => setFormData({...formData, customSubdomain: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-l-xl px-4 py-3 text-white focus:ring-2 focus:ring-teal-500 focus:outline-none text-sm font-mono" placeholder="acme" />
-                          <span className="bg-slate-700 border border-slate-600 border-l-0 rounded-r-xl px-4 py-3 text-slate-300 text-xs flex items-center font-mono">{domainSuffix}</span>
+                          <input required type="text" value={formData.customSubdomain} onChange={e => setFormData({...formData, customSubdomain: e.target.value})} className="w-full bg-slate-50 border border-slate-300 rounded-l-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-mono" placeholder="acme" />
+                          <span className="bg-slate-100 border border-slate-300 border-l-0 rounded-r-xl px-4 py-3 text-slate-600 text-xs flex items-center font-mono">{domainSuffix}</span>
                         </div>
                       </div>
                       
-                      <button disabled={loading} type="submit" className="w-full bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold py-3.5 px-4 rounded-xl mt-6 transition-all disabled:opacity-50 text-sm shadow-lg shadow-teal-900/30">
+                      <button disabled={loading} type="submit" className="w-full bg-[#187baa] hover:bg-[#14668f] text-white font-bold py-3.5 px-4 rounded-xl mt-6 transition-all disabled:opacity-50 text-sm shadow-md">
                         {loading ? 'Reserving Subdomain...' : 'Create Workspace & Proceed to Payment →'}
                       </button>
                     </form>
@@ -524,21 +657,21 @@ const PricingPortal = () => {
                 {/* STEP 2: PAYMENT INTEGRATION */}
                 {currentStep === 'PAYMENT' && (
                   <>
-                    <h3 className="text-2xl font-bold text-white mb-1">Payment Integration</h3>
-                    <p className="text-slate-400 text-xs mb-6">Complete subscription checkout for <span className="text-amber-400 font-bold uppercase">{selectedPlan}</span> plan.</p>
+                    <h3 className="text-2xl font-bold text-slate-900 mb-1">Payment Integration</h3>
+                    <p className="text-slate-500 text-xs mb-6">Complete subscription checkout for <span className="text-blue-600 font-bold uppercase">{selectedPlan}</span> plan.</p>
                     
-                    <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 mb-6 text-xs space-y-3">
-                      <div className="flex justify-between text-slate-300">
+                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-6 text-xs space-y-3">
+                      <div className="flex justify-between text-slate-600">
                         <span>Company:</span>
-                        <span className="font-bold text-white text-sm">{formData.companyName}</span>
+                        <span className="font-bold text-slate-900 text-sm">{formData.companyName}</span>
                       </div>
-                      <div className="flex justify-between text-slate-300">
+                      <div className="flex justify-between text-slate-600">
                         <span>Workspace URL:</span>
-                        <span className="font-mono text-teal-400 text-sm">{formData.customSubdomain}{domainSuffix}</span>
+                        <span className="font-mono text-[#187baa] text-sm">{formData.customSubdomain}{domainSuffix}</span>
                       </div>
-                      <div className="flex justify-between text-slate-300 border-t border-slate-700 pt-3 font-bold text-base">
+                      <div className="flex justify-between text-slate-700 border-t border-slate-200 pt-3 font-bold text-base">
                         <span>Total Payable:</span>
-                        <span className="text-emerald-400">
+                        <span className="text-[#187baa]">
                           {selectedPlan === 'silver' ? '₹50,000' : selectedPlan === 'platinum' ? '₹1,00,000' : '₹5,00,000'}
                         </span>
                       </div>
@@ -548,7 +681,7 @@ const PricingPortal = () => {
                       {tenantInfo?.orderSessionId && (
                         <button 
                           onClick={handlePayment} 
-                          className="w-full bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold py-3.5 px-4 rounded-xl transition-colors text-sm flex items-center justify-center space-x-2 shadow-lg shadow-teal-900/30"
+                          className="w-full bg-[#187baa] hover:bg-[#14668f] text-white font-bold py-3.5 px-4 rounded-xl transition-colors text-sm flex items-center justify-center space-x-2 shadow-md"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                           <span>Pay via Cashfree Gateway</span>
@@ -557,7 +690,7 @@ const PricingPortal = () => {
 
                       <button 
                         onClick={() => setCurrentStep('ADMIN_SETUP')} 
-                        className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-medium py-3 px-4 rounded-xl transition-colors text-xs"
+                        className="w-full bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-medium py-3 px-4 rounded-xl transition-colors text-xs"
                       >
                         Complete Payment & Proceed to First User Setup →
                       </button>
@@ -565,66 +698,66 @@ const PricingPortal = () => {
                   </>
                 )}
 
-                {/* STEP 3: FIRST USER CREATE (ADMIN SETUP) */}
+                {/* STEP 3: FIRST USER CREATE */}
                 {currentStep === 'ADMIN_SETUP' && (
                   <>
-                    <h3 className="text-2xl font-bold text-white mb-1">Create Admin Account</h3>
-                    <p className="text-slate-400 text-xs mb-6">Set up master admin login credentials for <span className="text-teal-400 font-bold">{formData.companyName}</span>.</p>
+                    <h3 className="text-2xl font-bold text-slate-900 mb-1">Create Admin Account</h3>
+                    <p className="text-slate-500 text-xs mb-6">Set up master admin login credentials for <span className="text-[#187baa] font-bold">{formData.companyName}</span>.</p>
                     
                     <form onSubmit={handleAdminSetup} className="space-y-4">
                       <div>
-                        <label className="block text-slate-300 text-xs font-medium mb-1.5">Admin Username / Email</label>
+                        <label className="block text-slate-700 text-xs font-medium mb-1.5">Admin Username / Email</label>
                         <input 
                           required 
                           type="text" 
                           value={adminData.username} 
                           onChange={e => setAdminData({...adminData, username: e.target.value})} 
-                          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-teal-500 focus:outline-none text-sm" 
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" 
                           placeholder="admin@domain.com or 9876543210" 
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-300 text-xs font-medium mb-1.5">New Password</label>
+                        <label className="block text-slate-700 text-xs font-medium mb-1.5">New Password</label>
                         <input 
                           required 
                           type="password" 
                           value={adminData.password} 
                           onChange={e => setAdminData({...adminData, password: e.target.value})} 
-                          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-teal-500 focus:outline-none text-sm" 
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" 
                           placeholder="••••••••" 
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-300 text-xs font-medium mb-1.5">Confirm Password</label>
+                        <label className="block text-slate-700 text-xs font-medium mb-1.5">Confirm Password</label>
                         <input 
                           required 
                           type="password" 
                           value={adminData.confirmPassword} 
                           onChange={e => setAdminData({...adminData, confirmPassword: e.target.value})} 
-                          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-teal-500 focus:outline-none text-sm" 
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" 
                           placeholder="••••••••" 
                         />
                       </div>
                       
-                      <button disabled={loading} type="submit" className="w-full bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold py-3.5 px-4 rounded-xl mt-6 transition-all disabled:opacity-50 text-sm shadow-lg shadow-teal-900/30">
+                      <button disabled={loading} type="submit" className="w-full bg-[#187baa] hover:bg-[#14668f] text-white font-bold py-3.5 px-4 rounded-xl mt-6 transition-all disabled:opacity-50 text-sm shadow-md">
                         {loading ? 'Securing Credentials...' : 'Create Admin Account & Secure Workspace →'}
                       </button>
                     </form>
                   </>
                 )}
 
-                {/* STEP 4: MAGIC LINK & WORKSPACE OPEN */}
+                {/* STEP 4: MAGIC LINK & LAUNCH */}
                 {currentStep === 'COMPLETE' && (
                   <div className="text-center py-6">
-                    <div className="w-16 h-16 bg-teal-900/50 border border-teal-500/40 text-teal-400 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg shadow-teal-900/40">
+                    <div className="w-16 h-16 bg-blue-100 text-[#187baa] rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-sm">
                       <svg className="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path></svg>
                     </div>
-                    <h3 className="text-2xl font-bold text-white mb-2">Workspace Ready!</h3>
-                    <p className="text-slate-300 text-xs mb-8 max-w-sm mx-auto">Your dedicated workspace and admin credentials have been configured successfully.</p>
+                    <h3 className="text-2xl font-bold text-slate-900 mb-2">Workspace Ready!</h3>
+                    <p className="text-slate-600 text-xs mb-8 max-w-sm mx-auto">Your dedicated workspace and admin credentials have been configured successfully.</p>
                     
                     <a 
                       href={result?.fullLoginUrl || tenantInfo?.fullLoginUrl || `http://${formData.customSubdomain}${domainSuffix}/login`}
-                      className="w-full bg-gradient-to-r from-teal-400 to-emerald-400 hover:from-teal-300 hover:to-emerald-300 text-slate-950 font-bold py-4 px-6 rounded-xl transition-colors text-sm flex items-center justify-center space-x-2 shadow-xl shadow-teal-500/25"
+                      className="w-full bg-[#187baa] hover:bg-[#14668f] text-white font-bold py-4 px-6 rounded-xl transition-colors text-sm flex items-center justify-center space-x-2 shadow-lg"
                     >
                       <span>Login via Magic Link</span>
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
@@ -633,9 +766,9 @@ const PricingPortal = () => {
                 )}
               </div>
               
-              {/* Error or Alert banner */}
+              {/* Error / Result message */}
               {result && (
-                <div className={`mt-6 p-3.5 rounded-xl text-xs ${result.success ? 'bg-teal-900/30 text-teal-400 border border-teal-800' : 'bg-red-900/30 text-red-400 border border-red-800'}`}>
+                <div className={`mt-6 p-3.5 rounded-xl text-xs ${result.success ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
                   {result.message}
                 </div>
               )}
