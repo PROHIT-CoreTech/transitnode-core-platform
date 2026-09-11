@@ -196,16 +196,16 @@ const PricingPortal = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-6 pt-28 sm:pt-32 pb-16 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      <section className="container mx-auto px-6 pt-28 sm:pt-32 pb-16 relative z-10 overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-20">
           
           {/* Left Hero Copy */}
-          <div className="lg:col-span-6 flex flex-col space-y-6">
+          <div className="lg:col-span-6 flex flex-col space-y-6 z-20">
             <div className="font-['Inter'] font-semibold text-[15px] leading-none uppercase" style={{ color: 'rgba(19, 107, 207, 1)' }}>
               GLOBAL LOGISTICS. SMARTER TOMORROW
             </div>
 
-            <h1 className="font-['Inter'] font-extrabold text-[36px] sm:text-[46px] lg:text-[55px] uppercase" style={{ fontFamily: 'Inter, sans-serif', fontWeight: 800, fontSize: '55px', lineHeight: '100%', letterSpacing: '0%', color: '#000000' }}>
+            <h1 className="font-['Inter'] font-extrabold text-[36px] sm:text-[46px] lg:text-[55px] uppercase" style={{ fontFamily: 'Inter, sans-serif', fontWeight: 800, fontSize: '55px', lineHeight: '100%', letterSpacing: '0%', color: '#000000', WebkitTextFillColor: '#000000', background: 'none' }}>
               ENTERPRISE FLEET CONTROL. ZERO FRICTION.
             </h1>
 
@@ -232,10 +232,10 @@ const PricingPortal = () => {
             </div>
 
             {/* CTA Action Row */}
-            <div className="flex flex-wrap items-center gap-4 pt-4">
+            <div className="flex flex-wrap items-center gap-5 pt-4">
               <button 
                 onClick={() => openRegisterModal('free')}
-                className="bg-[#187baa] hover:bg-[#14668f] text-white font-semibold text-sm px-7 py-3.5 rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center space-x-2"
+                className="bg-[#136bcf] hover:bg-[#0f5bb3] text-white font-semibold text-sm px-7 py-3 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center space-x-2"
               >
                 <span>Start Free Trial</span>
                 <span>→</span>
@@ -243,7 +243,7 @@ const PricingPortal = () => {
 
               <button 
                 onClick={() => openRegisterModal('free')}
-                className="bg-transparent hover:opacity-80 transition-all flex items-center space-x-2 py-2"
+                className="bg-[#ffffff] hover:opacity-80 transition-all flex items-center space-x-2 py-2"
               >
                 <img src="/play_circle.svg" alt="Play Icon" className="w-7 h-7 flex-shrink-0" />
                 <span className="font-['Inter'] font-normal text-[15px] leading-[150%]" style={{ color: 'rgba(28, 27, 31, 1)' }}>
@@ -253,14 +253,18 @@ const PricingPortal = () => {
             </div>
           </div>
 
-          {/* Right Hero Graphic */}
-          <div className="lg:col-span-6 flex justify-center lg:justify-end">
-            <div className="relative w-full max-w-2xl drop-shadow-xl">
+          {/* Right Hero Graphic - Seamlessly merged into canvas like Expected Image 2 */}
+          <div className="lg:col-span-6 relative flex justify-end items-center mt-8 lg:mt-0 z-10">
+            <div className="w-full lg:w-[125%] lg:-mr-[12%] relative">
               <img 
                 src={useSvg ? "/hero_display.svg" : "/hero_display.png"} 
                 onError={() => setUseSvg(false)} 
                 alt="Enterprise Fleet Control Display" 
-                className="w-full h-auto object-contain rounded-2xl"
+                className="w-full h-auto object-contain max-h-[540px]"
+                style={{
+                  WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 15%, black 100%)',
+                  maskImage: 'linear-gradient(to right, transparent 0%, black 15%, black 100%)'
+                }}
               />
             </div>
           </div>
@@ -268,28 +272,30 @@ const PricingPortal = () => {
         </div>
 
         {/* KPI Counter Stats Strip */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pt-16 border-t border-slate-100 mt-16 max-w-5xl">
-          <div>
-            <div className="font-['Inter'] font-semibold text-[25px] leading-[150%]" style={{ color: 'rgba(0, 0, 0, 1)' }}>1M+</div>
-            <div className="font-['Inter'] font-normal text-[15px] leading-[150%]" style={{ color: 'rgba(28, 27, 31, 1)' }}>Vehicles Connected</div>
-          </div>
-          <div>
-            <div className="font-['Inter'] font-semibold text-[25px] leading-[150%]" style={{ color: 'rgba(0, 0, 0, 1)' }}>150+</div>
-            <div className="font-['Inter'] font-normal text-[15px] leading-[150%]" style={{ color: 'rgba(28, 27, 31, 1)' }}>Vehicles Connected</div>
-          </div>
-          <div>
-            <div className="font-['Inter'] font-semibold text-[25px] leading-[150%]" style={{ color: 'rgba(0, 0, 0, 1)' }}>99.9%</div>
-            <div className="font-['Inter'] font-normal text-[15px] leading-[150%]" style={{ color: 'rgba(28, 27, 31, 1)' }}>Vehicles Connected</div>
-          </div>
-          <div>
-            <div className="font-['Inter'] font-semibold text-[25px] leading-[150%]" style={{ color: 'rgba(0, 0, 0, 1)' }}>24/7</div>
-            <div className="font-['Inter'] font-normal text-[15px] leading-[150%]" style={{ color: 'rgba(28, 27, 31, 1)' }}>Vehicles Connected</div>
+        <div className="pt-16 border-t border-slate-100 mt-16 max-w-6xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-slate-200">
+            <div className="px-2 md:px-6 py-2 md:py-0">
+              <div className="font-['Inter'] font-semibold text-[25px] leading-[150%]" style={{ color: 'rgba(0, 0, 0, 1)' }}>1M+</div>
+              <div className="font-['Inter'] font-normal text-[15px] leading-[150%]" style={{ color: 'rgba(28, 27, 31, 1)' }}>Vehicles Connected</div>
+            </div>
+            <div className="px-2 md:px-6 py-2 md:py-0">
+              <div className="font-['Inter'] font-semibold text-[25px] leading-[150%]" style={{ color: 'rgba(0, 0, 0, 1)' }}>150+</div>
+              <div className="font-['Inter'] font-normal text-[15px] leading-[150%]" style={{ color: 'rgba(28, 27, 31, 1)' }}>Vehicles Connected</div>
+            </div>
+            <div className="px-2 md:px-6 py-2 md:py-0">
+              <div className="font-['Inter'] font-semibold text-[25px] leading-[150%]" style={{ color: 'rgba(0, 0, 0, 1)' }}>99.9%</div>
+              <div className="font-['Inter'] font-normal text-[15px] leading-[150%]" style={{ color: 'rgba(28, 27, 31, 1)' }}>Vehicles Connected</div>
+            </div>
+            <div className="px-2 md:px-6 py-2 md:py-0">
+              <div className="font-['Inter'] font-semibold text-[25px] leading-[150%]" style={{ color: 'rgba(0, 0, 0, 1)' }}>24/7</div>
+              <div className="font-['Inter'] font-normal text-[15px] leading-[150%]" style={{ color: 'rgba(28, 27, 31, 1)' }}>Vehicles Connected</div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Operational Volume Tier Pricing Section */}
-      <section id="pricing" className="container mx-auto px-6 py-20 relative z-10 border-t border-slate-100">
+      <section id="pricing" className="container mx-auto px-6 pt-16 pb-20 relative z-10">
         <div className="text-center mb-16 space-y-2">
           <div className="font-['Inter'] font-semibold text-[15px] leading-none uppercase text-center" style={{ color: 'rgba(19, 107, 207, 1)' }}>
             FLEXIBLE PLANING FOR EVERY STAGE
