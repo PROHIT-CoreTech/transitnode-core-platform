@@ -161,13 +161,13 @@ const PricingPortal = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-blue-500/20 overflow-x-hidden">
+    <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-blue-500/20">
       
       {/* Light Gradient Subtle Highlights */}
       <div className="fixed top-0 right-0 w-[800px] h-[600px] bg-gradient-to-b from-sky-100/60 via-blue-50/40 to-transparent blur-3xl pointer-events-none z-0"></div>
       
-      {/* Fixed Sticky Header Navigation */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm w-full">
+      {/* Fixed Top Header Navigation */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm w-full">
         <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-3 cursor-pointer" onClick={() => window.location.href = '/'}>
             <img src={brandLogo} alt="TransitNode Logo" className="h-8 w-auto object-contain" />
@@ -196,7 +196,7 @@ const PricingPortal = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-6 pt-12 pb-16 relative z-10">
+      <section className="container mx-auto px-6 pt-28 sm:pt-32 pb-16 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           
           {/* Left Hero Copy */}
@@ -205,7 +205,7 @@ const PricingPortal = () => {
               GLOBAL LOGISTICS. SMARTER TOMORROW
             </div>
 
-            <h1 className="font-['Inter'] font-extrabold text-[38px] sm:text-[48px] lg:text-[55px] leading-none uppercase tracking-normal" style={{ color: 'rgba(0, 0, 0, 1)' }}>
+            <h1 className="font-['Inter'] font-extrabold text-[36px] sm:text-[46px] lg:text-[55px] uppercase" style={{ fontFamily: 'Inter, sans-serif', fontWeight: 800, fontSize: '55px', lineHeight: '100%', letterSpacing: '0%', color: '#000000' }}>
               ENTERPRISE FLEET CONTROL. ZERO FRICTION.
             </h1>
 
