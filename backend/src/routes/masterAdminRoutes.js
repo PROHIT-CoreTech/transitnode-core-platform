@@ -15,4 +15,15 @@ router.put('/tenant/:tenantId/suspend', masterAdminController.toggleTenantSuspen
 router.put('/tenant/:tenantId/subscription', masterAdminController.updateTenantSubscription);
 router.delete('/purge-specified-tenants', masterAdminController.purgeSpecifiedTenants);
 
+// Subscription Plan Routes
+router.get('/plans', masterAdminController.getSubscriptionPlans);
+router.put('/plans/:id', masterAdminController.updateSubscriptionPlanConfig);
+
+// Coupon Routes
+router.get('/coupons', masterAdminController.getCoupons);
+router.post('/coupons', masterAdminController.createCoupon);
+router.put('/coupons/:id', masterAdminController.updateCoupon);
+router.delete('/coupons/:id', masterAdminController.deleteCoupon);
+
 module.exports = router;
+

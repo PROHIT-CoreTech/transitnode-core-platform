@@ -1,8 +1,11 @@
 const Tenant = require('../models/NoSQL/Tenant');
 const User = require('../models/NoSQL/User');
 const SubscriptionTransaction = require('../models/NoSQL/SubscriptionTransaction');
+const SubscriptionPlan = require('../models/NoSQL/SubscriptionPlan');
+const Coupon = require('../models/NoSQL/Coupon');
 const crypto = require('crypto');
 const { verifyWebhookSignature } = require('../config/cashfree');
+
 
 exports.registerTenant = async (req, res) => {
   try {
@@ -502,3 +505,162 @@ exports.updateInvoiceFormat = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Internal server error while updating invoice format' });
   }
 };
+
+// GET /api/saas/plans (Public)
+exports.getPublicSubscriptionPlans = async (req, res) => {
+  try {
+    let plans = await SubscriptionPlan.find({ isActive: true }).sort({ createdAt: 1 });
+    if (plans.length === 0) {
+      // Return hardcoded default structures if not seeded yet
+      plans = [
+        {
+          planKey: 'TRIAL',
+          title: '10 Day Exploration',
+          badgeText: 'TRANCEZARDS',
+          tagline: 'Start exploring all transit management capabilities.',
+          price: 0,
+          originalPrice: 0,
+          currency: 'INR',
+          priceDisplay: '₹0',
+          durationDays: 14,
+          durationLabel: '14 Days',
+          features: ['Scale Global Logistics', 'Fleet management'],
+          buttonText: 'Start Free Trial',
+          accentColor: 'blue',
+          isPopular: false,
+          isActive: true
+        },
+        {
+          planKey: 'SILVER',
+          title: 'Silver Plan',
+          badgeText: 'TRANCEZARDS',
+          tagline: 'Ideal for growing regional fleet operators.',
+          price: 50000,
+          originalPrice: 65000,
+          currency: 'INR',
+          priceDisplay: '₹50k',
+          durationDays: 1095,
+          durationLabel: '3 Years',
+          features: ['Scale Global Logistics', 'Fleet management'],
+          buttonText: 'Upgrade to 3 Years',
+          accentColor: 'emerald',
+          isPopular: true,
+          isActive: true
+        },
+        {
+          planKey: 'PLATINUM',
+          title: 'Platinum Plan',
+          badgeText: 'TRANCEZARDS',
+          tagline: 'Enterprise logistics with multi-company management.',
+          price: 50000,
+          originalPrice: 85000,
+          currency: 'INR',
+          priceDisplay: '₹50k',
+          durationDays: 1825,
+          durationLabel: '5 Years',
+          features: ['Scale Global Logistics', 'Fleet management', 'Multi-Company Portal'],
+          buttonText: 'Upgrade to 5 Years',
+          accentColor: 'amber',
+          isPopular: false,
+          isActive: true
+        },
+        {
+          planKey: 'LIFETIME',
+          title: 'Lifetime Access',
+          badgeText: 'TRANCEZARDS',
+          tagline: 'Unlimited perpetual access for scaling enterprises.',
+          price: 50000,
+          originalPrice: 150000,
+          currency: 'INR',
+          priceDisplay: '₹50k',
+          durationDays: 36500,
+          durationLabel: 'Lifetime',
+          features: ['Scale Global Logistics', 'Fleet management', 'Multi-Company Portal', 'Custom Branding & Subdomain'],
+          buttonText: 'Upgrade to Lifetime',
+          accentColor: 'purple',
+          isPopular: false,
+          isActive: true
+        }
+      ];
+    }
+    return res.status(200).json({ success: true, plans });
+  } catch (error) {
+    console.error('getPublicSubscriptionPlans error:', error);
+    return res.status(500).json({ error: 'Failed to load subscription plans' });
+  }
+};
+
+// POST /api/saas/validate-coupon (Public)
+exports.validateCoupon = async (req, res) => {
+  try {
+    const { code, planKey, amount } = req.body;
+    if (!code) {
+      return res.status(400).json({ success: false, message: 'Coupon code is required' });
+    }
+
+    const cleanCode = code.trim().toUpperCase();
+    const coupon = await Coupon.findOne({ code: cleanCode, isActive: true });
+
+    if (!coupon) {
+      return res.status(404).json({ success: false, message: 'Invalid or expired coupon code' });
+    }
+
+    // Check expiration
+    if (coupon.validUntil && new Date(coupon.validUntil) < new Date()) {
+      return res.status(400).json({ success: false, message: 'This coupon code has expired' });
+    }
+
+    // Check max redemptions
+    if (coupon.maxRedemptions !== null && coupon.timesRedeemed >= coupon.maxRedemptions) {
+      return res.status(400).json({ success: false, message: 'Coupon usage limit has been reached' });
+    }
+
+    // Check plan eligibility
+    const upperPlan = (planKey || '').toUpperCase();
+    if (coupon.applicablePlans && !coupon.applicablePlans.includes('ALL') && !coupon.applicablePlans.includes(upperPlan)) {
+      return res.status(400).json({ success: false, message: `Coupon is not valid for ${planKey || 'this'} plan` });
+    }
+
+    const baseAmount = Number(amount) || 0;
+    if (baseAmount <= 0) {
+      return res.status(400).json({ success: false, message: 'Coupon cannot be applied to free tier' });
+    }
+
+    if (coupon.minOrderAmount > 0 && baseAmount < coupon.minOrderAmount) {
+      return res.status(400).json({ success: false, message: `Minimum plan value of ₹${coupon.minOrderAmount} required for this coupon` });
+    }
+
+    let discountAmount = 0;
+    if (coupon.discountType === 'PERCENTAGE') {
+      discountAmount = (baseAmount * coupon.discountValue) / 100;
+      if (coupon.maxDiscountAmount && discountAmount > coupon.maxDiscountAmount) {
+        discountAmount = coupon.maxDiscountAmount;
+      }
+    } else {
+      discountAmount = coupon.discountValue;
+    }
+
+    if (discountAmount > baseAmount) {
+      discountAmount = baseAmount;
+    }
+
+    const finalAmount = Math.max(0, baseAmount - discountAmount);
+
+    return res.status(200).json({
+      success: true,
+      message: `Coupon '${coupon.code}' applied successfully!`,
+      coupon: {
+        code: coupon.code,
+        discountType: coupon.discountType,
+        discountValue: coupon.discountValue,
+        description: coupon.description
+      },
+      discountAmount,
+      finalAmount
+    });
+  } catch (error) {
+    console.error('validateCoupon error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to validate coupon code' });
+  }
+};
+

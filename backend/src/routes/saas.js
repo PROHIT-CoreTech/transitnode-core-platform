@@ -7,10 +7,21 @@ const saasController = require('../controllers/saasController');
 // @access  Public
 router.post('/register-tenant', saasController.registerTenant);
 
+// @route   GET /api/saas/plans
+// @desc    Get active subscription plans for landing page
+// @access  Public
+router.get('/plans', saasController.getPublicSubscriptionPlans);
+
+// @route   POST /api/saas/validate-coupon
+// @desc    Validate coupon code and return discount
+// @access  Public
+router.post('/validate-coupon', saasController.validateCoupon);
+
 // @route   GET /api/saas/tenant-profile
 // @desc    Get tenant profile by subdomain
 // @access  Public
 router.get('/tenant-profile', saasController.getTenantProfile);
+
 
 const authGuard = require('../middleware/authGuard');
 const { ensureLifetimeTier } = require('../middleware/tierGuard');

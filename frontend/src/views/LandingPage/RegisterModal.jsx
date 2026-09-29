@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import axios from 'axios';
 import brandLogo from '../../assets/brand_logo.png';
 import { CheckIcon } from './Icons';
 
@@ -22,7 +23,38 @@ const RegisterModal = ({
   handlePayment,
   handleAdminSetup
 }) => {
+  const [couponCode, setCouponCode] = useState('');
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
+  const [couponResult, setCouponResult] = useState(null);
+
   if (!showModal) return null;
+
+  const planKeyUpper = (selectedPlan || 'silver').toUpperCase();
+  const basePrice = planKeyUpper === 'SILVER' ? 50000 : planKeyUpper === 'PLATINUM' ? 100000 : planKeyUpper === 'LIFETIME' ? 500000 : 0;
+  const payableAmount = couponResult?.success ? couponResult.finalAmount : basePrice;
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setValidatingCoupon(true);
+    setCouponResult(null);
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+      const response = await axios.post(`${apiUrl}/api/saas/validate-coupon`, {
+        code: couponCode,
+        planKey: selectedPlan,
+        amount: basePrice
+      });
+      setCouponResult(response.data);
+    } catch (err) {
+      setCouponResult({
+        success: false,
+        message: err.response?.data?.message || 'Invalid or expired coupon code'
+      });
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 md:p-10 bg-slate-950/70 backdrop-blur-sm overflow-y-auto">
@@ -127,8 +159,35 @@ const RegisterModal = ({
             {currentStep === 'PAYMENT' && (
               <>
                 <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1">Payment Integration</h3>
-                <p className="text-slate-500 text-xs mb-5 sm:mb-6">Complete subscription checkout for <span className="text-blue-600 font-bold uppercase">{selectedPlan}</span> plan.</p>
+                <p className="text-slate-500 text-xs mb-4 sm:mb-5">Complete subscription checkout for <span className="text-blue-600 font-bold uppercase">{selectedPlan}</span> plan.</p>
                 
+                {/* Coupon Code Section */}
+                <div className="bg-blue-50/70 border border-blue-100 rounded-xl p-3 mb-4">
+                  <label className="block text-slate-700 text-[11px] font-semibold mb-1">Have a Coupon / Promo Code?</label>
+                  <div className="flex space-x-2">
+                    <input 
+                      type="text" 
+                      value={couponCode} 
+                      onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                      placeholder="e.g. WELCOME20" 
+                      className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-900 uppercase font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button 
+                      type="button"
+                      disabled={validatingCoupon || !couponCode.trim()}
+                      onClick={handleApplyCoupon}
+                      className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors flex-shrink-0"
+                    >
+                      {validatingCoupon ? 'Validating...' : 'Apply'}
+                    </button>
+                  </div>
+                  {couponResult && (
+                    <div className={`mt-2 text-[11px] font-medium ${couponResult.success ? 'text-emerald-700' : 'text-red-600'}`}>
+                      {couponResult.message}
+                    </div>
+                  )}
+                </div>
+
                 <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5 mb-5 sm:mb-6 text-xs space-y-2.5 sm:space-y-3">
                   <div className="flex justify-between text-slate-600">
                     <span>Company:</span>
@@ -138,10 +197,26 @@ const RegisterModal = ({
                     <span>Workspace URL:</span>
                     <span className="font-mono text-[#187baa] text-xs sm:text-sm truncate max-w-[180px] sm:max-w-none">{formData.customSubdomain}{domainSuffix}</span>
                   </div>
+
+                  {couponResult?.success && couponResult.discountAmount > 0 && (
+                    <>
+                      <div className="flex justify-between text-slate-500 border-t border-slate-200 pt-2">
+                        <span>Original Plan Price:</span>
+                        <span className="line-through font-semibold text-slate-500">
+                          ₹{basePrice.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-emerald-600 font-semibold">
+                        <span>Promo Discount ({couponResult.coupon?.code}):</span>
+                        <span>- ₹{couponResult.discountAmount.toLocaleString('en-IN')}</span>
+                      </div>
+                    </>
+                  )}
+
                   <div className="flex justify-between text-slate-700 border-t border-slate-200 pt-2.5 sm:pt-3 font-bold text-sm sm:text-base">
                     <span>Total Payable:</span>
                     <span className="text-[#187baa]">
-                      {selectedPlan === 'silver' ? '₹50,000' : selectedPlan === 'platinum' ? '₹1,00,000' : '₹5,00,000'}
+                      ₹{payableAmount.toLocaleString('en-IN')}
                     </span>
                   </div>
                 </div>
@@ -166,6 +241,7 @@ const RegisterModal = ({
                 </div>
               </>
             )}
+
 
             {/* STEP 3: FIRST USER CREATE */}
             {currentStep === 'ADMIN_SETUP' && (

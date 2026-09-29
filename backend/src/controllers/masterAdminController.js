@@ -574,3 +574,227 @@ exports.purgeSpecifiedTenants = async (req, res) => {
     if (res) return res.status(500).json({ error: 'Failed to purge specified tenants.' });
   }
 };
+
+// ==========================================
+// SUBSCRIPTION PLANS MANAGEMENT
+// ==========================================
+const SubscriptionPlan = require('../models/NoSQL/SubscriptionPlan');
+const Coupon = require('../models/NoSQL/Coupon');
+
+const DEFAULT_PLANS = [
+  {
+    planKey: 'TRIAL',
+    title: '10 Day Exploration',
+    badgeText: 'TRANCEZARDS',
+    tagline: 'Start exploring all transit management capabilities.',
+    price: 0,
+    originalPrice: 0,
+    currency: 'INR',
+    priceDisplay: '₹0',
+    durationDays: 14,
+    durationLabel: '14 Days',
+    features: ['Scale Global Logistics', 'Fleet management'],
+    buttonText: 'Start Free Trial',
+    accentColor: 'blue',
+    isPopular: false,
+    isActive: true
+  },
+  {
+    planKey: 'SILVER',
+    title: 'Silver Plan',
+    badgeText: 'TRANCEZARDS',
+    tagline: 'Ideal for growing regional fleet operators.',
+    price: 50000,
+    originalPrice: 65000,
+    currency: 'INR',
+    priceDisplay: '₹50k',
+    durationDays: 1095,
+    durationLabel: '3 Years',
+    features: ['Scale Global Logistics', 'Fleet management'],
+    buttonText: 'Upgrade to 3 Years',
+    accentColor: 'emerald',
+    isPopular: true,
+    isActive: true
+  },
+  {
+    planKey: 'PLATINUM',
+    title: 'Platinum Plan',
+    badgeText: 'TRANCEZARDS',
+    tagline: 'Enterprise logistics with multi-company management.',
+    price: 50000,
+    originalPrice: 85000,
+    currency: 'INR',
+    priceDisplay: '₹50k',
+    durationDays: 1825,
+    durationLabel: '5 Years',
+    features: ['Scale Global Logistics', 'Fleet management', 'Multi-Company Portal'],
+    buttonText: 'Upgrade to 5 Years',
+    accentColor: 'amber',
+    isPopular: false,
+    isActive: true
+  },
+  {
+    planKey: 'LIFETIME',
+    title: 'Lifetime Access',
+    badgeText: 'TRANCEZARDS',
+    tagline: 'Unlimited perpetual access for scaling enterprises.',
+    price: 50000,
+    originalPrice: 150000,
+    currency: 'INR',
+    priceDisplay: '₹50k',
+    durationDays: 36500,
+    durationLabel: 'Lifetime',
+    features: ['Scale Global Logistics', 'Fleet management', 'Multi-Company Portal', 'Custom Branding & Subdomain'],
+    buttonText: 'Upgrade to Lifetime',
+    accentColor: 'purple',
+    isPopular: false,
+    isActive: true
+  }
+];
+
+const seedPlansIfEmpty = async () => {
+  const count = await SubscriptionPlan.countDocuments();
+  if (count === 0) {
+    await SubscriptionPlan.insertMany(DEFAULT_PLANS);
+    console.log('[SubscriptionPlan] Default plans initialized.');
+  }
+  return await SubscriptionPlan.find().sort({ createdAt: 1 });
+};
+
+exports.getSubscriptionPlans = async (req, res) => {
+  try {
+    const plans = await seedPlansIfEmpty();
+    return res.status(200).json({ success: true, plans });
+  } catch (error) {
+    console.error('[MasterAdmin] getSubscriptionPlans error:', error);
+    return res.status(500).json({ error: 'Failed to fetch subscription plans' });
+  }
+};
+
+exports.updateSubscriptionPlanConfig = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, badgeText, tagline, price, originalPrice, priceDisplay, durationDays, durationLabel, features, buttonText, accentColor, isPopular, isActive } = req.body;
+
+    let plan = await SubscriptionPlan.findById(id);
+    if (!plan) {
+      plan = await SubscriptionPlan.findOne({ planKey: id.toUpperCase() });
+    }
+
+    if (!plan) {
+      return res.status(404).json({ error: 'Subscription plan not found' });
+    }
+
+    if (title !== undefined) plan.title = title;
+    if (badgeText !== undefined) plan.badgeText = badgeText;
+    if (tagline !== undefined) plan.tagline = tagline;
+    if (price !== undefined) plan.price = Number(price);
+    if (originalPrice !== undefined) plan.originalPrice = originalPrice !== null ? Number(originalPrice) : null;
+    if (priceDisplay !== undefined) plan.priceDisplay = priceDisplay;
+    if (durationDays !== undefined) plan.durationDays = Number(durationDays);
+    if (durationLabel !== undefined) plan.durationLabel = durationLabel;
+    if (features !== undefined && Array.isArray(features)) plan.features = features;
+    if (buttonText !== undefined) plan.buttonText = buttonText;
+    if (accentColor !== undefined) plan.accentColor = accentColor;
+    if (isPopular !== undefined) plan.isPopular = Boolean(isPopular);
+    if (isActive !== undefined) plan.isActive = Boolean(isActive);
+
+    await plan.save();
+
+    return res.status(200).json({ success: true, message: 'Subscription plan updated successfully', plan });
+  } catch (error) {
+    console.error('[MasterAdmin] updateSubscriptionPlanConfig error:', error);
+    return res.status(500).json({ error: 'Failed to update subscription plan' });
+  }
+};
+
+// ==========================================
+// COUPON & OFFERS MANAGEMENT
+// ==========================================
+exports.getCoupons = async (req, res) => {
+  try {
+    const coupons = await Coupon.find().sort({ createdAt: -1 });
+    return res.status(200).json({ success: true, coupons });
+  } catch (error) {
+    console.error('[MasterAdmin] getCoupons error:', error);
+    return res.status(500).json({ error: 'Failed to fetch coupons' });
+  }
+};
+
+exports.createCoupon = async (req, res) => {
+  try {
+    const { code, description, discountType, discountValue, minOrderAmount, maxDiscountAmount, maxRedemptions, applicablePlans, validUntil, isActive } = req.body;
+
+    if (!code || !discountValue) {
+      return res.status(400).json({ error: 'Coupon code and discount value are required' });
+    }
+
+    const cleanCode = code.trim().toUpperCase();
+    const existing = await Coupon.findOne({ code: cleanCode });
+    if (existing) {
+      return res.status(400).json({ error: `Coupon code '${cleanCode}' already exists` });
+    }
+
+    const coupon = new Coupon({
+      code: cleanCode,
+      description: description || '',
+      discountType: discountType || 'PERCENTAGE',
+      discountValue: Number(discountValue),
+      minOrderAmount: minOrderAmount ? Number(minOrderAmount) : 0,
+      maxDiscountAmount: maxDiscountAmount ? Number(maxDiscountAmount) : null,
+      maxRedemptions: maxRedemptions ? Number(maxRedemptions) : null,
+      applicablePlans: Array.isArray(applicablePlans) && applicablePlans.length > 0 ? applicablePlans : ['ALL'],
+      validUntil: validUntil ? new Date(validUntil) : null,
+      isActive: isActive !== undefined ? Boolean(isActive) : true
+    });
+
+    await coupon.save();
+    return res.status(201).json({ success: true, message: 'Coupon created successfully', coupon });
+  } catch (error) {
+    console.error('[MasterAdmin] createCoupon error:', error);
+    return res.status(500).json({ error: 'Failed to create coupon' });
+  }
+};
+
+exports.updateCoupon = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { description, discountType, discountValue, minOrderAmount, maxDiscountAmount, maxRedemptions, applicablePlans, validUntil, isActive } = req.body;
+
+    const coupon = await Coupon.findById(id);
+    if (!coupon) {
+      return res.status(404).json({ error: 'Coupon not found' });
+    }
+
+    if (description !== undefined) coupon.description = description;
+    if (discountType !== undefined) coupon.discountType = discountType;
+    if (discountValue !== undefined) coupon.discountValue = Number(discountValue);
+    if (minOrderAmount !== undefined) coupon.minOrderAmount = Number(minOrderAmount);
+    if (maxDiscountAmount !== undefined) coupon.maxDiscountAmount = maxDiscountAmount ? Number(maxDiscountAmount) : null;
+    if (maxRedemptions !== undefined) coupon.maxRedemptions = maxRedemptions ? Number(maxRedemptions) : null;
+    if (applicablePlans !== undefined && Array.isArray(applicablePlans)) coupon.applicablePlans = applicablePlans;
+    if (validUntil !== undefined) coupon.validUntil = validUntil ? new Date(validUntil) : null;
+    if (isActive !== undefined) coupon.isActive = Boolean(isActive);
+
+    await coupon.save();
+    return res.status(200).json({ success: true, message: 'Coupon updated successfully', coupon });
+  } catch (error) {
+    console.error('[MasterAdmin] updateCoupon error:', error);
+    return res.status(500).json({ error: 'Failed to update coupon' });
+  }
+};
+
+exports.deleteCoupon = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const coupon = await Coupon.findByIdAndDelete(id);
+    if (!coupon) {
+      return res.status(404).json({ error: 'Coupon not found' });
+    }
+    return res.status(200).json({ success: true, message: 'Coupon deleted successfully' });
+  } catch (error) {
+    console.error('[MasterAdmin] deleteCoupon error:', error);
+    return res.status(500).json({ error: 'Failed to delete coupon' });
+  }
+};
+
