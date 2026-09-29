@@ -1411,9 +1411,34 @@ const MasterAdminDashboard = () => {
             <form onSubmit={handleCreatePlanSubmit} className="p-6 space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Plan Key (Uppercase unique)</label>
-                  <input required type="text" value={createPlanForm.planKey} onChange={e => setCreatePlanForm({...createPlanForm, planKey: e.target.value.toUpperCase()})} placeholder="e.g. SILVER, PLATINUM, GOLD" className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 font-mono" />
+                  <label className="block text-slate-700 font-semibold mb-1">Select Plan Tier (Plan Key)</label>
+                  <select 
+                    required 
+                    value={createPlanForm.planKey} 
+                    onChange={e => {
+                      const selected = e.target.value;
+                      let defaults = {};
+                      if (selected === 'TRIAL') {
+                        defaults = { title: '10 Day Exploration', price: '0', priceDisplay: '₹0', durationDays: '14', durationLabel: '14 Days', accentColor: 'blue', buttonText: 'Start Free Trial', featuresStr: 'Scale Global Logistics\nFleet management' };
+                      } else if (selected === 'SILVER') {
+                        defaults = { title: 'Silver Plan', price: '50000', originalPrice: '65000', priceDisplay: '₹50k', durationDays: '1095', durationLabel: '3 Years', accentColor: 'emerald', buttonText: 'Upgrade to 3 Years', featuresStr: 'Scale Global Logistics\nFleet management' };
+                      } else if (selected === 'PLATINUM') {
+                        defaults = { title: 'Platinum Plan', price: '50000', originalPrice: '85000', priceDisplay: '₹50k', durationDays: '1825', durationLabel: '5 Years', accentColor: 'amber', buttonText: 'Upgrade to 5 Years', featuresStr: 'Scale Global Logistics\nFleet management\nMulti-Company Portal' };
+                      } else if (selected === 'LIFETIME') {
+                        defaults = { title: 'Lifetime Access', price: '50000', originalPrice: '150000', priceDisplay: '₹50k', durationDays: '36500', durationLabel: 'Lifetime', accentColor: 'purple', buttonText: 'Upgrade to Lifetime', featuresStr: 'Scale Global Logistics\nFleet management\nMulti-Company Portal\nCustom Branding & Subdomain' };
+                      }
+                      setCreatePlanForm({ ...createPlanForm, planKey: selected, ...defaults });
+                    }}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 bg-white font-semibold"
+                  >
+                    <option value="">-- Select Plan Tier --</option>
+                    <option value="TRIAL">TRIAL (14 Days Free Trial)</option>
+                    <option value="SILVER">SILVER (Silver Tier - 3 Years)</option>
+                    <option value="PLATINUM">PLATINUM (Platinum Tier - 5 Years)</option>
+                    <option value="LIFETIME">LIFETIME (Lifetime Access)</option>
+                  </select>
                 </div>
+
                 <div>
                   <label className="block text-slate-700 font-semibold mb-1">Plan Title</label>
                   <input required type="text" value={createPlanForm.title} onChange={e => setCreatePlanForm({...createPlanForm, title: e.target.value})} placeholder="e.g. Silver Plan" className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900" />
