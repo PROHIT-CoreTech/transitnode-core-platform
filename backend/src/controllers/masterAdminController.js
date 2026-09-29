@@ -479,39 +479,32 @@ exports.updateTenantSubscription = async (req, res) => {
 
     if (planType) {
       const upperPlan = planType.toUpperCase();
-      if (['TRIAL', 'SILVER', 'PLATINUM', 'LIFETIME'].includes(upperPlan)) {
-        
-        // Check if tenant already used/completed trial
-        const trialCompleted = tenant.hasUsedTrial || 
-          (tenant.planType === 'TRIAL' && tenant.licenseExpiresAt && new Date(tenant.licenseExpiresAt) < new Date()) || 
-          tenant.planType !== 'TRIAL';
 
-        if (upperPlan === 'TRIAL' && trialCompleted) {
-          return res.status(400).json({ error: 'This tenant has already completed their free trial and cannot be re-assigned to a Trial plan.' });
-        }
+      // Look up dynamic plan in SubscriptionPlan collection if available
+      const planConfig = await SubscriptionPlan.findOne({ planKey: upperPlan });
 
-        tenant.planType = upperPlan;
-        tenant.maxCompaniesAllowed = upperPlan === 'PLATINUM' ? 3 : upperPlan === 'LIFETIME' ? 999 : 1;
-        tenant.paymentStatus = upperPlan === 'TRIAL' ? 'PENDING' : 'PAID';
-        tenant.isSuspended = false;
-
-        // Automatically set license expiry date based on plan type
-        const newExpiry = new Date();
-        if (upperPlan === 'TRIAL') {
-          newExpiry.setDate(newExpiry.getDate() + 14); // 14 Days Trial
-          tenant.hasUsedTrial = true;
-        } else if (upperPlan === 'SILVER') {
-          newExpiry.setFullYear(newExpiry.getFullYear() + 3); // 3 Years (36 Months)
-          tenant.hasUsedTrial = true;
-        } else if (upperPlan === 'PLATINUM') {
-          newExpiry.setFullYear(newExpiry.getFullYear() + 5); // 5 Years (60 Months)
-          tenant.hasUsedTrial = true;
-        } else if (upperPlan === 'LIFETIME') {
-          newExpiry.setFullYear(newExpiry.getFullYear() + 100); // Lifetime
-          tenant.hasUsedTrial = true;
-        }
-        tenant.licenseExpiresAt = newExpiry;
+      let durationDays = 365;
+      if (planConfig && planConfig.durationDays) {
+        durationDays = planConfig.durationDays;
+      } else if (upperPlan === 'TRIAL') {
+        durationDays = 14;
+      } else if (upperPlan === 'SILVER') {
+        durationDays = 1095; // 3 Years (36 Months)
+      } else if (upperPlan === 'PLATINUM') {
+        durationDays = 1825; // 5 Years (60 Months)
+      } else if (upperPlan === 'LIFETIME') {
+        durationDays = 36500; // Lifetime Access
       }
+
+      tenant.planType = upperPlan;
+      tenant.maxCompaniesAllowed = (upperPlan === 'PLATINUM' || upperPlan === 'LIFETIME') ? 999 : 1;
+      tenant.paymentStatus = upperPlan === 'TRIAL' ? 'PENDING' : 'PAID';
+      tenant.isSuspended = false;
+      tenant.hasUsedTrial = true;
+
+      const newExpiry = new Date();
+      newExpiry.setDate(newExpiry.getDate() + durationDays);
+      tenant.licenseExpiresAt = newExpiry;
     }
 
     await tenant.save();
@@ -522,9 +515,10 @@ exports.updateTenantSubscription = async (req, res) => {
     });
   } catch (error) {
     console.error('[MasterAdmin] updateTenantSubscription error:', error);
-    return res.status(500).json({ error: 'Internal server error updating tenant subscription.' });
+    return res.status(500).json({ error: error.message || 'Internal server error updating tenant subscription.' });
   }
 };
+
 
 // Purge specified tenants from attached image
 exports.purgeSpecifiedTenants = async (req, res) => {

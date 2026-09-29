@@ -39,7 +39,6 @@ const tenantSchema = new mongoose.Schema(
     },
     planType: {
       type: String,
-      enum: ['TRIAL', 'SILVER', 'PLATINUM', 'LIFETIME'],
       default: 'TRIAL',
     },
     licenseExpiresAt: {
