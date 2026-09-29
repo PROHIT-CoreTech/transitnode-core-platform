@@ -1419,7 +1419,7 @@ const MasterAdminDashboard = () => {
                       const selected = e.target.value;
                       let defaults = {};
                       if (selected === 'TRIAL') {
-                        defaults = { title: '10 Day Exploration', price: '0', priceDisplay: '₹0', durationDays: '14', durationLabel: '14 Days', accentColor: 'blue', buttonText: 'Start Free Trial', featuresStr: 'Scale Global Logistics\nFleet management' };
+                        defaults = { title: '14 Day Exploration', price: '0', priceDisplay: '₹0', durationDays: '14', durationLabel: '14 Days', accentColor: 'blue', buttonText: 'Start Free Trial', featuresStr: 'Scale Global Logistics\nFleet management' };
                       } else if (selected === 'SILVER') {
                         defaults = { title: 'Silver Plan', price: '50000', originalPrice: '65000', priceDisplay: '₹50k', durationDays: '1095', durationLabel: '3 Years', accentColor: 'emerald', buttonText: 'Upgrade to 3 Years', featuresStr: 'Scale Global Logistics\nFleet management' };
                       } else if (selected === 'PLATINUM') {

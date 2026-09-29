@@ -578,7 +578,7 @@ const Coupon = require('../models/NoSQL/Coupon');
 const DEFAULT_PLANS = [
   {
     planKey: 'TRIAL',
-    title: '10 Day Exploration',
+    title: '14 Day Exploration',
     badgeText: 'TRANCEZARDS',
     tagline: 'Start exploring all transit management capabilities.',
     price: 0,

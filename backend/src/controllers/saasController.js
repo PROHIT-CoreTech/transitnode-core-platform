@@ -515,7 +515,7 @@ exports.getPublicSubscriptionPlans = async (req, res) => {
       plans = [
         {
           planKey: 'TRIAL',
-          title: '10 Day Exploration',
+          title: '14 Day Exploration',
           badgeText: 'TRANCEZARDS',
           tagline: 'Start exploring all transit management capabilities.',
           price: 0,
