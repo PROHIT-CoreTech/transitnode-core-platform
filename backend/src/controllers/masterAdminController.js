@@ -701,7 +701,6 @@ exports.updateSubscriptionPlanConfig = async (req, res) => {
 };
 
 exports.createSubscriptionPlan = async (req, res) => {
-
   try {
     const { planKey, title, badgeText, tagline, price, originalPrice, priceDisplay, durationDays, durationLabel, features, buttonText, accentColor, isPopular, isActive } = req.body;
 
@@ -710,35 +709,33 @@ exports.createSubscriptionPlan = async (req, res) => {
     }
 
     const cleanKey = planKey.trim().toUpperCase();
-    const existing = await SubscriptionPlan.findOne({ planKey: cleanKey });
-    if (existing) {
-      return res.status(400).json({ error: `Subscription Plan with key '${cleanKey}' already exists` });
+    let plan = await SubscriptionPlan.findOne({ planKey: cleanKey });
+    if (!plan) {
+      plan = new SubscriptionPlan({ planKey: cleanKey });
     }
 
-    const plan = new SubscriptionPlan({
-      planKey: cleanKey,
-      title,
-      badgeText: badgeText || 'TRANCEZARDS',
-      tagline: tagline || '',
-      price: Number(price) || 0,
-      originalPrice: originalPrice ? Number(originalPrice) : null,
-      priceDisplay: priceDisplay || `₹${price || 0}`,
-      durationDays: Number(durationDays) || 365,
-      durationLabel: durationLabel || '1 Year',
-      features: Array.isArray(features) ? features : [],
-      buttonText: buttonText || 'Upgrade Plan',
-      accentColor: accentColor || 'blue',
-      isPopular: Boolean(isPopular),
-      isActive: isActive !== undefined ? Boolean(isActive) : true
-    });
+    plan.title = title;
+    plan.badgeText = badgeText || 'TRANCEZARDS';
+    plan.tagline = tagline || '';
+    plan.price = Number(price) || 0;
+    plan.originalPrice = originalPrice ? Number(originalPrice) : null;
+    plan.priceDisplay = priceDisplay || `₹${price || 0}`;
+    plan.durationDays = Number(durationDays) || 365;
+    plan.durationLabel = durationLabel || '1 Year';
+    plan.features = Array.isArray(features) ? features : [];
+    plan.buttonText = buttonText || 'Upgrade Plan';
+    plan.accentColor = accentColor || 'blue';
+    plan.isPopular = Boolean(isPopular);
+    plan.isActive = isActive !== undefined ? Boolean(isActive) : true;
 
     await plan.save();
-    return res.status(201).json({ success: true, message: 'Subscription plan created successfully', plan });
+    return res.status(200).json({ success: true, message: `Subscription plan '${cleanKey}' saved successfully`, plan });
   } catch (error) {
     console.error('[MasterAdmin] createSubscriptionPlan error:', error);
-    return res.status(500).json({ error: 'Failed to create subscription plan' });
+    return res.status(500).json({ error: error.message || 'Failed to save subscription plan' });
   }
 };
+
 
 exports.deleteSubscriptionPlan = async (req, res) => {
   try {

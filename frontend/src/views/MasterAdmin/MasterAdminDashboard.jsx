@@ -304,7 +304,7 @@ const MasterAdminDashboard = () => {
       fetchPlans();
     } catch (err) {
       console.error('Failed to create plan:', err);
-      alert(err.response?.data?.error || 'Failed to create plan.');
+      alert(err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to create plan.');
     } finally {
       setIsCreatingPlan(false);
     }
