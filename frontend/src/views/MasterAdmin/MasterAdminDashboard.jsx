@@ -131,6 +131,25 @@ const MasterAdminDashboard = () => {
   });
   const [isSavingPlan, setIsSavingPlan] = useState(false);
 
+  const [showCreatePlanModal, setShowCreatePlanModal] = useState(false);
+  const [createPlanForm, setCreatePlanForm] = useState({
+    planKey: '',
+    title: '',
+    badgeText: 'TRANCEZARDS',
+    tagline: '',
+    price: '',
+    originalPrice: '',
+    priceDisplay: '',
+    durationDays: '365',
+    durationLabel: '1 Year',
+    featuresStr: '',
+    buttonText: 'Upgrade Plan',
+    accentColor: 'blue',
+    isPopular: false,
+    isActive: true
+  });
+  const [isCreatingPlan, setIsCreatingPlan] = useState(false);
+
   const [coupons, setCoupons] = useState([]);
   const [loadingCoupons, setLoadingCoupons] = useState(false);
   const [showCouponModal, setShowCouponModal] = useState(false);
@@ -247,6 +266,64 @@ const MasterAdminDashboard = () => {
       setIsSavingPlan(false);
     }
   };
+
+  const handleCreatePlanSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setIsCreatingPlan(true);
+      const features = createPlanForm.featuresStr.split('\n').map(s => s.trim()).filter(Boolean);
+      await axios.post(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/master-admin/plans`,
+        {
+          ...createPlanForm,
+          price: Number(createPlanForm.price) || 0,
+          originalPrice: createPlanForm.originalPrice !== '' ? Number(createPlanForm.originalPrice) : null,
+          durationDays: Number(createPlanForm.durationDays) || 365,
+          features
+        },
+        { headers: getHeaders() }
+      );
+      alert('Subscription plan created successfully!');
+      setShowCreatePlanModal(false);
+      setCreatePlanForm({
+        planKey: '',
+        title: '',
+        badgeText: 'TRANCEZARDS',
+        tagline: '',
+        price: '',
+        originalPrice: '',
+        priceDisplay: '',
+        durationDays: '365',
+        durationLabel: '1 Year',
+        featuresStr: '',
+        buttonText: 'Upgrade Plan',
+        accentColor: 'blue',
+        isPopular: false,
+        isActive: true
+      });
+      fetchPlans();
+    } catch (err) {
+      console.error('Failed to create plan:', err);
+      alert(err.response?.data?.error || 'Failed to create plan.');
+    } finally {
+      setIsCreatingPlan(false);
+    }
+  };
+
+  const handleDeletePlan = async (planId) => {
+    if (!window.confirm('Are you sure you want to delete this subscription plan?')) return;
+    try {
+      await axios.delete(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/master-admin/plans/${planId}`,
+        { headers: getHeaders() }
+      );
+      alert('Plan deleted successfully!');
+      fetchPlans();
+    } catch (err) {
+      alert('Failed to delete plan.');
+    }
+  };
+
 
   const handleCreateCouponSubmit = async (e) => {
     e.preventDefault();
@@ -1049,17 +1126,25 @@ const MasterAdminDashboard = () => {
                   <h2 className="text-xl font-bold text-slate-800">Subscription Plans & Landing Page Pricing</h2>
                   <p className="text-xs text-slate-500 mt-1">Configure pricing tiers, billing durations, feature lists, and badges displayed on the public landing page.</p>
                 </div>
-                <button
-                  onClick={fetchPlans}
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg transition-colors flex items-center space-x-1"
-                >
-                  <span>🔄 Refresh Plans</span>
-                </button>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setShowCreatePlanModal(true)}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3.5 py-2 rounded-lg transition-colors flex items-center space-x-1 shadow-sm"
+                  >
+                    <span>➕ Create New Plan</span>
+                  </button>
+                  <button
+                    onClick={fetchPlans}
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg transition-colors flex items-center space-x-1"
+                  >
+                    <span>🔄 Refresh Plans</span>
+                  </button>
+                </div>
               </div>
 
               {loadingPlans ? (
                 <div className="py-12 text-center text-slate-500 font-medium">Loading subscription plans...</div>
-              ) : (
+              ) : plans.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {plans.map((plan) => (
                     <div
@@ -1101,19 +1186,38 @@ const MasterAdminDashboard = () => {
                         </div>
                       </div>
 
-                      <div className="pt-4 border-t border-slate-200">
+                      <div className="pt-4 border-t border-slate-200 flex space-x-2">
                         <button
                           onClick={() => openPlanEditor(plan)}
-                          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 rounded-lg transition-colors shadow-sm"
+                          className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 rounded-lg transition-colors shadow-sm"
                         >
-                          ✏️ Edit Plan Config
+                          ✏️ Edit Plan
+                        </button>
+                        <button
+                          onClick={() => handleDeletePlan(plan._id)}
+                          className="bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold px-2.5 py-2 rounded-lg transition-colors border border-red-200"
+                        >
+                          🗑️
                         </button>
                       </div>
                     </div>
                   ))}
                 </div>
+              ) : (
+                <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                  <div className="text-3xl mb-2">💳</div>
+                  <h3 className="text-base font-bold text-slate-800 mb-1">No Subscription Plans Configured</h3>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto mb-5">Create subscription plans to configure pricing tiers, durations, and features displayed on the landing page.</p>
+                  <button
+                    onClick={() => setShowCreatePlanModal(true)}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-colors shadow-md"
+                  >
+                    ➕ Create Subscription Plan Now
+                  </button>
+                </div>
               )}
             </div>
+
 
             {/* Section B: Coupons & Promotional Offers */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
@@ -1290,6 +1394,105 @@ const MasterAdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Create Plan Modal */}
+      {showCreatePlanModal && (
+
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden my-8">
+            <div className="bg-slate-900 text-white p-4 sm:p-5 flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-bold">Create New Subscription Plan</h3>
+                <p className="text-xs text-slate-400">Add a new plan tier to display on the public Landing Page.</p>
+              </div>
+              <button onClick={() => setShowCreatePlanModal(false)} className="text-slate-400 hover:text-white">✕</button>
+            </div>
+            
+            <form onSubmit={handleCreatePlanSubmit} className="p-6 space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Plan Key (Uppercase unique)</label>
+                  <input required type="text" value={createPlanForm.planKey} onChange={e => setCreatePlanForm({...createPlanForm, planKey: e.target.value.toUpperCase()})} placeholder="e.g. SILVER, PLATINUM, GOLD" className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 font-mono" />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Plan Title</label>
+                  <input required type="text" value={createPlanForm.title} onChange={e => setCreatePlanForm({...createPlanForm, title: e.target.value})} placeholder="e.g. Silver Plan" className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Badge Text</label>
+                  <input type="text" value={createPlanForm.badgeText} onChange={e => setCreatePlanForm({...createPlanForm, badgeText: e.target.value})} placeholder="TRANCEZARDS" className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900" />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Tagline / Short Description</label>
+                  <input type="text" value={createPlanForm.tagline} onChange={e => setCreatePlanForm({...createPlanForm, tagline: e.target.value})} placeholder="Ideal for growing fleet operators" className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Price (₹ INR)</label>
+                  <input required type="number" value={createPlanForm.price} onChange={e => setCreatePlanForm({...createPlanForm, price: e.target.value})} placeholder="50000" className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900" />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Original Price (Strike-through)</label>
+                  <input type="number" value={createPlanForm.originalPrice} onChange={e => setCreatePlanForm({...createPlanForm, originalPrice: e.target.value})} placeholder="Optional strike-through" className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900" />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Display Label</label>
+                  <input required type="text" value={createPlanForm.priceDisplay} onChange={e => setCreatePlanForm({...createPlanForm, priceDisplay: e.target.value})} placeholder="e.g. ₹50k" className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Duration (Days)</label>
+                  <input required type="number" value={createPlanForm.durationDays} onChange={e => setCreatePlanForm({...createPlanForm, durationDays: e.target.value})} placeholder="365" className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900" />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Duration Label</label>
+                  <input required type="text" value={createPlanForm.durationLabel} onChange={e => setCreatePlanForm({...createPlanForm, durationLabel: e.target.value})} placeholder="e.g. 1 Year" className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900" />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Accent Theme</label>
+                  <select value={createPlanForm.accentColor} onChange={e => setCreatePlanForm({...createPlanForm, accentColor: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 bg-white">
+                    <option value="blue">Blue</option>
+                    <option value="emerald">Emerald / Teal</option>
+                    <option value="amber">Amber / Orange</option>
+                    <option value="purple">Purple</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1">Features (One feature per line)</label>
+                <textarea rows="4" value={createPlanForm.featuresStr} onChange={e => setCreatePlanForm({...createPlanForm, featuresStr: e.target.value})} placeholder="Scale Global Logistics&#10;Fleet management&#10;Multi-Company Portal" className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 font-mono"></textarea>
+              </div>
+
+              <div className="flex items-center space-x-6 pt-2">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input type="checkbox" checked={createPlanForm.isPopular} onChange={e => setCreatePlanForm({...createPlanForm, isPopular: e.target.checked})} className="rounded text-indigo-600" />
+                  <span className="font-semibold text-slate-700">Mark as Popular</span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input type="checkbox" checked={createPlanForm.isActive} onChange={e => setCreatePlanForm({...createPlanForm, isActive: e.target.checked})} className="rounded text-indigo-600" />
+                  <span className="font-semibold text-slate-700">Active (Visible on Landing Page)</span>
+                </label>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex justify-end space-x-3">
+                <button type="button" onClick={() => setShowCreatePlanModal(false)} className="px-4 py-2 text-slate-600 hover:text-slate-800 font-semibold">Cancel</button>
+                <button type="submit" disabled={isCreatingPlan} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-colors">
+                  {isCreatingPlan ? 'Creating Plan...' : 'Create Plan'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
 
       {/* Create Coupon Modal */}
       {showCouponModal && (

@@ -7,8 +7,7 @@ const subscriptionPlanSchema = new mongoose.Schema(
       required: true,
       unique: true,
       uppercase: true,
-      trim: true,
-      enum: ['TRIAL', 'SILVER', 'PLATINUM', 'LIFETIME']
+      trim: true
     },
     title: {
       type: String,

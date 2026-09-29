@@ -697,8 +697,6 @@ exports.updateSubscriptionPlanConfig = async (req, res) => {
     if (buttonText !== undefined) plan.buttonText = buttonText;
     if (accentColor !== undefined) plan.accentColor = accentColor;
     if (isPopular !== undefined) plan.isPopular = Boolean(isPopular);
-    if (isActive !== undefined) plan.isActive = Boolean(isActive);
-
     await plan.save();
 
     return res.status(200).json({ success: true, message: 'Subscription plan updated successfully', plan });
@@ -707,6 +705,61 @@ exports.updateSubscriptionPlanConfig = async (req, res) => {
     return res.status(500).json({ error: 'Failed to update subscription plan' });
   }
 };
+
+exports.createSubscriptionPlan = async (req, res) => {
+
+  try {
+    const { planKey, title, badgeText, tagline, price, originalPrice, priceDisplay, durationDays, durationLabel, features, buttonText, accentColor, isPopular, isActive } = req.body;
+
+    if (!planKey || !title) {
+      return res.status(400).json({ error: 'Plan Key and Title are required' });
+    }
+
+    const cleanKey = planKey.trim().toUpperCase();
+    const existing = await SubscriptionPlan.findOne({ planKey: cleanKey });
+    if (existing) {
+      return res.status(400).json({ error: `Subscription Plan with key '${cleanKey}' already exists` });
+    }
+
+    const plan = new SubscriptionPlan({
+      planKey: cleanKey,
+      title,
+      badgeText: badgeText || 'TRANCEZARDS',
+      tagline: tagline || '',
+      price: Number(price) || 0,
+      originalPrice: originalPrice ? Number(originalPrice) : null,
+      priceDisplay: priceDisplay || `₹${price || 0}`,
+      durationDays: Number(durationDays) || 365,
+      durationLabel: durationLabel || '1 Year',
+      features: Array.isArray(features) ? features : [],
+      buttonText: buttonText || 'Upgrade Plan',
+      accentColor: accentColor || 'blue',
+      isPopular: Boolean(isPopular),
+      isActive: isActive !== undefined ? Boolean(isActive) : true
+    });
+
+    await plan.save();
+    return res.status(201).json({ success: true, message: 'Subscription plan created successfully', plan });
+  } catch (error) {
+    console.error('[MasterAdmin] createSubscriptionPlan error:', error);
+    return res.status(500).json({ error: 'Failed to create subscription plan' });
+  }
+};
+
+exports.deleteSubscriptionPlan = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const plan = await SubscriptionPlan.findByIdAndDelete(id);
+    if (!plan) {
+      return res.status(404).json({ error: 'Subscription plan not found' });
+    }
+    return res.status(200).json({ success: true, message: 'Subscription plan deleted successfully' });
+  } catch (error) {
+    console.error('[MasterAdmin] deleteSubscriptionPlan error:', error);
+    return res.status(500).json({ error: 'Failed to delete subscription plan' });
+  }
+};
+
 
 // ==========================================
 // COUPON & OFFERS MANAGEMENT

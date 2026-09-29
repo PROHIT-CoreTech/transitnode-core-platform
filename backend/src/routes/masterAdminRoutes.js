@@ -17,7 +17,10 @@ router.delete('/purge-specified-tenants', masterAdminController.purgeSpecifiedTe
 
 // Subscription Plan Routes
 router.get('/plans', masterAdminController.getSubscriptionPlans);
+router.post('/plans', masterAdminController.createSubscriptionPlan);
 router.put('/plans/:id', masterAdminController.updateSubscriptionPlanConfig);
+router.delete('/plans/:id', masterAdminController.deleteSubscriptionPlan);
+
 
 // Coupon Routes
 router.get('/coupons', masterAdminController.getCoupons);
