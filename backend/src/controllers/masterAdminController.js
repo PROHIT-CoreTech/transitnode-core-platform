@@ -230,9 +230,23 @@ exports.dashboardSummary = async (req, res) => {
       if (t.planType && t.planType !== 'TRIAL') {
         const hasTx = await SubscriptionTransaction.findOne({ tenantId: t._id });
         const isSarthak = t.companyName && t.companyName.toLowerCase().includes('sarthak');
+        const isProdTest = t.companyName && t.companyName.toLowerCase().includes('prod test');
         let expectedAmount = 50000;
         if (t.planType === 'PLATINUM') expectedAmount = 100000;
         if (t.planType === 'LIFETIME') expectedAmount = isSarthak ? 335000 : 450000;
+
+        // One-time data correction for 'prod test' manual upgrade to Lifetime
+        if (isProdTest && hasTx) {
+          if (hasTx.amount !== 450000 || hasTx.paymentMethod !== 'OFFLINE_MANUAL') {
+            hasTx.amount = 450000;
+            hasTx.amountPaid = 450000;
+            hasTx.planType = 'LIFETIME';
+            hasTx.planNameAtPurchase = 'Lifetime Access';
+            hasTx.paymentMethod = 'OFFLINE_MANUAL';
+            hasTx.createdAt = new Date();
+            await hasTx.save();
+          }
+        }
 
         // Preserve manually or offline provisioned PAID tenants (e.g. Offline Transport, LIFETIME tenants)
         if (t.paymentStatus === 'PAID') {
@@ -244,8 +258,8 @@ exports.dashboardSummary = async (req, res) => {
               amount: expectedAmount,
               amountPaid: expectedAmount,
               currency: 'INR',
-              paymentMethod: 'OFFLINE_PAYMENT',
-              createdAt: t.createdAt || new Date()
+              paymentMethod: 'OFFLINE_MANUAL',
+              createdAt: new Date()
             });
           }
           continue;
@@ -546,13 +560,18 @@ exports.updateTenantSubscription = async (req, res) => {
         const existingTx = await SubscriptionTransaction.findOne({ tenantId: tenant._id, planType: upperPlan });
         if (existingTx) {
           existingTx.amount = amount;
+          existingTx.amountPaid = amount;
+          existingTx.paymentMethod = 'OFFLINE_MANUAL';
           existingTx.createdAt = new Date();
           await existingTx.save();
         } else {
           await SubscriptionTransaction.create({
             tenantId: tenant._id,
             planType: upperPlan,
+            planNameAtPurchase: `${upperPlan} Plan`,
             amount: amount,
+            amountPaid: amount,
+            currency: 'INR',
             paymentMethod: 'OFFLINE_MANUAL',
             createdAt: new Date()
           });
