@@ -872,3 +872,124 @@ exports.deleteCoupon = async (req, res) => {
   }
 };
 
+
+// ==========================================
+// TESTIMONIALS MANAGEMENT
+// ==========================================
+const Testimonial = require('../models/NoSQL/Testimonial');
+
+const DEFAULT_TESTIMONIALS = [
+  {
+    name: 'Anis S.',
+    role: 'Head of Operations, Indigo',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+    quote: 'TransitNode simplified our fleet operations and automated invoicing across regional routes efficiently.',
+    rating: 5,
+    isActive: true,
+    order: 1
+  },
+  {
+    name: 'Vikram Mehta',
+    role: 'Managing Director, Apex Logistics',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+    quote: 'The real-time telemetry and compliance vault cut down our administrative overhead by more than 40%.',
+    rating: 5,
+    isActive: true,
+    order: 2
+  },
+  {
+    name: 'Priya Sharma',
+    role: 'VP Supply Chain, Transport Core',
+    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80',
+    quote: 'Managing multi-company workspaces with automated rate cards has never been this seamless.',
+    rating: 5,
+    isActive: true,
+    order: 3
+  }
+];
+
+const seedTestimonialsIfEmpty = async () => {
+  const count = await Testimonial.countDocuments();
+  if (count === 0) {
+    await Testimonial.insertMany(DEFAULT_TESTIMONIALS);
+    console.log('[Testimonial] Default testimonials initialized.');
+  }
+  return await Testimonial.find().sort({ order: 1, createdAt: -1 });
+};
+
+exports.getTestimonials = async (req, res) => {
+  try {
+    const testimonials = await seedTestimonialsIfEmpty();
+    return res.status(200).json({ success: true, testimonials });
+  } catch (error) {
+    console.error('[MasterAdmin] getTestimonials error:', error);
+    return res.status(500).json({ error: 'Failed to fetch testimonials' });
+  }
+};
+
+exports.createTestimonial = async (req, res) => {
+  try {
+    const { name, role, quote, avatar, rating, isActive, order } = req.body;
+
+    if (!name || !role || !quote) {
+      return res.status(400).json({ error: 'Name, Role, and Quote are required' });
+    }
+
+    const testimonial = new Testimonial({
+      name: name.trim(),
+      role: role.trim(),
+      quote: quote.trim(),
+      avatar: avatar ? avatar.trim() : '',
+      rating: rating ? Number(rating) : 5,
+      isActive: isActive !== undefined ? Boolean(isActive) : true,
+      order: order !== undefined ? Number(order) : 0
+    });
+
+    await testimonial.save();
+    return res.status(201).json({ success: true, message: 'Testimonial created successfully', testimonial });
+  } catch (error) {
+    console.error('[MasterAdmin] createTestimonial error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to create testimonial' });
+  }
+};
+
+exports.updateTestimonial = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, role, quote, avatar, rating, isActive, order } = req.body;
+
+    const testimonial = await Testimonial.findById(id);
+    if (!testimonial) {
+      return res.status(404).json({ error: 'Testimonial not found' });
+    }
+
+    if (name !== undefined) testimonial.name = name.trim();
+    if (role !== undefined) testimonial.role = role.trim();
+    if (quote !== undefined) testimonial.quote = quote.trim();
+    if (avatar !== undefined) testimonial.avatar = avatar ? avatar.trim() : '';
+    if (rating !== undefined) testimonial.rating = Number(rating);
+    if (isActive !== undefined) testimonial.isActive = Boolean(isActive);
+    if (order !== undefined) testimonial.order = Number(order);
+
+    await testimonial.save();
+    return res.status(200).json({ success: true, message: 'Testimonial updated successfully', testimonial });
+  } catch (error) {
+    console.error('[MasterAdmin] updateTestimonial error:', error);
+    return res.status(500).json({ error: 'Failed to update testimonial' });
+  }
+};
+
+exports.deleteTestimonial = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const testimonial = await Testimonial.findByIdAndDelete(id);
+    if (!testimonial) {
+      return res.status(404).json({ error: 'Testimonial not found' });
+    }
+    return res.status(200).json({ success: true, message: 'Testimonial deleted successfully' });
+  } catch (error) {
+    console.error('[MasterAdmin] deleteTestimonial error:', error);
+    return res.status(500).json({ error: 'Failed to delete testimonial' });
+  }
+};
+

@@ -29,5 +29,11 @@ router.post('/coupons', masterAdminController.createCoupon);
 router.put('/coupons/:id', masterAdminController.updateCoupon);
 router.delete('/coupons/:id', masterAdminController.deleteCoupon);
 
+// Testimonial Routes
+router.get('/testimonials', masterAdminController.getTestimonials);
+router.post('/testimonials', masterAdminController.createTestimonial);
+router.put('/testimonials/:id', masterAdminController.updateTestimonial);
+router.delete('/testimonials/:id', masterAdminController.deleteTestimonial);
+
 module.exports = router;
 

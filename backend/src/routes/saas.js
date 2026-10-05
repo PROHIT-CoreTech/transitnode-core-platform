@@ -22,6 +22,11 @@ router.post('/validate-coupon', saasController.validateCoupon);
 // @access  Public
 router.get('/tenant-profile', saasController.getTenantProfile);
 
+// @route   GET /api/saas/testimonials
+// @desc    Get active testimonials for landing page
+// @access  Public
+router.get('/testimonials', saasController.getPublicTestimonials);
+
 
 const authGuard = require('../middleware/authGuard');
 const { ensureLifetimeTier } = require('../middleware/tierGuard');

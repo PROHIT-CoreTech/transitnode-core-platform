@@ -205,10 +205,131 @@ const MasterAdminDashboard = () => {
     }
   };
 
+  // Testimonials State & Handlers
+  const [testimonials, setTestimonials] = useState([]);
+  const [loadingTestimonials, setLoadingTestimonials] = useState(false);
+  const [showTestimonialModal, setShowTestimonialModal] = useState(false);
+  const [editingTestimonial, setEditingTestimonial] = useState(null);
+  const [testimonialForm, setTestimonialForm] = useState({
+    name: '',
+    role: '',
+    quote: '',
+    avatar: '',
+    rating: '5',
+    isActive: true,
+    order: '0'
+  });
+  const [isSavingTestimonial, setIsSavingTestimonial] = useState(false);
+
+  const fetchTestimonials = async () => {
+    try {
+      setLoadingTestimonials(true);
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/master-admin/testimonials`,
+        { headers: getHeaders() }
+      );
+      setTestimonials(res.data?.testimonials || []);
+    } catch (err) {
+      console.error('Failed to fetch testimonials:', err);
+    } finally {
+      setLoadingTestimonials(false);
+    }
+  };
+
+  const openTestimonialModal = (item = null) => {
+    if (item) {
+      setEditingTestimonial(item);
+      setTestimonialForm({
+        name: item.name || '',
+        role: item.role || '',
+        quote: item.quote || '',
+        avatar: item.avatar || '',
+        rating: item.rating ?? 5,
+        isActive: item.isActive !== false,
+        order: item.order ?? 0
+      });
+    } else {
+      setEditingTestimonial(null);
+      setTestimonialForm({
+        name: '',
+        role: '',
+        quote: '',
+        avatar: '',
+        rating: '5',
+        isActive: true,
+        order: testimonials.length + 1
+      });
+    }
+    setShowTestimonialModal(true);
+  };
+
+  const handleSaveTestimonial = async (e) => {
+    e.preventDefault();
+    if (!testimonialForm.name || !testimonialForm.role || !testimonialForm.quote) {
+      alert('Name, Role, and Quote are required');
+      return;
+    }
+
+    try {
+      setIsSavingTestimonial(true);
+      const payload = {
+        name: testimonialForm.name,
+        role: testimonialForm.role,
+        quote: testimonialForm.quote,
+        avatar: testimonialForm.avatar,
+        rating: Number(testimonialForm.rating),
+        isActive: Boolean(testimonialForm.isActive),
+        order: Number(testimonialForm.order)
+      };
+
+      if (editingTestimonial) {
+        await axios.put(
+          `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/master-admin/testimonials/${editingTestimonial._id}`,
+          payload,
+          { headers: getHeaders() }
+        );
+        alert('Testimonial updated successfully!');
+      } else {
+        await axios.post(
+          `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/master-admin/testimonials`,
+          payload,
+          { headers: getHeaders() }
+        );
+        alert('Testimonial added successfully!');
+      }
+
+      setShowTestimonialModal(false);
+      fetchTestimonials();
+    } catch (err) {
+      console.error('Failed to save testimonial:', err);
+      alert(err.response?.data?.error || 'Failed to save testimonial');
+    } finally {
+      setIsSavingTestimonial(false);
+    }
+  };
+
+  const handleDeleteTestimonial = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this testimonial?')) return;
+    try {
+      await axios.delete(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/master-admin/testimonials/${id}`,
+        { headers: getHeaders() }
+      );
+      alert('Testimonial deleted successfully!');
+      fetchTestimonials();
+    } catch (err) {
+      console.error('Failed to delete testimonial:', err);
+      alert('Failed to delete testimonial');
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'pricing') {
       fetchPlans();
       fetchCoupons();
+    }
+    if (activeTab === 'testimonials') {
+      fetchTestimonials();
     }
   }, [activeTab]);
 
@@ -740,6 +861,16 @@ const MasterAdminDashboard = () => {
           }`}
         >
           <span>💳 Pricing & Coupons</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('testimonials')}
+          className={`flex items-center space-x-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all ${
+            activeTab === 'testimonials'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+              : 'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 shadow-sm'
+          }`}
+        >
+          <span>💬 Wall of Trust (Testimonials)</span>
         </button>
       </div>
 
@@ -1392,6 +1523,96 @@ const MasterAdminDashboard = () => {
             </div>
           </div>
         )}
+
+        {/* 6. Testimonials Tab */}
+        {activeTab === 'testimonials' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+              <div>
+                <h2 className="text-xl font-extrabold text-slate-900">Wall of Trust — Testimonials</h2>
+                <p className="text-xs text-slate-500 mt-1">Manage client reviews & quotes displayed on the public landing page.</p>
+              </div>
+              <button
+                onClick={() => openTestimonialModal()}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs flex items-center space-x-2 transition-all shadow-sm cursor-pointer"
+              >
+                <span>➕ Add Testimonial</span>
+              </button>
+            </div>
+
+            {loadingTestimonials ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-600"></div>
+              </div>
+            ) : testimonials.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500">
+                No testimonials found. Click "Add Testimonial" to create your first client review!
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {testimonials.map((t) => (
+                  <div key={t._id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between relative overflow-hidden">
+                    <div className="absolute top-0 right-0 pt-4 pr-4 flex items-center space-x-2">
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase ${t.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}`}>
+                        {t.isActive ? 'Active' : 'Hidden'}
+                      </span>
+                    </div>
+
+                    <div>
+                      {/* Rating Stars */}
+                      <div className="flex items-center space-x-1 mb-3 text-amber-400">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <svg key={i} className={`w-4 h-4 ${i < (t.rating || 5) ? 'fill-amber-400 text-amber-400' : 'fill-slate-200 text-slate-200'}`} viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                          </svg>
+                        ))}
+                      </div>
+
+                      <p className="text-slate-600 text-xs leading-relaxed mb-6 italic">
+                        "{t.quote}"
+                      </p>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <img
+                          src={t.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'}
+                          alt={t.name}
+                          className="w-10 h-10 rounded-full object-cover border border-slate-200"
+                        />
+                        <div>
+                          <div className="font-bold text-slate-900 text-xs">{t.name}</div>
+                          <div className="text-slate-500 text-[11px] font-medium">{t.role}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => openTestimonialModal(t)}
+                          className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTestimonial(t._id)}
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Edit Plan Modal */}
@@ -1994,6 +2215,114 @@ const MasterAdminDashboard = () => {
                   className="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors disabled:opacity-50"
                 >
                   {isUpdatingSub ? 'Updating...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Testimonial Create/Edit Modal */}
+      {showTestimonialModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden my-8 animate-in zoom-in-95">
+            <div className="flex justify-between items-center bg-slate-900 text-white p-4 sm:p-5">
+              <div>
+                <h3 className="text-lg font-bold">{editingTestimonial ? 'Edit Testimonial' : 'Add New Testimonial'}</h3>
+                <p className="text-xs text-slate-400">Add or edit client reviews shown on the landing page.</p>
+              </div>
+              <button onClick={() => setShowTestimonialModal(false)} className="text-slate-400 hover:text-white">✕</button>
+            </div>
+
+            <form onSubmit={handleSaveTestimonial} className="p-6 space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Client Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Anis S."
+                  className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 focus:ring-indigo-500 focus:border-indigo-500"
+                  value={testimonialForm.name}
+                  onChange={(e) => setTestimonialForm({ ...testimonialForm, name: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Role & Company *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Head of Operations, Indigo"
+                  className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 focus:ring-indigo-500 focus:border-indigo-500"
+                  value={testimonialForm.role}
+                  onChange={(e) => setTestimonialForm({ ...testimonialForm, role: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Testimonial Quote / Review *</label>
+                <textarea
+                  required
+                  rows="4"
+                  placeholder="Write the client's review here..."
+                  className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 focus:ring-indigo-500 focus:border-indigo-500"
+                  value={testimonialForm.quote}
+                  onChange={(e) => setTestimonialForm({ ...testimonialForm, quote: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Avatar Image URL (Optional)</label>
+                  <input
+                    type="url"
+                    placeholder="https://..."
+                    className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 focus:ring-indigo-500 focus:border-indigo-500"
+                    value={testimonialForm.avatar}
+                    onChange={(e) => setTestimonialForm({ ...testimonialForm, avatar: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Rating (1 to 5 Stars)</label>
+                  <select
+                    className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 bg-white focus:ring-indigo-500 focus:border-indigo-500"
+                    value={testimonialForm.rating}
+                    onChange={(e) => setTestimonialForm({ ...testimonialForm, rating: e.target.value })}
+                  >
+                    <option value="5">5 Stars ⭐⭐⭐⭐⭐</option>
+                    <option value="4">4 Stars ⭐⭐⭐⭐</option>
+                    <option value="3">3 Stars ⭐⭐⭐</option>
+                    <option value="2">2 Stars ⭐⭐</option>
+                    <option value="1">1 Star ⭐</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3 pt-2">
+                <input
+                  type="checkbox"
+                  id="tIsActive"
+                  checked={testimonialForm.isActive}
+                  onChange={(e) => setTestimonialForm({ ...testimonialForm, isActive: e.target.checked })}
+                  className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                />
+                <label htmlFor="tIsActive" className="text-xs font-bold text-slate-700 cursor-pointer">Display on Public Landing Page</label>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowTestimonialModal(false)}
+                  className="px-4 py-2 text-slate-600 hover:text-slate-800 font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingTestimonial}
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-colors shadow-sm cursor-pointer"
+                >
+                  {isSavingTestimonial ? 'Saving...' : (editingTestimonial ? 'Update Testimonial' : 'Save Testimonial')}
                 </button>
               </div>
             </form>

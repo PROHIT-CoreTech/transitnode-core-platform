@@ -33,26 +33,44 @@ const PricingPortal = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
 
-  const testimonials = [
+  const [testimonials, setTestimonials] = useState([
     {
       name: "Anis S.",
       role: "Head of Operations, Indigo",
       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
-      quote: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip"
+      quote: "TransitNode simplified our fleet operations and automated invoicing across regional routes efficiently.",
+      rating: 5
     },
     {
-      name: "Anis S.",
-      role: "Head of Operations, Indigo",
+      name: "Vikram Mehta",
+      role: "Managing Director, Apex Logistics",
       avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
-      quote: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip"
+      quote: "The real-time telemetry and compliance vault cut down our administrative overhead by more than 40%.",
+      rating: 5
     },
     {
-      name: "Anis S.",
-      role: "Head of Operations, Indigo",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80",
-      quote: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip"
+      name: "Priya Sharma",
+      role: "VP Supply Chain, Transport Core",
+      avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80",
+      quote: "Managing multi-company workspaces with automated rate cards has never been this seamless.",
+      rating: 5
     }
-  ];
+  ]);
+
+  React.useEffect(() => {
+    const fetchPublicTestimonials = async () => {
+      try {
+        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+        const res = await axios.get(`${apiUrl}/api/saas/testimonials`);
+        if (res.data?.testimonials && res.data.testimonials.length > 0) {
+          setTestimonials(res.data.testimonials);
+        }
+      } catch (err) {
+        console.error('Failed to fetch public testimonials:', err);
+      }
+    };
+    fetchPublicTestimonials();
+  }, []);
 
   // Step 1: Create Workspace
   const handleCreateWorkspace = async (e) => {

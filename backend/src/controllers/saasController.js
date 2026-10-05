@@ -666,3 +666,14 @@ exports.validateCoupon = async (req, res) => {
   }
 };
 
+exports.getPublicTestimonials = async (req, res) => {
+  try {
+    const Testimonial = require('../models/NoSQL/Testimonial');
+    const testimonials = await Testimonial.find({ isActive: true }).sort({ order: 1, createdAt: -1 });
+    return res.status(200).json({ success: true, testimonials });
+  } catch (error) {
+    console.error('getPublicTestimonials error:', error);
+    return res.status(500).json({ error: 'Failed to fetch testimonials' });
+  }
+};
+
