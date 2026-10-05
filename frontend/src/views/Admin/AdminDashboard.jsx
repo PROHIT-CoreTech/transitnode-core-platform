@@ -152,9 +152,55 @@ const AdminDashboard = () => {
   
   const [drivers, setDrivers] = useState([]);
   const [fleetAssets, setFleetAssets] = useState([]);
-  const [usersList, setUsersList] = useState([]);
-  const [suppliers, setSuppliers] = useState([]);
   const [vendorRateCards, setVendorRateCards] = useState([]);
+
+  const [tenantReviewForm, setTenantReviewForm] = useState({
+    name: '',
+    role: '',
+    quote: '',
+    avatar: '',
+    rating: '5'
+  });
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  useEffect(() => {
+    if (user && subscriptionDetails) {
+      setTenantReviewForm(prev => ({
+        ...prev,
+        name: prev.name || user.name || '',
+        role: prev.role || `Head of Operations, ${subscriptionDetails.companyName || ''}`
+      }));
+    }
+  }, [user, subscriptionDetails]);
+
+  const handleSubmitTenantTestimonial = async (e) => {
+    e.preventDefault();
+    if (!tenantReviewForm.name || !tenantReviewForm.role || !tenantReviewForm.quote) {
+      alert('Name, Role, and Review text are required');
+      return;
+    }
+    try {
+      setSubmittingReview(true);
+      const res = await axios.post(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/submit-testimonial`,
+        tenantReviewForm,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert(res.data.message || 'Review submitted successfully!');
+      setTenantReviewForm({
+        name: user?.name || '',
+        role: `Head of Operations, ${subscriptionDetails?.companyName || ''}`,
+        quote: '',
+        avatar: '',
+        rating: '5'
+      });
+    } catch (err) {
+      console.error('Failed to submit review:', err);
+      alert(err.response?.data?.message || 'Failed to submit review');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   useEffect(() => {
     const allowedRoles = ['ADMIN', 'ACCOUNTANT', 'OPERATION', 'OPERATION_EXECUTIVE'];
@@ -2876,6 +2922,94 @@ const AdminDashboard = () => {
                     </tbody>
                   </table>
                 </div>
+              </div>
+
+              {/* SUBMIT PLATFORM REVIEW / TESTIMONIAL */}
+              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6 mt-6">
+                <div className="flex justify-between items-center border-b pb-3 mb-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800">Submit Platform Review & Testimonial</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">Share your experience with TransitNode. Approved reviews will be featured on our public Wall of Trust!</p>
+                  </div>
+                  <span className="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">⭐ Wall of Trust</span>
+                </div>
+
+                <form onSubmit={handleSubmitTenantTestimonial} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Your Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={tenantReviewForm.name}
+                        onChange={e => setTenantReviewForm({ ...tenantReviewForm, name: e.target.value })}
+                        className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border"
+                        placeholder="e.g. Anis S."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Role & Company *</label>
+                      <input
+                        type="text"
+                        required
+                        value={tenantReviewForm.role}
+                        onChange={e => setTenantReviewForm({ ...tenantReviewForm, role: e.target.value })}
+                        className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border"
+                        placeholder={`e.g. Head of Operations, ${subscriptionDetails?.companyName || ''}`}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Your Review / Quote *</label>
+                    <textarea
+                      required
+                      rows="3"
+                      value={tenantReviewForm.quote}
+                      onChange={e => setTenantReviewForm({ ...tenantReviewForm, quote: e.target.value })}
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border"
+                      placeholder="Share how TransitNode has helped your logistics & fleet operations..."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Avatar / Profile Photo URL (Optional)</label>
+                      <input
+                        type="url"
+                        value={tenantReviewForm.avatar}
+                        onChange={e => setTenantReviewForm({ ...tenantReviewForm, avatar: e.target.value })}
+                        className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border"
+                        placeholder="https://..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Rating</label>
+                      <select
+                        value={tenantReviewForm.rating}
+                        onChange={e => setTenantReviewForm({ ...tenantReviewForm, rating: e.target.value })}
+                        className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border bg-white"
+                      >
+                        <option value="5">5 Stars ⭐⭐⭐⭐⭐</option>
+                        <option value="4">4 Stars ⭐⭐⭐⭐</option>
+                        <option value="3">3 Stars ⭐⭐⭐</option>
+                        <option value="2">2 Stars ⭐⭐</option>
+                        <option value="1">1 Star ⭐</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <p className="text-xs text-slate-500">Submitted reviews are sent to Master Admin for publication approval.</p>
+                    <button
+                      type="submit"
+                      disabled={submittingReview}
+                      className="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 transition font-medium text-sm shadow-sm disabled:opacity-50 cursor-pointer"
+                    >
+                      {submittingReview ? 'Submitting Review...' : 'Submit Review'}
+                    </button>
+                  </div>
+                </form>
               </div>
 
               {/* Edit Workspace Modal */}

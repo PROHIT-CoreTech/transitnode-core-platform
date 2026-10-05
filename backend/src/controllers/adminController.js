@@ -988,3 +988,56 @@ exports.deleteVendorRateCard = async (req, res) => {
   }
 };
 
+exports.submitTestimonial = async (req, res) => {
+  try {
+    const { name, role, quote, rating, avatar } = req.body;
+
+    if (!name || !role || !quote) {
+      return res.status(400).json({ message: 'Name, Role, and Quote are required' });
+    }
+
+    const Testimonial = require('../models/NoSQL/Testimonial');
+
+    const testimonial = new Testimonial({
+      name: name.trim(),
+      role: role.trim(),
+      quote: quote.trim(),
+      avatar: avatar ? avatar.trim() : '',
+      rating: rating ? Number(rating) : 5,
+      isActive: false, // Pending approval by Master Admin
+      order: 0
+    });
+
+    await testimonial.save();
+
+    res.status(201).json({
+      message: 'Thank you for your feedback! Your review has been submitted to Master Admin for publication.',
+      testimonial
+    });
+  } catch (error) {
+    console.error('Error submitting testimonial:', error);
+    res.status(500).json({ message: 'Server error submitting testimonial' });
+  }
+};
+
+exports.getMyTestimonials = async (req, res) => {
+  try {
+    const Testimonial = require('../models/NoSQL/Testimonial');
+    const Tenant = require('../models/NoSQL/Tenant');
+    const tenant = await Tenant.findById(req.user.tenantId);
+    if (!tenant) return res.status(404).json({ message: 'Tenant not found' });
+
+    const testimonials = await Testimonial.find({
+      $or: [
+        { role: { $regex: tenant.companyName, $options: 'i' } },
+        { name: { $regex: req.user.name || '', $options: 'i' } }
+      ]
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json({ testimonials });
+  } catch (error) {
+    console.error('Error fetching my testimonials:', error);
+    res.status(500).json({ message: 'Server error fetching testimonials' });
+  }
+};
+

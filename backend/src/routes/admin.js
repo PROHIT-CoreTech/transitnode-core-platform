@@ -96,6 +96,10 @@ router.delete('/suppliers/:id', supplierController.deleteSupplier);
 router.get('/subscription', adminController.getSubscriptionDetails);
 router.put('/subscription/upgrade', adminController.updateSubscriptionPlan);
 
+// Tenant Review / Testimonial Submission
+router.post('/submit-testimonial', adminController.submitTestimonial);
+router.get('/my-testimonials', adminController.getMyTestimonials);
+
 // Demo Simulation Toggle
 router.post('/demo/toggle', (req, res) => {
   const { active } = req.body;
