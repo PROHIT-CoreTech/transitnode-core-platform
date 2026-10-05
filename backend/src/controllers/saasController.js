@@ -669,7 +669,43 @@ exports.validateCoupon = async (req, res) => {
 exports.getPublicTestimonials = async (req, res) => {
   try {
     const Testimonial = require('../models/NoSQL/Testimonial');
-    const testimonials = await Testimonial.find({ isActive: true }).sort({ order: 1, createdAt: -1 });
+    const count = await Testimonial.countDocuments();
+    if (count === 0) {
+      const DEFAULT_TESTIMONIALS = [
+        {
+          name: 'Anis S.',
+          role: 'Head of Operations, Indigo',
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+          quote: 'TransitNode simplified our fleet operations and automated invoicing across regional routes efficiently.',
+          rating: 5,
+          isActive: true,
+          order: 1
+        },
+        {
+          name: 'Vikram Mehta',
+          role: 'Managing Director, Apex Logistics',
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+          quote: 'The real-time telemetry and compliance vault cut down our administrative overhead by more than 40%.',
+          rating: 5,
+          isActive: true,
+          order: 2
+        },
+        {
+          name: 'Priya Sharma',
+          role: 'VP Supply Chain, Transport Core',
+          avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80',
+          quote: 'Managing multi-company workspaces with automated rate cards has never been this seamless.',
+          rating: 5,
+          isActive: true,
+          order: 3
+        }
+      ];
+      await Testimonial.insertMany(DEFAULT_TESTIMONIALS);
+    }
+
+    const testimonials = await Testimonial.find({ isActive: true })
+      .sort({ createdAt: -1 })
+      .limit(10);
     return res.status(200).json({ success: true, testimonials });
   } catch (error) {
     console.error('getPublicTestimonials error:', error);
