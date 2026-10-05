@@ -11,9 +11,20 @@ const subscriptionTransactionSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    planNameAtPurchase: {
+      type: String,
+      default: '',
+    },
     amount: {
       type: Number,
       required: true,
+    },
+    amountPaid: {
+      type: Number,
+    },
+    currency: {
+      type: String,
+      default: 'INR',
     },
     paymentMethod: {
       type: String,
@@ -24,5 +35,16 @@ const subscriptionTransactionSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// Ensure immutable snapshot defaults before saving
+subscriptionTransactionSchema.pre('save', function (next) {
+  if (this.amountPaid === undefined || this.amountPaid === null) {
+    this.amountPaid = this.amount;
+  }
+  if (!this.planNameAtPurchase) {
+    this.planNameAtPurchase = `${this.planType} Plan`;
+  }
+  next();
+});
 
 module.exports = mongoose.model('SubscriptionTransaction', subscriptionTransactionSchema);

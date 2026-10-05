@@ -30,7 +30,7 @@ const RegisterModal = ({
   if (!showModal) return null;
 
   const planKeyUpper = (selectedPlan || 'silver').toUpperCase();
-  const basePrice = planKeyUpper === 'SILVER' ? 50000 : planKeyUpper === 'PLATINUM' ? 100000 : planKeyUpper === 'LIFETIME' ? 500000 : 0;
+  const basePrice = planKeyUpper === 'SILVER' ? 50000 : planKeyUpper === 'PLATINUM' ? 100000 : planKeyUpper === 'LIFETIME' ? 450000 : 0;
   const payableAmount = couponResult?.success ? couponResult.finalAmount : basePrice;
 
   const handleApplyCoupon = async () => {

@@ -116,7 +116,7 @@ exports.registerTenant = async (req, res) => {
 
     // For paid plans, create Cashfree Order & record initial transaction
     let amount = 0;
-    if (mappedPlanType === 'LIFETIME') amount = 500000;
+    if (mappedPlanType === 'LIFETIME') amount = 450000;
     else if (mappedPlanType === 'PLATINUM') amount = 100000;
     else if (mappedPlanType === 'SILVER') amount = 50000;
 
@@ -127,7 +127,10 @@ exports.registerTenant = async (req, res) => {
         await SubscriptionTransaction.create({
           tenantId: newTenant._id,
           planType: mappedPlanType,
+          planNameAtPurchase: `${mappedPlanType} Plan`,
           amount: amount,
+          amountPaid: amount,
+          currency: 'INR',
           paymentMethod: 'CASHFREE_GATEWAY',
           createdAt: newTenant.createdAt || new Date()
         });
@@ -571,10 +574,10 @@ exports.getPublicSubscriptionPlans = async (req, res) => {
           title: 'Lifetime Access',
           badgeText: 'TRANCEZARDS',
           tagline: 'Unlimited perpetual access for scaling enterprises.',
-          price: 50000,
-          originalPrice: 150000,
+          price: 450000,
+          originalPrice: 500000,
           currency: 'INR',
-          priceDisplay: '₹50k',
+          priceDisplay: '₹450k',
           durationDays: 36500,
           durationLabel: 'Lifetime',
           features: ['Scale Global Logistics', 'Fleet management', 'Multi-Company Portal', 'Custom Branding & Subdomain'],
@@ -584,6 +587,14 @@ exports.getPublicSubscriptionPlans = async (req, res) => {
           isActive: true
         }
       ];
+      await SubscriptionPlan.insertMany(DEFAULT_PLANS);
+      plans = await SubscriptionPlan.find({ isActive: true }).sort({ createdAt: 1 });
+    } else {
+      await SubscriptionPlan.updateOne(
+        { planKey: 'LIFETIME' },
+        { $set: { price: 450000, originalPrice: 500000, priceDisplay: '₹450k' } }
+      );
+      plans = await SubscriptionPlan.find({ isActive: true }).sort({ createdAt: 1 });
     }
     return res.status(200).json({ success: true, plans });
   } catch (error) {

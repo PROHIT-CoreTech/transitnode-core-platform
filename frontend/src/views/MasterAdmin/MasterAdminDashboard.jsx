@@ -2204,7 +2204,7 @@ const MasterAdminDashboard = () => {
                   <input
                     type="number"
                     min="0"
-                    placeholder="e.g. 335000 (Leave blank for default catalog price)"
+                    placeholder="e.g. 500000 (Leave blank for default catalog price)"
                     value={subForm.amountPaid || ''}
                     onChange={e => setSubForm({...subForm, amountPaid: e.target.value})}
                     className="w-full border-slate-300 rounded-lg p-3 text-sm border bg-white font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 shadow-sm"

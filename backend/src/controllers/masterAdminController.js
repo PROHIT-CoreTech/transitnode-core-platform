@@ -127,7 +127,10 @@ exports.onboardManual = async (req, res) => {
     // 2. Log Revenue if Amount Paid is provided or plan is paid
     let finalAmount = amountPaid && !isNaN(amountPaid) ? parseFloat(amountPaid) : 0;
     if (finalAmount <= 0 && uppercasePlanType !== 'TRIAL') {
-      if (uppercasePlanType === 'LIFETIME') finalAmount = 335000;
+      if (uppercasePlanType === 'LIFETIME') {
+        const isSarthak = companyName && companyName.toLowerCase().includes('sarthak');
+        finalAmount = isSarthak ? 335000 : 450000;
+      }
       else if (uppercasePlanType === 'PLATINUM') finalAmount = 100000;
       else if (uppercasePlanType === 'SILVER') finalAmount = 50000;
       else finalAmount = 50000;
@@ -226,17 +229,21 @@ exports.dashboardSummary = async (req, res) => {
     for (const t of allTenants) {
       if (t.planType && t.planType !== 'TRIAL') {
         const hasTx = await SubscriptionTransaction.findOne({ tenantId: t._id });
+        const isSarthak = t.companyName && t.companyName.toLowerCase().includes('sarthak');
+        let expectedAmount = 50000;
+        if (t.planType === 'PLATINUM') expectedAmount = 100000;
+        if (t.planType === 'LIFETIME') expectedAmount = isSarthak ? 335000 : 450000;
 
         // Preserve manually or offline provisioned PAID tenants (e.g. Offline Transport, LIFETIME tenants)
         if (t.paymentStatus === 'PAID') {
           if (!hasTx) {
-            let amount = 50000;
-            if (t.planType === 'PLATINUM') amount = 100000;
-            if (t.planType === 'LIFETIME') amount = 335000;
             await SubscriptionTransaction.create({
               tenantId: t._id,
               planType: t.planType,
-              amount: amount,
+              planNameAtPurchase: `${t.planType} Plan`,
+              amount: expectedAmount,
+              amountPaid: expectedAmount,
+              currency: 'INR',
               paymentMethod: 'OFFLINE_PAYMENT',
               createdAt: t.createdAt || new Date()
             });
@@ -525,7 +532,8 @@ exports.updateTenantSubscription = async (req, res) => {
           if (planConfig && planConfig.price && planConfig.price > 0) {
             amount = planConfig.price;
           } else if (upperPlan === 'LIFETIME') {
-            amount = 335000;
+            const isSarthak = tenant.companyName && tenant.companyName.toLowerCase().includes('sarthak');
+            amount = isSarthak ? 335000 : 450000;
           } else if (upperPlan === 'PLATINUM') {
             amount = 100000;
           } else if (upperPlan === 'SILVER') {
@@ -705,10 +713,10 @@ const DEFAULT_PLANS = [
     title: 'Lifetime Access',
     badgeText: 'TRANCEZARDS',
     tagline: 'Unlimited perpetual access for scaling enterprises.',
-    price: 50000,
-    originalPrice: 150000,
+    price: 450000,
+    originalPrice: 500000,
     currency: 'INR',
-    priceDisplay: '₹50k',
+    priceDisplay: '₹450k',
     durationDays: 36500,
     durationLabel: 'Lifetime',
     features: ['Scale Global Logistics', 'Fleet management', 'Multi-Company Portal', 'Custom Branding & Subdomain'],
@@ -724,6 +732,11 @@ const seedPlansIfEmpty = async () => {
   if (count === 0) {
     await SubscriptionPlan.insertMany(DEFAULT_PLANS);
     console.log('[SubscriptionPlan] Default plans initialized.');
+  } else {
+    await SubscriptionPlan.updateOne(
+      { planKey: 'LIFETIME' },
+      { $set: { price: 450000, originalPrice: 500000, priceDisplay: '₹450k' } }
+    );
   }
   return await SubscriptionPlan.find().sort({ createdAt: 1 });
 };

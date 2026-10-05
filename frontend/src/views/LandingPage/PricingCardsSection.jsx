@@ -40,8 +40,9 @@ const DEFAULT_FALLBACK_PLANS = [
     title: 'Lifetime Access',
     badgeText: 'TRANCEZARDS',
     tagline: 'Unlimited perpetual access for scaling enterprises.',
-    price: 50000,
-    priceDisplay: '₹50k',
+    price: 450000,
+    priceDisplay: '₹450k',
+    originalPrice: 500000,
     features: ['Scale Global Logistics', 'Fleet management', 'Multi-Company Portal', 'Custom Branding & Subdomain'],
     buttonText: 'Upgrade to Lifetime',
     accentColor: 'purple'
