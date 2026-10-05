@@ -153,6 +153,8 @@ const AdminDashboard = () => {
   const [drivers, setDrivers] = useState([]);
   const [fleetAssets, setFleetAssets] = useState([]);
   const [vendorRateCards, setVendorRateCards] = useState([]);
+  const [usersList, setUsersList] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
 
   const [tenantReviewForm, setTenantReviewForm] = useState({
     name: '',
@@ -347,8 +349,19 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (activeTab === 'PROFILE') {
       fetchProfile();
-    } else if (activeTab === 'RATE_CARD') {
+    } else if (activeTab === 'RATE_CARD' || activeTab === 'MANAGEMENT') {
       fetchVendorRateCards();
+      fetchUsersList();
+      fetchWorkspaces();
+      fetchSuppliers();
+    } else if (activeTab === 'DAILY_RUN_SHEET') {
+      fetchWorkspaces();
+      fetchSuppliers();
+    } else if (activeTab === 'SUPPLIERS') {
+      fetchSuppliers();
+    } else if (activeTab === 'SUBSCRIPTION') {
+      fetchWorkspaces();
+      fetchSubscription();
     }
   }, [activeTab]);
 

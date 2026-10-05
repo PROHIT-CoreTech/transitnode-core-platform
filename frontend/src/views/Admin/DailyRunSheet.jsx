@@ -43,8 +43,11 @@ const DailyRunSheet = ({ workspaces = [], suppliers = [], isOperator = false }) 
   useEffect(() => {
     const fetchRunSheets = async () => {
       try {
+        const token = localStorage.getItem('token');
         const url = `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/runsheets`;
-        const res = await axios.get(url);
+        const res = await axios.get(url, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         setLogs(res.data.runSheets || []);
       } catch (error) {
         console.error("Error fetching run sheets:", error);
@@ -52,6 +55,10 @@ const DailyRunSheet = ({ workspaces = [], suppliers = [], isOperator = false }) 
     };
     fetchRunSheets();
   }, []);
+
+  // Safe navigation arrays
+  const safeSuppliers = suppliers || [];
+  const safeWorkspaces = workspaces || [];
 
   // Auto-calculate Distance Travelled
   useEffect(() => {
@@ -78,7 +85,7 @@ const DailyRunSheet = ({ workspaces = [], suppliers = [], isOperator = false }) 
   };
 
   // Find the selected supplier object to drive dynamic UI
-  const selectedSupplierObj = suppliers.find(sup => sup.supplierName === formData.supplier);
+  const selectedSupplierObj = safeSuppliers.find(sup => sup.supplierName === formData.supplier);
   const dynamicIdentifierLabel = selectedSupplierObj?.identifierType || 'Source Hub Name';
 
   // Auto-set single options for billing/invoice when supplier changes
@@ -95,15 +102,17 @@ const DailyRunSheet = ({ workspaces = [], suppliers = [], isOperator = false }) 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
       if (editingId) {
         const url = `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/runsheets/${editingId}`;
-        const res = await axios.put(url, formData);
+        const res = await axios.put(url, formData, { headers });
         setLogs(prev => prev.map(log => log._id === editingId ? res.data.runSheet : log));
         alert('Run sheet entry updated successfully!');
         setEditingId(null);
       } else {
         const url = `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/runsheets`;
-        const res = await axios.post(url, formData);
+        const res = await axios.post(url, formData, { headers });
         setLogs(prev => [res.data.runSheet, ...prev]);
         alert('Run sheet entry saved successfully!');
       }
@@ -166,8 +175,11 @@ const DailyRunSheet = ({ workspaces = [], suppliers = [], isOperator = false }) 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this run sheet?')) return;
     try {
+      const token = localStorage.getItem('token');
       const url = `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/runsheets/${id}`;
-      await axios.delete(url);
+      await axios.delete(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setLogs(prev => prev.filter(log => log._id !== id));
       alert('Run sheet deleted successfully!');
     } catch (error) {
@@ -279,7 +291,7 @@ const DailyRunSheet = ({ workspaces = [], suppliers = [], isOperator = false }) 
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Client Name</label>
                 <select name="vendor" required value={formData.vendor} onChange={handleChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 bg-white text-slate-900">
                   <option value="">-- Select Client --</option>
-                  {workspaces.map(ws => (
+                  {safeWorkspaces.map(ws => (
                     <option key={ws._id} value={ws.companyName}>{ws.companyName}</option>
                   ))}
                 </select>
@@ -288,7 +300,7 @@ const DailyRunSheet = ({ workspaces = [], suppliers = [], isOperator = false }) 
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Supplier Name</label>
                 <select name="supplier" value={formData.supplier} onChange={handleChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 bg-white text-slate-900">
                   <option value="">-- Select Supplier --</option>
-                  {suppliers.map(sup => (
+                  {safeSuppliers.map(sup => (
                     <option key={sup._id} value={sup.supplierName}>{sup.supplierName}</option>
                   ))}
                 </select>
