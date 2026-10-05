@@ -205,7 +205,7 @@ exports.dashboardSummary = async (req, res) => {
     });
 
     // 4. List of all Tenants
-    const allTenants = await Tenant.find({}, 'companyName planType registeredMobile customSubdomain licenseExpiresAt createdAt isSuspended paymentStatus').sort({ createdAt: -1 });
+    const allTenants = await Tenant.find({}, 'companyName planType registeredMobile customSubdomain licenseExpiresAt createdAt isSuspended paymentStatus enableLiveFleetMap enableFinancialEngine').sort({ createdAt: -1 });
 
     // Restore Offline Transport Pvt. Ltd. if present
     await Tenant.updateOne({ customSubdomain: 'offlinetransportpvtltd-7731' }, { $set: { paymentStatus: 'PAID', planType: 'PLATINUM' } });
@@ -516,6 +516,36 @@ exports.updateTenantSubscription = async (req, res) => {
   } catch (error) {
     console.error('[MasterAdmin] updateTenantSubscription error:', error);
     return res.status(500).json({ error: error.message || 'Internal server error updating tenant subscription.' });
+  }
+};
+
+// PUT /api/master-admin/tenant/:tenantId/features
+exports.updateTenantFeatures = async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+    const { enableLiveFleetMap, enableFinancialEngine } = req.body;
+
+    const tenant = await Tenant.findById(tenantId);
+    if (!tenant) {
+      return res.status(404).json({ error: 'Tenant not found' });
+    }
+
+    if (enableLiveFleetMap !== undefined) {
+      tenant.enableLiveFleetMap = Boolean(enableLiveFleetMap);
+    }
+    if (enableFinancialEngine !== undefined) {
+      tenant.enableFinancialEngine = Boolean(enableFinancialEngine);
+    }
+
+    await tenant.save();
+
+    return res.status(200).json({
+      message: 'Tenant feature settings updated successfully.',
+      tenant
+    });
+  } catch (error) {
+    console.error('[MasterAdmin] updateTenantFeatures error:', error);
+    return res.status(500).json({ error: error.message || 'Internal server error updating tenant feature settings.' });
   }
 };
 

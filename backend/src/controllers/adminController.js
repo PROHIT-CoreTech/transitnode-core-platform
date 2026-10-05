@@ -791,7 +791,9 @@ exports.getSubscriptionDetails = async (req, res) => {
       contactNumber: (tenant.contactNumber && tenant.contactNumber.trim() !== '') ? tenant.contactNumber.trim() : tenant.registeredMobile,
       registeredMobile: tenant.registeredMobile,
       requireDriverMobileApp: tenant.requireDriverMobileApp,
-      brandingOptions: tenant.brandingOptions
+      brandingOptions: tenant.brandingOptions,
+      enableLiveFleetMap: tenant.enableLiveFleetMap !== false,
+      enableFinancialEngine: tenant.enableFinancialEngine !== false
     });
   } catch (error) {
     console.error('Error fetching subscription:', error);

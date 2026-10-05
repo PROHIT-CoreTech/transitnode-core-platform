@@ -84,6 +84,14 @@ const tenantSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    enableLiveFleetMap: {
+      type: Boolean,
+      default: true,
+    },
+    enableFinancialEngine: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
     timestamps: true,

@@ -423,6 +423,96 @@ const MasterAdminDashboard = () => {
     }
   };
 
+  const [isUpdatingFeature, setIsUpdatingFeature] = useState(false);
+
+  const handleToggleLiveFleetMap = async () => {
+    if (!tenantDetails || !tenantDetails.tenant) return;
+    const currentStatus = tenantDetails.tenant.enableLiveFleetMap !== false;
+    const newStatus = !currentStatus;
+    const actionText = newStatus ? 'enable' : 'disable';
+
+    if (!window.confirm(`Are you sure you want to ${actionText} Live Fleet Map for this tenant?`)) {
+      return;
+    }
+
+    try {
+      setIsUpdatingFeature(true);
+      const response = await axios.put(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/master-admin/tenant/${tenantDetails.tenant._id}/features`,
+        { enableLiveFleetMap: newStatus },
+        { headers: getHeaders() }
+      );
+
+      // Update tenant details in modal
+      setTenantDetails(prev => ({
+        ...prev,
+        tenant: response.data.tenant
+      }));
+
+      // Update tenant directory in summary
+      setSummary(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          allTenants: prev.allTenants.map(t =>
+            t._id === tenantDetails.tenant._id ? response.data.tenant : t
+          )
+        };
+      });
+
+      alert(`Live Fleet Map has been ${newStatus ? 'enabled' : 'disabled'} for this tenant.`);
+    } catch (error) {
+      console.error('Failed to toggle Live Fleet Map:', error);
+      alert(error.response?.data?.error || 'Failed to update feature settings.');
+    } finally {
+      setIsUpdatingFeature(false);
+    }
+  };
+
+  const handleToggleFinancialEngine = async () => {
+    if (!tenantDetails || !tenantDetails.tenant) return;
+    const currentStatus = tenantDetails.tenant.enableFinancialEngine !== false;
+    const newStatus = !currentStatus;
+    const actionText = newStatus ? 'enable' : 'disable';
+
+    if (!window.confirm(`Are you sure you want to ${actionText} Financial Engine for this tenant?`)) {
+      return;
+    }
+
+    try {
+      setIsUpdatingFeature(true);
+      const response = await axios.put(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/master-admin/tenant/${tenantDetails.tenant._id}/features`,
+        { enableFinancialEngine: newStatus },
+        { headers: getHeaders() }
+      );
+
+      // Update tenant details in modal
+      setTenantDetails(prev => ({
+        ...prev,
+        tenant: response.data.tenant
+      }));
+
+      // Update tenant directory in summary
+      setSummary(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          allTenants: prev.allTenants.map(t =>
+            t._id === tenantDetails.tenant._id ? response.data.tenant : t
+          )
+        };
+      });
+
+      alert(`Financial Engine has been ${newStatus ? 'enabled' : 'disabled'} for this tenant.`);
+    } catch (error) {
+      console.error('Failed to toggle Financial Engine:', error);
+      alert(error.response?.data?.error || 'Failed to update feature settings.');
+    } finally {
+      setIsUpdatingFeature(false);
+    }
+  };
+
   const fetchDashboardSummary = async () => {
     try {
       setLoading(true);
@@ -1689,6 +1779,73 @@ const MasterAdminDashboard = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                       </svg>
                     </button>
+                  </div>
+
+                  {/* Feature Access Controls */}
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800 mb-4 border-b border-slate-200 pb-2 flex items-center justify-between">
+                      <span>Feature Access Controls</span>
+                      <span className="text-xs font-semibold text-slate-400">Tenant Feature Settings</span>
+                    </h3>
+                    <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
+                      {/* Live Fleet Map */}
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                            </svg>
+                            <h4 className="font-bold text-slate-900 text-base">Live Fleet Map</h4>
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1 max-w-lg">
+                            Control real-time GPS fleet tracking and live map availability in the tenant admin dashboard.
+                          </p>
+                        </div>
+                        <button
+                          onClick={handleToggleLiveFleetMap}
+                          disabled={isUpdatingFeature}
+                          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold tracking-wider transition-all flex items-center gap-2.5 cursor-pointer shadow-sm ${
+                            (tenantDetails.tenant.enableLiveFleetMap !== false)
+                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500'
+                              : 'bg-slate-200 hover:bg-slate-300 text-slate-700 border border-slate-300'
+                          }`}
+                        >
+                          <span className={`w-2.5 h-2.5 rounded-full ${
+                            (tenantDetails.tenant.enableLiveFleetMap !== false) ? 'bg-emerald-200 animate-pulse' : 'bg-slate-400'
+                          }`}></span>
+                          {(tenantDetails.tenant.enableLiveFleetMap !== false) ? 'ENABLED' : 'DISABLED'}
+                        </button>
+                      </div>
+
+                      {/* Financial Engine */}
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-1">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <h4 className="font-bold text-slate-900 text-base">Financial Engine</h4>
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1 max-w-lg">
+                            Control real-time ledger, P&L snapshot, trial balance, and accounting Tally XML exports in tenant admin.
+                          </p>
+                        </div>
+                        <button
+                          onClick={handleToggleFinancialEngine}
+                          disabled={isUpdatingFeature}
+                          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold tracking-wider transition-all flex items-center gap-2.5 cursor-pointer shadow-sm ${
+                            (tenantDetails.tenant.enableFinancialEngine !== false)
+                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500'
+                              : 'bg-slate-200 hover:bg-slate-300 text-slate-700 border border-slate-300'
+                          }`}
+                        >
+                          <span className={`w-2.5 h-2.5 rounded-full ${
+                            (tenantDetails.tenant.enableFinancialEngine !== false) ? 'bg-emerald-200 animate-pulse' : 'bg-slate-400'
+                          }`}></span>
+                          {(tenantDetails.tenant.enableFinancialEngine !== false) ? 'ENABLED' : 'DISABLED'}
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Registered Workspaces/Companies */}

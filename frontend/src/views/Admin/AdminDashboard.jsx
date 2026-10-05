@@ -162,9 +162,9 @@ const AdminDashboard = () => {
       navigate('/login');
       return;
     }
+    fetchSubscription();
     if (user?.role === 'ADMIN') {
       fetchUsersList();
-      fetchSubscription();
       fetchWorkspaces();
       fetchSuppliers();
     }
@@ -213,6 +213,23 @@ const AdminDashboard = () => {
       }
     };
   }, [token, user, navigate]);
+
+  useEffect(() => {
+    if (subscriptionDetails && subscriptionDetails.enableLiveFleetMap === false && activeTab === 'MAP') {
+      if (user?.role === 'ADMIN') {
+        setActiveTab('ANALYTICS');
+      } else {
+        setActiveTab('FLEET_MANAGEMENT');
+      }
+    }
+    if (subscriptionDetails && subscriptionDetails.enableFinancialEngine === false && activeTab === 'FINANCE') {
+      if (user?.role === 'ADMIN') {
+        setActiveTab('ANALYTICS');
+      } else {
+        setActiveTab('TRANSACTIONS');
+      }
+    }
+  }, [subscriptionDetails, activeTab, user]);
 
   // Inject Workspace Context & Global API Loader
   useEffect(() => {
@@ -1100,7 +1117,9 @@ const AdminDashboard = () => {
                 </button>
                 {expandedMenu === 'FLEET' && (
                   <div className="pl-4 mt-1 space-y-1">
-                    <button onClick={() => setActiveTab('MAP')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'MAP' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Live Fleet Map</button>
+                    {(subscriptionDetails?.enableLiveFleetMap !== false) && (
+                      <button onClick={() => setActiveTab('MAP')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'MAP' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Live Fleet Map</button>
+                    )}
                     <button onClick={() => setActiveTab('FLEET_MANAGEMENT')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'FLEET_MANAGEMENT' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Fleet Management</button>
                     <button onClick={() => setActiveTab('DRIVER_MANAGEMENT')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'DRIVER_MANAGEMENT' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Driver Management</button>
                     <button onClick={() => setActiveTab('DAILY_RUN_SHEET')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'DAILY_RUN_SHEET' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Daily Run Sheets</button>
@@ -1121,7 +1140,9 @@ const AdminDashboard = () => {
                 </button>
                 {expandedMenu === 'FINANCE' && (
                   <div className="pl-4 mt-1 space-y-1">
-                    <button onClick={() => setActiveTab('FINANCE')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'FINANCE' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Financial Engine</button>
+                    {(subscriptionDetails?.enableFinancialEngine !== false) && (
+                      <button onClick={() => setActiveTab('FINANCE')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'FINANCE' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Financial Engine</button>
+                    )}
                     <button onClick={() => setActiveTab('TRANSACTIONS')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'TRANSACTIONS' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Shipment Ledger</button>
                     <button onClick={() => setActiveTab('SUPPLIERS')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'SUPPLIERS' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Suppliers</button>
                   </div>
@@ -2543,6 +2564,17 @@ const AdminDashboard = () => {
           )}
 
           {activeTab === 'MAP' && (
+            subscriptionDetails?.enableLiveFleetMap === false ? (
+              <div className="flex flex-col items-center justify-center p-12 bg-white rounded-2xl shadow-sm border border-slate-200 text-center my-8">
+                <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mb-4 border border-amber-100">
+                  <svg className="w-8 h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-slate-800 mb-2">Live Fleet Map Disabled</h3>
+                <p className="text-slate-500 text-sm max-w-md">The Live Fleet Map feature is currently disabled for your tenant account by the administrator.</p>
+              </div>
+            ) : (
             <div className="flex h-[calc(100vh-14rem)] gap-6">
               {/* Left Sidebar */}
               <div className="w-1/4 min-w-[320px] bg-white rounded-xl shadow-sm border border-slate-100 flex flex-col overflow-hidden">
@@ -2599,6 +2631,7 @@ const AdminDashboard = () => {
                 />
               </div>
             </div>
+            )
           )}
 
           {activeTab === 'COMPLIANCE' && (
@@ -2614,9 +2647,21 @@ const AdminDashboard = () => {
           )}
 
           {activeTab === 'FINANCE' && (
-            <div className="w-full h-full animate-fade-in">
-              <FinancialLedger planType={subscriptionDetails?.planType} />
-            </div>
+            subscriptionDetails?.enableFinancialEngine === false ? (
+              <div className="flex flex-col items-center justify-center p-12 bg-white rounded-2xl shadow-sm border border-slate-200 text-center my-8">
+                <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mb-4 border border-amber-100">
+                  <svg className="w-8 h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-slate-800 mb-2">Financial Engine Disabled</h3>
+                <p className="text-slate-500 text-sm max-w-md">The Financial Engine feature is currently disabled for your tenant account by the administrator.</p>
+              </div>
+            ) : (
+              <div className="w-full h-full animate-fade-in">
+                <FinancialLedger planType={subscriptionDetails?.planType} />
+              </div>
+            )
           )}
 
           {activeTab === 'SUPPLIERS' && (

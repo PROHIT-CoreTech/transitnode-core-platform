@@ -359,6 +359,8 @@ exports.getTenantProfile = async (req, res) => {
       planType: tenant.planType,
       paymentStatus: tenant.paymentStatus,
       adminSetupComplete: tenant.adminSetupComplete,
+      enableLiveFleetMap: tenant.enableLiveFleetMap !== false,
+      enableFinancialEngine: tenant.enableFinancialEngine !== false,
       // Default theme settings (can be expanded later via db)
       themeColorHex: '#0d9488', // teal-600 default
       logoAssetString: 'default_tenant_logo',
