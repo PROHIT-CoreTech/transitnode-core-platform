@@ -124,14 +124,23 @@ exports.onboardManual = async (req, res) => {
     });
     await tenant.save();
 
-    // 2. Log Revenue if Amount Paid is provided
-    if (amountPaid && !isNaN(amountPaid)) {
+    // 2. Log Revenue if Amount Paid is provided or plan is paid
+    let finalAmount = amountPaid && !isNaN(amountPaid) ? parseFloat(amountPaid) : 0;
+    if (finalAmount <= 0 && uppercasePlanType !== 'TRIAL') {
+      if (uppercasePlanType === 'LIFETIME') finalAmount = 335000;
+      else if (uppercasePlanType === 'PLATINUM') finalAmount = 100000;
+      else if (uppercasePlanType === 'SILVER') finalAmount = 50000;
+      else finalAmount = 50000;
+    }
+
+    if (finalAmount > 0) {
       const SubscriptionTransaction = require('../models/NoSQL/SubscriptionTransaction');
       const transaction = new SubscriptionTransaction({
         tenantId: tenant._id,
         planType: uppercasePlanType,
-        amount: parseFloat(amountPaid),
-        paymentMethod: 'OFFLINE_MANUAL'
+        amount: finalAmount,
+        paymentMethod: 'OFFLINE_MANUAL',
+        createdAt: new Date()
       });
       await transaction.save();
     }
@@ -215,14 +224,15 @@ exports.dashboardSummary = async (req, res) => {
     const { getCashfreeOrder, getCashfreeOrderPayments } = require('../config/cashfree');
 
     for (const t of allTenants) {
-      if (t.planType && t.planType !== 'TRIAL' && t.planType !== 'LIFETIME') {
+      if (t.planType && t.planType !== 'TRIAL') {
         const hasTx = await SubscriptionTransaction.findOne({ tenantId: t._id });
 
-        // Preserve manually or offline provisioned PAID tenants (e.g. Offline Transport Pvt. Ltd.)
+        // Preserve manually or offline provisioned PAID tenants (e.g. Offline Transport, LIFETIME tenants)
         if (t.paymentStatus === 'PAID') {
           if (!hasTx) {
             let amount = 50000;
             if (t.planType === 'PLATINUM') amount = 100000;
+            if (t.planType === 'LIFETIME') amount = 335000;
             await SubscriptionTransaction.create({
               tenantId: t._id,
               planType: t.planType,
@@ -470,7 +480,7 @@ exports.toggleTenantSuspension = async (req, res) => {
 exports.updateTenantSubscription = async (req, res) => {
   try {
     const { tenantId } = req.params;
-    const { planType } = req.body;
+    const { planType, amountPaid } = req.body;
 
     const tenant = await Tenant.findById(tenantId);
     if (!tenant) {
@@ -505,9 +515,42 @@ exports.updateTenantSubscription = async (req, res) => {
       const newExpiry = new Date();
       newExpiry.setDate(newExpiry.getDate() + durationDays);
       tenant.licenseExpiresAt = newExpiry;
-    }
+      await tenant.save();
 
-    await tenant.save();
+      // Create/Update SubscriptionTransaction if plan is paid
+      if (upperPlan !== 'TRIAL') {
+        const SubscriptionTransaction = require('../models/NoSQL/SubscriptionTransaction');
+        let amount = parseFloat(amountPaid);
+        if (isNaN(amount) || amount <= 0) {
+          if (planConfig && planConfig.price && planConfig.price > 0) {
+            amount = planConfig.price;
+          } else if (upperPlan === 'LIFETIME') {
+            amount = 335000;
+          } else if (upperPlan === 'PLATINUM') {
+            amount = 100000;
+          } else if (upperPlan === 'SILVER') {
+            amount = 50000;
+          } else {
+            amount = 50000;
+          }
+        }
+
+        const existingTx = await SubscriptionTransaction.findOne({ tenantId: tenant._id, planType: upperPlan });
+        if (existingTx) {
+          existingTx.amount = amount;
+          existingTx.createdAt = new Date();
+          await existingTx.save();
+        } else {
+          await SubscriptionTransaction.create({
+            tenantId: tenant._id,
+            planType: upperPlan,
+            amount: amount,
+            paymentMethod: 'OFFLINE_MANUAL',
+            createdAt: new Date()
+          });
+        }
+      }
+    }
 
     return res.status(200).json({
       message: 'Tenant subscription updated successfully.',

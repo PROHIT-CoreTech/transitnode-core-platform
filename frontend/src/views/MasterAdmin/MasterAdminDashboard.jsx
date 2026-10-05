@@ -66,7 +66,8 @@ const MasterAdminDashboard = () => {
     setEditingSubscriptionTenant(tenant);
     const trialDone = isTenantTrialCompleted(tenant);
     setSubForm({
-      planType: (trialDone && (tenant.planType === 'TRIAL' || !tenant.planType)) ? 'SILVER' : (tenant.planType || 'SILVER')
+      planType: (trialDone && (tenant.planType === 'TRIAL' || !tenant.planType)) ? 'SILVER' : (tenant.planType || 'SILVER'),
+      amountPaid: ''
     });
   };
 
@@ -78,7 +79,8 @@ const MasterAdminDashboard = () => {
       const res = await axios.put(
         `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/master-admin/tenant/${editingSubscriptionTenant._id}/subscription`,
         {
-          planType: subForm.planType
+          planType: subForm.planType,
+          amountPaid: subForm.amountPaid
         },
         { headers: getHeaders() }
       );
@@ -2195,6 +2197,21 @@ const MasterAdminDashboard = () => {
                   <option value="LIFETIME">Lifetime License (Unlimited)</option>
                 </select>
               </div>
+
+              {subForm.planType !== 'TRIAL' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Amount Paid (₹) — Optional</label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 335000 (Leave blank for default catalog price)"
+                    value={subForm.amountPaid || ''}
+                    onChange={e => setSubForm({...subForm, amountPaid: e.target.value})}
+                    className="w-full border-slate-300 rounded-lg p-3 text-sm border bg-white font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 shadow-sm"
+                  />
+                  <p className="text-xs text-slate-400 mt-1">If left blank, standard catalog price for {subForm.planType} will be logged.</p>
+                </div>
+              )}
 
               <div className="bg-indigo-50/70 border border-indigo-100 rounded-xl p-3.5 text-xs text-indigo-900 leading-relaxed">
                 <span className="font-bold block mb-1">ℹ️ License Expiry Policy:</span>
