@@ -1556,7 +1556,7 @@ const MasterAdminDashboard = () => {
                   <div key={t._id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between relative overflow-hidden">
                     <div className="absolute top-0 right-0 pt-4 pr-4 flex items-center space-x-2">
                       <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase ${t.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}`}>
-                        {t.isActive ? 'Active' : 'Hidden'}
+                        {t.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 

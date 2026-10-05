@@ -703,6 +703,17 @@ exports.getPublicTestimonials = async (req, res) => {
       await Testimonial.insertMany(DEFAULT_TESTIMONIALS);
     }
 
+    const all = await Testimonial.find().sort({ createdAt: -1, _id: -1 });
+    const top10Ids = all.slice(0, 10).map((t) => t._id);
+    const olderIds = all.slice(10).map((t) => t._id);
+
+    if (top10Ids.length > 0) {
+      await Testimonial.updateMany({ _id: { $in: top10Ids } }, { $set: { isActive: true } });
+    }
+    if (olderIds.length > 0) {
+      await Testimonial.updateMany({ _id: { $in: olderIds } }, { $set: { isActive: false } });
+    }
+
     const testimonials = await Testimonial.find({ isActive: true })
       .sort({ createdAt: -1 })
       .limit(10);

@@ -951,13 +951,31 @@ const DEFAULT_TESTIMONIALS = [
   }
 ];
 
+const syncTestimonialsActiveState = async () => {
+  try {
+    const allTestimonials = await Testimonial.find().sort({ createdAt: -1, _id: -1 });
+    const activeIds = allTestimonials.slice(0, 10).map((t) => t._id);
+    const inactiveIds = allTestimonials.slice(10).map((t) => t._id);
+
+    if (activeIds.length > 0) {
+      await Testimonial.updateMany({ _id: { $in: activeIds } }, { $set: { isActive: true } });
+    }
+    if (inactiveIds.length > 0) {
+      await Testimonial.updateMany({ _id: { $in: inactiveIds } }, { $set: { isActive: false } });
+    }
+  } catch (err) {
+    console.error('[Testimonial] Failed to sync active state:', err);
+  }
+};
+
 const seedTestimonialsIfEmpty = async () => {
   const count = await Testimonial.countDocuments();
   if (count === 0) {
     await Testimonial.insertMany(DEFAULT_TESTIMONIALS);
     console.log('[Testimonial] Default testimonials initialized.');
   }
-  return await Testimonial.find().sort({ order: 1, createdAt: -1 });
+  await syncTestimonialsActiveState();
+  return await Testimonial.find().sort({ createdAt: -1 });
 };
 
 exports.getTestimonials = async (req, res) => {
@@ -989,6 +1007,8 @@ exports.createTestimonial = async (req, res) => {
     });
 
     await testimonial.save();
+    await syncTestimonialsActiveState();
+
     return res.status(201).json({ success: true, message: 'Testimonial created successfully', testimonial });
   } catch (error) {
     console.error('[MasterAdmin] createTestimonial error:', error);
@@ -1015,6 +1035,8 @@ exports.updateTestimonial = async (req, res) => {
     if (order !== undefined) testimonial.order = Number(order);
 
     await testimonial.save();
+    await syncTestimonialsActiveState();
+
     return res.status(200).json({ success: true, message: 'Testimonial updated successfully', testimonial });
   } catch (error) {
     console.error('[MasterAdmin] updateTestimonial error:', error);
@@ -1029,6 +1051,8 @@ exports.deleteTestimonial = async (req, res) => {
     if (!testimonial) {
       return res.status(404).json({ error: 'Testimonial not found' });
     }
+    await syncTestimonialsActiveState();
+
     return res.status(200).json({ success: true, message: 'Testimonial deleted successfully' });
   } catch (error) {
     console.error('[MasterAdmin] deleteTestimonial error:', error);
