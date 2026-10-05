@@ -237,15 +237,21 @@ exports.dashboardSummary = async (req, res) => {
 
         // One-time data correction for 'prod test' manual upgrade to Lifetime
         if (isProdTest && hasTx) {
-          if (hasTx.amount !== 450000 || hasTx.paymentMethod !== 'OFFLINE_MANUAL') {
-            hasTx.amount = 450000;
-            hasTx.amountPaid = 450000;
-            hasTx.planType = 'LIFETIME';
-            hasTx.planNameAtPurchase = 'Lifetime Access';
-            hasTx.paymentMethod = 'OFFLINE_MANUAL';
-            hasTx.createdAt = new Date();
-            await hasTx.save();
-          }
+          const now = new Date();
+          await SubscriptionTransaction.updateOne(
+            { _id: hasTx._id },
+            {
+              $set: {
+                amount: 450000,
+                amountPaid: 450000,
+                planType: 'LIFETIME',
+                planNameAtPurchase: 'Lifetime Access',
+                paymentMethod: 'OFFLINE_MANUAL',
+                createdAt: now,
+                updatedAt: now
+              }
+            }
+          );
         }
 
         // Preserve manually or offline provisioned PAID tenants (e.g. Offline Transport, LIFETIME tenants)
