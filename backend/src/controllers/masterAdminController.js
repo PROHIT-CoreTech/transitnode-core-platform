@@ -117,7 +117,7 @@ exports.onboardManual = async (req, res) => {
       fullLoginUrl,
       planType: uppercasePlanType,
       licenseExpiresAt,
-      maxCompaniesAllowed: customMaxCompanies ? parseInt(customMaxCompanies, 10) : (uppercasePlanType === 'PLATINUM' ? 3 : 1),
+      maxCompaniesAllowed: customMaxCompanies ? parseInt(customMaxCompanies, 10) : ((uppercasePlanType === 'PLATINUM' || uppercasePlanType === 'LIFETIME') ? 999 : 1),
       adminSetupComplete: false,
       paymentStatus: 'PAID',
       address: address || ''
@@ -520,15 +520,13 @@ exports.updateTenantSubscription = async (req, res) => {
       // Look up dynamic plan in SubscriptionPlan collection if available
       const planConfig = await SubscriptionPlan.findOne({ planKey: upperPlan });
 
-      let durationDays = 365;
+      let durationDays = 30;
       if (planConfig && planConfig.durationDays) {
         durationDays = planConfig.durationDays;
       } else if (upperPlan === 'TRIAL') {
         durationDays = 14;
-      } else if (upperPlan === 'SILVER') {
-        durationDays = 1095; // 3 Years (36 Months)
-      } else if (upperPlan === 'PLATINUM') {
-        durationDays = 1825; // 5 Years (60 Months)
+      } else if (upperPlan === 'SILVER' || upperPlan === 'PLATINUM') {
+        durationDays = 30; // Monthly (30 Days)
       } else if (upperPlan === 'LIFETIME') {
         durationDays = 36500; // Lifetime Access
       }
@@ -555,11 +553,11 @@ exports.updateTenantSubscription = async (req, res) => {
             const isSarthak = tenant.companyName && tenant.companyName.toLowerCase().includes('sarthak');
             amount = isSarthak ? 335000 : 450000;
           } else if (upperPlan === 'PLATINUM') {
-            amount = 100000;
+            amount = 3999;
           } else if (upperPlan === 'SILVER') {
-            amount = 50000;
+            amount = 1499;
           } else {
-            amount = 50000;
+            amount = 1499;
           }
         }
 
@@ -693,7 +691,12 @@ const DEFAULT_PLANS = [
     priceDisplay: '₹0',
     durationDays: 14,
     durationLabel: '14 Days',
-    features: ['Scale Global Logistics', 'Fleet management'],
+    features: [
+      'Up to 2 Vehicles & Fleet Assets',
+      '1 Admin User Account',
+      '1 Primary Workspace',
+      'Basic Billing & Invoicing'
+    ],
     buttonText: 'Start Free Trial',
     accentColor: 'blue',
     isPopular: false,
@@ -704,14 +707,22 @@ const DEFAULT_PLANS = [
     title: 'Silver Plan',
     badgeText: 'TRANCEZARDS',
     tagline: 'Ideal for growing regional fleet operators.',
-    price: 50000,
-    originalPrice: 65000,
+    price: 1499,
+    originalPrice: 1999,
     currency: 'INR',
-    priceDisplay: '₹50k',
-    durationDays: 1095,
-    durationLabel: '3 Years',
-    features: ['Scale Global Logistics', 'Fleet management'],
-    buttonText: 'Upgrade to 3 Years',
+    priceDisplay: '₹1,499/mo',
+    durationDays: 30,
+    durationLabel: '1 Month',
+    features: [
+      'Up to 15 Vehicles & Fleet Assets',
+      'Up to 3 Team Users',
+      '1 Primary Workspace',
+      'Live GPS & Telemetry Tracking',
+      'Trip & Daily Runsheet Engine',
+      'Financial Ledger & Expense Tracking',
+      'Standard Client & Vendor Rate Cards'
+    ],
+    buttonText: 'Upgrade Monthly',
     accentColor: 'emerald',
     isPopular: true,
     isActive: true
@@ -721,21 +732,30 @@ const DEFAULT_PLANS = [
     title: 'Platinum Plan',
     badgeText: 'TRANCEZARDS',
     tagline: 'Enterprise logistics with multi-company management.',
-    price: 50000,
-    originalPrice: 85000,
+    price: 3999,
+    originalPrice: 4999,
     currency: 'INR',
-    priceDisplay: '₹50k',
-    durationDays: 1825,
-    durationLabel: '5 Years',
-    features: ['Scale Global Logistics', 'Fleet management', 'Multi-Company Portal'],
-    buttonText: 'Upgrade to 5 Years',
+    priceDisplay: '₹3,999/mo',
+    durationDays: 30,
+    durationLabel: '1 Month',
+    features: [
+      'Up to 50 Vehicles & Fleet Assets',
+      'Up to 10 Team Users',
+      'Up to 3 Sister Companies & Workspaces',
+      'Live GPS & Telemetry Tracking',
+      'Automated Compliance Vault Alerts',
+      'Driver Mobile App Access',
+      'Custom PDF Invoice Template Engine',
+      'Advanced Rate Cards & Analytics'
+    ],
+    buttonText: 'Upgrade Monthly',
     accentColor: 'amber',
     isPopular: false,
     isActive: true
   },
   {
     planKey: 'LIFETIME',
-    title: 'Lifetime Access',
+    title: 'Lifetime Access (Offline / Manual)',
     badgeText: 'TRANCEZARDS',
     tagline: 'Unlimited perpetual access for scaling enterprises.',
     price: 450000,
@@ -744,7 +764,15 @@ const DEFAULT_PLANS = [
     priceDisplay: '₹450k',
     durationDays: 36500,
     durationLabel: 'Lifetime',
-    features: ['Scale Global Logistics', 'Fleet management', 'Multi-Company Portal', 'Custom Branding & Subdomain'],
+    features: [
+      'Unlimited Vehicles & Fleet Assets',
+      'Unlimited Team Users',
+      'Unlimited Sister Companies & Workspaces',
+      'Unlimited Suppliers & Vendors',
+      'Full White-Label & Custom Subdomain',
+      'Dedicated API Access & Telematics',
+      'Perpetual Lifetime Access (24/7 SLA)'
+    ],
     buttonText: 'Upgrade to Lifetime',
     accentColor: 'purple',
     isPopular: false,
@@ -759,8 +787,20 @@ const seedPlansIfEmpty = async () => {
     console.log('[SubscriptionPlan] Default plans initialized.');
   } else {
     await SubscriptionPlan.updateOne(
+      { planKey: 'TRIAL' },
+      { $set: { features: DEFAULT_PLANS[0].features } }
+    );
+    await SubscriptionPlan.updateOne(
+      { planKey: 'SILVER' },
+      { $set: { price: 1499, originalPrice: 1999, priceDisplay: '₹1,499/mo', durationDays: 30, durationLabel: '1 Month', buttonText: 'Upgrade Monthly', features: DEFAULT_PLANS[1].features } }
+    );
+    await SubscriptionPlan.updateOne(
+      { planKey: 'PLATINUM' },
+      { $set: { price: 3999, originalPrice: 4999, priceDisplay: '₹3,999/mo', durationDays: 30, durationLabel: '1 Month', buttonText: 'Upgrade Monthly', features: DEFAULT_PLANS[2].features } }
+    );
+    await SubscriptionPlan.updateOne(
       { planKey: 'LIFETIME' },
-      { $set: { price: 450000, originalPrice: 500000, priceDisplay: '₹450k' } }
+      { $set: { price: 450000, originalPrice: 500000, priceDisplay: '₹450k', features: DEFAULT_PLANS[3].features } }
     );
   }
   return await SubscriptionPlan.find().sort({ createdAt: 1 });

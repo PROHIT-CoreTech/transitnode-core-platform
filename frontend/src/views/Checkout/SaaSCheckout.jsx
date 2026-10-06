@@ -19,22 +19,22 @@ const SaaSCheckout = () => {
   let planName = '';
 
   if (planType === 'PLATINUM') {
-    price = 100000;
-    duration = '60 Months (5 Years)';
-    planName = '5-Year Control Tower';
+    price = 3999;
+    duration = '30 Days (1 Month)';
+    planName = 'Platinum Monthly Plan';
   } else if (planType === 'LIFETIME') {
-    price = 500000;
-    duration = 'Lifetime';
+    price = 450000;
+    duration = 'Lifetime Access';
     planName = 'Lifetime Ownership';
   } else if (planType === 'SILVER') {
-    price = 50000;
-    duration = '36 Months (3 Years)';
-    planName = '3-Year Acceleration';
+    price = 1499;
+    duration = '30 Days (1 Month)';
+    planName = 'Silver Monthly Plan';
   } else {
     // Edge case if they are somehow here on a Trial
     price = 0;
-    duration = '10 Days';
-    planName = '10-Day Exploration';
+    duration = '14 Days';
+    planName = '14-Day Exploration';
   }
 
   const taxAmount = price * 0.0825; // Example 8.25% tax

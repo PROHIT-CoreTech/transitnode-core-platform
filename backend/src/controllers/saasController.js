@@ -35,11 +35,11 @@ exports.registerTenant = async (req, res) => {
     if (mappedPlanType === 'TRIAL') {
       licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 14); // 14 Days Trial
     } else if (mappedPlanType === 'SILVER') {
-      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 3); // 3 Years (36 Months)
+      licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 30); // Monthly (30 Days)
     } else if (mappedPlanType === 'PLATINUM') {
-      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 5); // 5 Years (60 Months)
+      licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 30); // Monthly (30 Days)
     } else if (mappedPlanType === 'LIFETIME') {
-      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 100); // Lifetime Access
+      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 100); // Lifetime Access (Offline/Manual)
     }
     
     // Generate the full login URL dynamically based on environment
@@ -117,8 +117,8 @@ exports.registerTenant = async (req, res) => {
     // For paid plans, create Cashfree Order & record initial transaction
     let amount = 0;
     if (mappedPlanType === 'LIFETIME') amount = 450000;
-    else if (mappedPlanType === 'PLATINUM') amount = 100000;
-    else if (mappedPlanType === 'SILVER') amount = 50000;
+    else if (mappedPlanType === 'PLATINUM') amount = 3999;
+    else if (mappedPlanType === 'SILVER') amount = 1499;
 
     // Save transaction record for Master Admin tracking
     try {
@@ -221,10 +221,8 @@ exports.cashfreeWebhook = async (req, res) => {
           const licenseExpiresAt = new Date();
           if (tenant.planType === 'LIFETIME') {
             licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 100);
-          } else if (tenant.planType === 'PLATINUM') {
-            licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 5);
-          } else if (tenant.planType === 'SILVER') {
-            licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 3);
+          } else if (tenant.planType === 'PLATINUM' || tenant.planType === 'SILVER') {
+            licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 30);
           }
 
           tenant.paymentStatus = 'PAID';
@@ -304,10 +302,8 @@ exports.getTenantProfile = async (req, res) => {
         
         if (cfOrder && cfOrder.order_status === 'PAID') {
           const licenseExpiresAt = new Date();
-          if (tenant.planType === 'PLATINUM') {
-            licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 5);
-          } else if (tenant.planType === 'SILVER') {
-            licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 3);
+          if (tenant.planType === 'PLATINUM' || tenant.planType === 'SILVER') {
+            licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 30);
           }
 
           tenant.paymentStatus = 'PAID';
@@ -393,10 +389,8 @@ exports.processCheckout = async (req, res) => {
     const licenseExpiresAt = new Date();
     if (tenant.planType === 'LIFETIME') {
       licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 100);
-    } else if (tenant.planType === 'PLATINUM') {
-      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 5);
-    } else if (tenant.planType === 'SILVER') {
-      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 3);
+    } else if (tenant.planType === 'PLATINUM' || tenant.planType === 'SILVER') {
+      licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 30);
     } else {
       // Default to +30 days if somehow checkout is hit for a free trial
       licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 30);
@@ -514,7 +508,7 @@ exports.updateInvoiceFormat = async (req, res) => {
 // GET /api/saas/plans (Public)
 exports.getPublicSubscriptionPlans = async (req, res) => {
   try {
-    let plans = await SubscriptionPlan.find({ isActive: true }).sort({ createdAt: 1 });
+    let plans = await SubscriptionPlan.find({ isActive: true, planKey: { $ne: 'LIFETIME' } }).sort({ createdAt: 1 });
     if (plans.length === 0) {
       // Return hardcoded default structures if not seeded yet
       plans = [
@@ -529,7 +523,12 @@ exports.getPublicSubscriptionPlans = async (req, res) => {
           priceDisplay: '₹0',
           durationDays: 14,
           durationLabel: '14 Days',
-          features: ['Scale Global Logistics', 'Fleet management'],
+          features: [
+            'Up to 2 Vehicles & Fleet Assets',
+            '1 Admin User Account',
+            '1 Primary Workspace',
+            'Basic Billing & Invoicing'
+          ],
           buttonText: 'Start Free Trial',
           accentColor: 'blue',
           isPopular: false,
@@ -540,14 +539,22 @@ exports.getPublicSubscriptionPlans = async (req, res) => {
           title: 'Silver Plan',
           badgeText: 'TRANCEZARDS',
           tagline: 'Ideal for growing regional fleet operators.',
-          price: 50000,
-          originalPrice: 65000,
+          price: 1499,
+          originalPrice: 1999,
           currency: 'INR',
-          priceDisplay: '₹50k',
-          durationDays: 1095,
-          durationLabel: '3 Years',
-          features: ['Scale Global Logistics', 'Fleet management'],
-          buttonText: 'Upgrade to 3 Years',
+          priceDisplay: '₹1,499/mo',
+          durationDays: 30,
+          durationLabel: '1 Month',
+          features: [
+            'Up to 15 Vehicles & Fleet Assets',
+            'Up to 3 Team Users',
+            '1 Primary Workspace',
+            'Live GPS & Telemetry Tracking',
+            'Trip & Daily Runsheet Engine',
+            'Financial Ledger & Expense Tracking',
+            'Standard Client & Vendor Rate Cards'
+          ],
+          buttonText: 'Upgrade Monthly',
           accentColor: 'emerald',
           isPopular: true,
           isActive: true
@@ -557,45 +564,31 @@ exports.getPublicSubscriptionPlans = async (req, res) => {
           title: 'Platinum Plan',
           badgeText: 'TRANCEZARDS',
           tagline: 'Enterprise logistics with multi-company management.',
-          price: 50000,
-          originalPrice: 85000,
+          price: 3999,
+          originalPrice: 4999,
           currency: 'INR',
-          priceDisplay: '₹50k',
-          durationDays: 1825,
-          durationLabel: '5 Years',
-          features: ['Scale Global Logistics', 'Fleet management', 'Multi-Company Portal'],
-          buttonText: 'Upgrade to 5 Years',
+          priceDisplay: '₹3,999/mo',
+          durationDays: 30,
+          durationLabel: '1 Month',
+          features: [
+            'Up to 50 Vehicles & Fleet Assets',
+            'Up to 10 Team Users',
+            'Up to 3 Sister Companies & Workspaces',
+            'Live GPS & Telemetry Tracking',
+            'Automated Compliance Vault Alerts',
+            'Driver Mobile App Access',
+            'Custom PDF Invoice Template Engine',
+            'Advanced Rate Cards & Analytics'
+          ],
+          buttonText: 'Upgrade Monthly',
           accentColor: 'amber',
-          isPopular: false,
-          isActive: true
-        },
-        {
-          planKey: 'LIFETIME',
-          title: 'Lifetime Access',
-          badgeText: 'TRANCEZARDS',
-          tagline: 'Unlimited perpetual access for scaling enterprises.',
-          price: 450000,
-          originalPrice: 500000,
-          currency: 'INR',
-          priceDisplay: '₹450k',
-          durationDays: 36500,
-          durationLabel: 'Lifetime',
-          features: ['Scale Global Logistics', 'Fleet management', 'Multi-Company Portal', 'Custom Branding & Subdomain'],
-          buttonText: 'Upgrade to Lifetime',
-          accentColor: 'purple',
           isPopular: false,
           isActive: true
         }
       ];
-      await SubscriptionPlan.insertMany(DEFAULT_PLANS);
-      plans = await SubscriptionPlan.find({ isActive: true }).sort({ createdAt: 1 });
-    } else {
-      await SubscriptionPlan.updateOne(
-        { planKey: 'LIFETIME' },
-        { $set: { price: 450000, originalPrice: 500000, priceDisplay: '₹450k' } }
-      );
-      plans = await SubscriptionPlan.find({ isActive: true }).sort({ createdAt: 1 });
     }
+    // Always ensure LIFETIME is excluded from public online plans
+    plans = plans.filter(p => p.planKey !== 'LIFETIME');
     return res.status(200).json({ success: true, plans });
   } catch (error) {
     console.error('getPublicSubscriptionPlans error:', error);

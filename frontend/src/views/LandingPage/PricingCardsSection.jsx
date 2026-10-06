@@ -9,7 +9,12 @@ const DEFAULT_FALLBACK_PLANS = [
     tagline: 'Start exploring all transit management capabilities.',
     price: 0,
     priceDisplay: '₹0',
-    features: ['Scale Global Logistics', 'Fleet management'],
+    features: [
+      'Up to 2 Vehicles & Fleet Assets',
+      '1 Admin User Account',
+      '1 Primary Workspace',
+      'Basic Billing & Invoicing'
+    ],
     buttonText: 'Start Free Trial',
     accentColor: 'blue'
   },
@@ -18,10 +23,19 @@ const DEFAULT_FALLBACK_PLANS = [
     title: 'Silver Plan',
     badgeText: 'TRANCEZARDS',
     tagline: 'Ideal for growing regional fleet operators.',
-    price: 50000,
-    priceDisplay: '₹50k',
-    features: ['Scale Global Logistics', 'Fleet management'],
-    buttonText: 'Upgrade to 3 Years',
+    price: 1499,
+    originalPrice: 1999,
+    priceDisplay: '₹1,499/mo',
+    features: [
+      'Up to 15 Vehicles & Fleet Assets',
+      'Up to 3 Team Users',
+      '1 Primary Workspace',
+      'Live GPS & Telemetry Tracking',
+      'Trip & Daily Runsheet Engine',
+      'Financial Ledger & Expense Tracking',
+      'Standard Client & Vendor Rate Cards'
+    ],
+    buttonText: 'Upgrade Monthly',
     accentColor: 'emerald'
   },
   {
@@ -29,23 +43,21 @@ const DEFAULT_FALLBACK_PLANS = [
     title: 'Platinum Plan',
     badgeText: 'TRANCEZARDS',
     tagline: 'Enterprise logistics with multi-company management.',
-    price: 50000,
-    priceDisplay: '₹50k',
-    features: ['Scale Global Logistics', 'Fleet management', 'Multi-Company Portal'],
-    buttonText: 'Upgrade to 5 Years',
+    price: 3999,
+    originalPrice: 4999,
+    priceDisplay: '₹3,999/mo',
+    features: [
+      'Up to 50 Vehicles & Fleet Assets',
+      'Up to 10 Team Users',
+      'Up to 3 Sister Companies & Workspaces',
+      'Live GPS & Telemetry Tracking',
+      'Automated Compliance Vault Alerts',
+      'Driver Mobile App Access',
+      'Custom PDF Invoice Template Engine',
+      'Advanced Rate Cards & Analytics'
+    ],
+    buttonText: 'Upgrade Monthly',
     accentColor: 'amber'
-  },
-  {
-    planKey: 'LIFETIME',
-    title: 'Lifetime Access',
-    badgeText: 'TRANCEZARDS',
-    tagline: 'Unlimited perpetual access for scaling enterprises.',
-    price: 450000,
-    priceDisplay: '₹450k',
-    originalPrice: 500000,
-    features: ['Scale Global Logistics', 'Fleet management', 'Multi-Company Portal', 'Custom Branding & Subdomain'],
-    buttonText: 'Upgrade to Lifetime',
-    accentColor: 'purple'
   }
 ];
 
@@ -85,14 +97,15 @@ const PricingCardsSection = ({ openRegisterModal, plansProp }) => {
       axios.get(`${apiUrl}/api/saas/plans`)
         .then(res => {
           if (res.data?.plans && res.data.plans.length > 0) {
-            setPlans(res.data.plans);
+            const publicPlans = res.data.plans.filter(p => (p.planKey || '').toUpperCase() !== 'LIFETIME');
+            setPlans(publicPlans);
           }
         })
         .catch(err => {
           console.warn('Could not fetch dynamic plans, using default presentation:', err);
         });
     } else {
-      setPlans(plansProp);
+      setPlans((plansProp || []).filter(p => (p.planKey || '').toUpperCase() !== 'LIFETIME'));
     }
   }, [plansProp]);
 

@@ -16,10 +16,17 @@ const companyLimitCheck = async (req, res, next) => {
 
     const companyCount = await Company.countDocuments({ tenantId });
 
-    if (companyCount >= tenant.maxCompaniesAllowed || tenant.planType !== 'PLATINUM') {
+    if (tenant.planType !== 'PLATINUM' && tenant.planType !== 'LIFETIME') {
       return res.status(403).json({
         success: false,
         message: 'Action Denied: Your current subscription tier limits corporate additions. Please upgrade to maximize your sister company slots.'
+      });
+    }
+
+    if (tenant.planType !== 'LIFETIME' && companyCount >= tenant.maxCompaniesAllowed) {
+      return res.status(403).json({
+        success: false,
+        message: `Action Denied: You have reached the maximum allowed companies (${tenant.maxCompaniesAllowed}). Please upgrade your plan.`
       });
     }
 

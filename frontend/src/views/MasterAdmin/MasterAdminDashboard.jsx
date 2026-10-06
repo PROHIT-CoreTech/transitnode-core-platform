@@ -1164,8 +1164,8 @@ const MasterAdminDashboard = () => {
                     onChange={e => {
                       const selectedPlan = e.target.value;
                       let days = '14';
-                      if (selectedPlan === 'SILVER') days = '1095';
-                      else if (selectedPlan === 'PLATINUM') days = '1825';
+                      if (selectedPlan === 'SILVER') days = '30';
+                      else if (selectedPlan === 'PLATINUM') days = '30';
                       else if (selectedPlan === 'LIFETIME') days = '36500';
                       setManualForm({
                         ...manualForm, 
@@ -1176,9 +1176,9 @@ const MasterAdminDashboard = () => {
                     className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2.5 border bg-white font-medium text-slate-800"
                   >
                     <option value="TRIAL">Trial (14 Days)</option>
-                    <option value="SILVER">Silver (3 Years)</option>
-                    <option value="PLATINUM">Platinum (5 Years)</option>
-                    <option value="LIFETIME">Lifetime (No Expiry)</option>
+                    <option value="SILVER">Silver Monthly (₹1,499/mo)</option>
+                    <option value="PLATINUM">Platinum Monthly (₹3,999/mo)</option>
+                    <option value="LIFETIME">Lifetime Access (Offline / Manual)</option>
                   </select>
                 </div>
                 <div>
@@ -1186,8 +1186,8 @@ const MasterAdminDashboard = () => {
                   <div className="w-full border border-slate-300 bg-slate-50/80 rounded-md p-2.5 flex items-center justify-between">
                     <span className="font-semibold text-sm text-slate-800">
                       {manualForm.planType === 'TRIAL' && '14 Days Free Trial'}
-                      {manualForm.planType === 'SILVER' && '3 Years (36 Months)'}
-                      {manualForm.planType === 'PLATINUM' && '5 Years (60 Months)'}
+                      {manualForm.planType === 'SILVER' && '1 Month (30 Days)'}
+                      {manualForm.planType === 'PLATINUM' && '1 Month (30 Days)'}
                       {manualForm.planType === 'LIFETIME' && 'Lifetime Access (No Expiry)'}
                     </span>
                     <span className={`text-xs font-bold px-2.5 py-0.5 rounded uppercase ${
@@ -1734,11 +1734,11 @@ const MasterAdminDashboard = () => {
                       if (selected === 'TRIAL') {
                         defaults = { title: '14 Day Exploration', price: '0', priceDisplay: '₹0', durationDays: '14', durationLabel: '14 Days', accentColor: 'blue', buttonText: 'Start Free Trial', featuresStr: 'Scale Global Logistics\nFleet management' };
                       } else if (selected === 'SILVER') {
-                        defaults = { title: 'Silver Plan', price: '50000', originalPrice: '65000', priceDisplay: '₹50k', durationDays: '1095', durationLabel: '3 Years', accentColor: 'emerald', buttonText: 'Upgrade to 3 Years', featuresStr: 'Scale Global Logistics\nFleet management' };
+                        defaults = { title: 'Silver Plan', price: '1499', originalPrice: '1999', priceDisplay: '₹1,499/mo', durationDays: '30', durationLabel: '1 Month', accentColor: 'emerald', buttonText: 'Upgrade Monthly', featuresStr: 'Scale Global Logistics\nFleet management' };
                       } else if (selected === 'PLATINUM') {
-                        defaults = { title: 'Platinum Plan', price: '50000', originalPrice: '85000', priceDisplay: '₹50k', durationDays: '1825', durationLabel: '5 Years', accentColor: 'amber', buttonText: 'Upgrade to 5 Years', featuresStr: 'Scale Global Logistics\nFleet management\nMulti-Company Portal' };
+                        defaults = { title: 'Platinum Plan', price: '3999', originalPrice: '4999', priceDisplay: '₹3,999/mo', durationDays: '30', durationLabel: '1 Month', accentColor: 'amber', buttonText: 'Upgrade Monthly', featuresStr: 'Scale Global Logistics\nFleet management\nMulti-Company Portal' };
                       } else if (selected === 'LIFETIME') {
-                        defaults = { title: 'Lifetime Access', price: '50000', originalPrice: '150000', priceDisplay: '₹50k', durationDays: '36500', durationLabel: 'Lifetime', accentColor: 'purple', buttonText: 'Upgrade to Lifetime', featuresStr: 'Scale Global Logistics\nFleet management\nMulti-Company Portal\nCustom Branding & Subdomain' };
+                        defaults = { title: 'Lifetime Access (Offline / Manual)', price: '450000', originalPrice: '500000', priceDisplay: '₹450k', durationDays: '36500', durationLabel: 'Lifetime', accentColor: 'purple', buttonText: 'Upgrade to Lifetime', featuresStr: 'Unlimited Vehicles & Fleet Assets\nUnlimited Sister Companies & Workspaces\nUnlimited Suppliers & Vendors\nMulti-Company Portal\nCustom Branding & Subdomain' };
                       }
                       setCreatePlanForm({ ...createPlanForm, planKey: selected, ...defaults });
                     }}
@@ -1746,9 +1746,9 @@ const MasterAdminDashboard = () => {
                   >
                     <option value="">-- Select Plan Tier --</option>
                     <option value="TRIAL">TRIAL (14 Days Free Trial)</option>
-                    <option value="SILVER">SILVER (Silver Tier - 3 Years)</option>
-                    <option value="PLATINUM">PLATINUM (Platinum Tier - 5 Years)</option>
-                    <option value="LIFETIME">LIFETIME (Lifetime Access)</option>
+                    <option value="SILVER">SILVER (Silver Monthly Tier - 1 Month)</option>
+                    <option value="PLATINUM">PLATINUM (Platinum Monthly Tier - 1 Month)</option>
+                    <option value="LIFETIME">LIFETIME (Offline / Manual Onboarding Only)</option>
                   </select>
                 </div>
 
