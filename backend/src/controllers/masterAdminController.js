@@ -16,7 +16,7 @@ exports.onboardAutomated = async (req, res) => {
     }
 
     const planType = selectedPlan.toUpperCase();
-    if (!['TRIAL', 'SILVER', 'PLATINUM', 'LIFETIME'].includes(planType)) {
+    if (!['TRIAL', 'SILVER', 'GOLD', 'PLATINUM', 'LIFETIME'].includes(planType)) {
       return res.status(400).json({ error: 'Invalid plan type' });
     }
 
@@ -26,11 +26,9 @@ exports.onboardAutomated = async (req, res) => {
     // Calculate license expiry
     const licenseExpiresAt = new Date();
     if (planType === 'TRIAL') {
-      licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 14); // 14 days trial
-    } else if (planType === 'SILVER') {
-      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 3); // 3 Years (36 Months)
-    } else if (planType === 'PLATINUM') {
-      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 5); // 5 Years (60 Months)
+      licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 10); // 10 days trial
+    } else if (planType === 'SILVER' || planType === 'GOLD' || planType === 'PLATINUM') {
+      licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 30); // Monthly (30 Days)
     } else if (planType === 'LIFETIME') {
       licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 100);
     }
@@ -86,17 +84,15 @@ exports.onboardManual = async (req, res) => {
     }
 
     const uppercasePlanType = planType.toUpperCase();
-    if (!['TRIAL', 'SILVER', 'PLATINUM', 'LIFETIME'].includes(uppercasePlanType)) {
+    if (!['TRIAL', 'SILVER', 'GOLD', 'PLATINUM', 'LIFETIME'].includes(uppercasePlanType)) {
       return res.status(400).json({ error: 'Invalid plan type' });
     }
 
     const licenseExpiresAt = new Date();
     if (uppercasePlanType === 'TRIAL') {
-      licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 14); // 14 Days Trial
-    } else if (uppercasePlanType === 'SILVER') {
-      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 3); // 3 Years (36 Months)
-    } else if (uppercasePlanType === 'PLATINUM') {
-      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 5); // 5 Years (60 Months)
+      licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 10); // 10 Days Exploration Free Tier
+    } else if (uppercasePlanType === 'SILVER' || uppercasePlanType === 'GOLD' || uppercasePlanType === 'PLATINUM') {
+      licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 30); // Monthly (30 Days)
     } else if (uppercasePlanType === 'LIFETIME') {
       licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 100); // Lifetime Access
     }
@@ -117,7 +113,7 @@ exports.onboardManual = async (req, res) => {
       fullLoginUrl,
       planType: uppercasePlanType,
       licenseExpiresAt,
-      maxCompaniesAllowed: customMaxCompanies ? parseInt(customMaxCompanies, 10) : ((uppercasePlanType === 'PLATINUM' || uppercasePlanType === 'LIFETIME') ? 999 : 1),
+      maxCompaniesAllowed: customMaxCompanies ? parseInt(customMaxCompanies, 10) : (uppercasePlanType === 'LIFETIME' ? 999 : uppercasePlanType === 'PLATINUM' ? 5 : uppercasePlanType === 'GOLD' ? 2 : 1),
       adminSetupComplete: false,
       paymentStatus: 'PAID',
       address: address || ''
@@ -131,9 +127,10 @@ exports.onboardManual = async (req, res) => {
         const isSarthak = companyName && companyName.toLowerCase().includes('sarthak');
         finalAmount = isSarthak ? 335000 : 450000;
       }
-      else if (uppercasePlanType === 'PLATINUM') finalAmount = 100000;
-      else if (uppercasePlanType === 'SILVER') finalAmount = 50000;
-      else finalAmount = 50000;
+      else if (uppercasePlanType === 'PLATINUM') finalAmount = 3999;
+      else if (uppercasePlanType === 'GOLD') finalAmount = 2499;
+      else if (uppercasePlanType === 'SILVER') finalAmount = 1499;
+      else finalAmount = 1499;
     }
 
     if (finalAmount > 0) {

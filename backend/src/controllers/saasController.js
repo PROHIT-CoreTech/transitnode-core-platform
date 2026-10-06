@@ -33,10 +33,8 @@ exports.registerTenant = async (req, res) => {
     // Set plan-based subscription license expiry
     const licenseExpiresAt = new Date();
     if (mappedPlanType === 'TRIAL') {
-      licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 14); // 14 Days Trial
-    } else if (mappedPlanType === 'SILVER') {
-      licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 30); // Monthly (30 Days)
-    } else if (mappedPlanType === 'PLATINUM') {
+      licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 10); // 10 Days Exploration Free Tier
+    } else if (mappedPlanType === 'SILVER' || mappedPlanType === 'GOLD' || mappedPlanType === 'PLATINUM') {
       licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 30); // Monthly (30 Days)
     } else if (mappedPlanType === 'LIFETIME') {
       licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 100); // Lifetime Access (Offline/Manual)
@@ -118,6 +116,7 @@ exports.registerTenant = async (req, res) => {
     let amount = 0;
     if (mappedPlanType === 'LIFETIME') amount = 450000;
     else if (mappedPlanType === 'PLATINUM') amount = 3999;
+    else if (mappedPlanType === 'GOLD') amount = 2499;
     else if (mappedPlanType === 'SILVER') amount = 1499;
 
     // Save transaction record for Master Admin tracking
@@ -514,15 +513,15 @@ exports.getPublicSubscriptionPlans = async (req, res) => {
       plans = [
         {
           planKey: 'TRIAL',
-          title: '14 Day Exploration',
+          title: '10 Day Exploration',
           badgeText: 'TRANCEZARDS',
           tagline: 'Start exploring all transit management capabilities.',
           price: 0,
           originalPrice: 0,
           currency: 'INR',
           priceDisplay: '₹0',
-          durationDays: 14,
-          durationLabel: '14 Days',
+          durationDays: 10,
+          durationLabel: '10 Days',
           features: [
             'Up to 2 Vehicles & Fleet Assets',
             '1 Admin User Account',
@@ -556,6 +555,32 @@ exports.getPublicSubscriptionPlans = async (req, res) => {
           ],
           buttonText: 'Upgrade Monthly',
           accentColor: 'emerald',
+          isPopular: false,
+          isActive: true
+        },
+        {
+          planKey: 'GOLD',
+          title: 'Gold Plan',
+          badgeText: 'TRANCEZARDS',
+          tagline: 'Optimized for expanding fleets & automated compliance.',
+          price: 2499,
+          originalPrice: 3299,
+          currency: 'INR',
+          priceDisplay: '₹2,499/mo',
+          durationDays: 30,
+          durationLabel: '1 Month',
+          features: [
+            'Up to 30 Vehicles & Fleet Assets',
+            'Up to 6 Team Users',
+            'Up to 2 Sister Companies & Workspaces',
+            'Live GPS & Telemetry Tracking',
+            'Automated Compliance Vault Alerts',
+            'Financial Ledger & Advanced Expense Tracking',
+            'Standard & Vendor Rate Cards Engine',
+            'Priority Support (12h SLA)'
+          ],
+          buttonText: 'Upgrade Monthly',
+          accentColor: 'amber',
           isPopular: true,
           isActive: true
         },
@@ -573,15 +598,15 @@ exports.getPublicSubscriptionPlans = async (req, res) => {
           features: [
             'Up to 50 Vehicles & Fleet Assets',
             'Up to 10 Team Users',
-            'Up to 3 Sister Companies & Workspaces',
+            'Up to 5 Sister Companies & Workspaces',
             'Live GPS & Telemetry Tracking',
             'Automated Compliance Vault Alerts',
             'Driver Mobile App Access',
             'Custom PDF Invoice Template Engine',
-            'Advanced Rate Cards & Analytics'
+            'Advanced Rate Cards & Route Analytics'
           ],
           buttonText: 'Upgrade Monthly',
-          accentColor: 'amber',
+          accentColor: 'purple',
           isPopular: false,
           isActive: true
         }

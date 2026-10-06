@@ -22,6 +22,10 @@ const SaaSCheckout = () => {
     price = 3999;
     duration = '30 Days (1 Month)';
     planName = 'Platinum Monthly Plan';
+  } else if (planType === 'GOLD') {
+    price = 2499;
+    duration = '30 Days (1 Month)';
+    planName = 'Gold Monthly Plan';
   } else if (planType === 'LIFETIME') {
     price = 450000;
     duration = 'Lifetime Access';
@@ -33,8 +37,8 @@ const SaaSCheckout = () => {
   } else {
     // Edge case if they are somehow here on a Trial
     price = 0;
-    duration = '14 Days';
-    planName = '14-Day Exploration';
+    duration = '10 Days';
+    planName = '10-Day Exploration';
   }
 
   const taxAmount = price * 0.0825; // Example 8.25% tax

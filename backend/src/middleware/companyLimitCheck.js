@@ -16,7 +16,7 @@ const companyLimitCheck = async (req, res, next) => {
 
     const companyCount = await Company.countDocuments({ tenantId });
 
-    if (tenant.planType !== 'PLATINUM' && tenant.planType !== 'LIFETIME') {
+    if (tenant.planType !== 'GOLD' && tenant.planType !== 'PLATINUM' && tenant.planType !== 'LIFETIME') {
       return res.status(403).json({
         success: false,
         message: 'Action Denied: Your current subscription tier limits corporate additions. Please upgrade to maximize your sister company slots.'

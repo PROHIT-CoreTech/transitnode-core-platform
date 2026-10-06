@@ -1163,9 +1163,8 @@ const MasterAdminDashboard = () => {
                     value={manualForm.planType} 
                     onChange={e => {
                       const selectedPlan = e.target.value;
-                      let days = '14';
-                      if (selectedPlan === 'SILVER') days = '30';
-                      else if (selectedPlan === 'PLATINUM') days = '30';
+                      let days = '10';
+                      if (selectedPlan === 'SILVER' || selectedPlan === 'GOLD' || selectedPlan === 'PLATINUM') days = '30';
                       else if (selectedPlan === 'LIFETIME') days = '36500';
                       setManualForm({
                         ...manualForm, 
@@ -1175,8 +1174,9 @@ const MasterAdminDashboard = () => {
                     }} 
                     className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2.5 border bg-white font-medium text-slate-800"
                   >
-                    <option value="TRIAL">Trial (14 Days)</option>
+                    <option value="TRIAL">Trial (10 Days)</option>
                     <option value="SILVER">Silver Monthly (₹1,499/mo)</option>
+                    <option value="GOLD">Gold Monthly (₹2,499/mo)</option>
                     <option value="PLATINUM">Platinum Monthly (₹3,999/mo)</option>
                     <option value="LIFETIME">Lifetime Access (Offline / Manual)</option>
                   </select>
@@ -1185,8 +1185,9 @@ const MasterAdminDashboard = () => {
                   <label className="block text-sm font-medium text-slate-700 mb-1">Subscription Period</label>
                   <div className="w-full border border-slate-300 bg-slate-50/80 rounded-md p-2.5 flex items-center justify-between">
                     <span className="font-semibold text-sm text-slate-800">
-                      {manualForm.planType === 'TRIAL' && '14 Days Free Trial'}
+                      {manualForm.planType === 'TRIAL' && '10 Days Free Trial'}
                       {manualForm.planType === 'SILVER' && '1 Month (30 Days)'}
+                      {manualForm.planType === 'GOLD' && '1 Month (30 Days)'}
                       {manualForm.planType === 'PLATINUM' && '1 Month (30 Days)'}
                       {manualForm.planType === 'LIFETIME' && 'Lifetime Access (No Expiry)'}
                     </span>
@@ -1732,11 +1733,13 @@ const MasterAdminDashboard = () => {
                       const selected = e.target.value;
                       let defaults = {};
                       if (selected === 'TRIAL') {
-                        defaults = { title: '14 Day Exploration', price: '0', priceDisplay: '₹0', durationDays: '14', durationLabel: '14 Days', accentColor: 'blue', buttonText: 'Start Free Trial', featuresStr: 'Scale Global Logistics\nFleet management' };
+                        defaults = { title: '10 Day Exploration', price: '0', priceDisplay: '₹0', durationDays: '10', durationLabel: '10 Days', accentColor: 'blue', buttonText: 'Start Free Trial', featuresStr: 'Up to 2 Vehicles & Fleet Assets\n1 Admin User Account\n1 Primary Workspace\nBasic Billing & Invoicing' };
                       } else if (selected === 'SILVER') {
-                        defaults = { title: 'Silver Plan', price: '1499', originalPrice: '1999', priceDisplay: '₹1,499/mo', durationDays: '30', durationLabel: '1 Month', accentColor: 'emerald', buttonText: 'Upgrade Monthly', featuresStr: 'Scale Global Logistics\nFleet management' };
+                        defaults = { title: 'Silver Plan', price: '1499', originalPrice: '1999', priceDisplay: '₹1,499/mo', durationDays: '30', durationLabel: '1 Month', accentColor: 'emerald', buttonText: 'Upgrade Monthly', featuresStr: 'Up to 15 Vehicles & Fleet Assets\nUp to 3 Team Users\n1 Primary Workspace\nLive GPS & Telemetry Tracking\nTrip & Daily Runsheet Engine\nFinancial Ledger & Expense Tracking\nStandard Client & Vendor Rate Cards' };
+                      } else if (selected === 'GOLD') {
+                        defaults = { title: 'Gold Plan', price: '2499', originalPrice: '3299', priceDisplay: '₹2,499/mo', durationDays: '30', durationLabel: '1 Month', accentColor: 'amber', buttonText: 'Upgrade Monthly', featuresStr: 'Up to 30 Vehicles & Fleet Assets\nUp to 6 Team Users\nUp to 2 Sister Companies & Workspaces\nLive GPS & Telemetry Tracking\nAutomated Compliance Vault Alerts\nFinancial Ledger & Advanced Expense Tracking\nStandard & Vendor Rate Cards Engine\nPriority Support (12h SLA)' };
                       } else if (selected === 'PLATINUM') {
-                        defaults = { title: 'Platinum Plan', price: '3999', originalPrice: '4999', priceDisplay: '₹3,999/mo', durationDays: '30', durationLabel: '1 Month', accentColor: 'amber', buttonText: 'Upgrade Monthly', featuresStr: 'Scale Global Logistics\nFleet management\nMulti-Company Portal' };
+                        defaults = { title: 'Platinum Plan', price: '3999', originalPrice: '4999', priceDisplay: '₹3,999/mo', durationDays: '30', durationLabel: '1 Month', accentColor: 'purple', buttonText: 'Upgrade Monthly', featuresStr: 'Up to 50 Vehicles & Fleet Assets\nUp to 10 Team Users\nUp to 5 Sister Companies & Workspaces\nLive GPS & Telemetry Tracking\nAutomated Compliance Vault Alerts\nDriver Mobile App Access\nCustom PDF Invoice Template Engine\nAdvanced Rate Cards & Route Analytics' };
                       } else if (selected === 'LIFETIME') {
                         defaults = { title: 'Lifetime Access (Offline / Manual)', price: '450000', originalPrice: '500000', priceDisplay: '₹450k', durationDays: '36500', durationLabel: 'Lifetime', accentColor: 'purple', buttonText: 'Upgrade to Lifetime', featuresStr: 'Unlimited Vehicles & Fleet Assets\nUnlimited Sister Companies & Workspaces\nUnlimited Suppliers & Vendors\nMulti-Company Portal\nCustom Branding & Subdomain' };
                       }
@@ -1745,8 +1748,9 @@ const MasterAdminDashboard = () => {
                     className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 bg-white font-semibold"
                   >
                     <option value="">-- Select Plan Tier --</option>
-                    <option value="TRIAL">TRIAL (14 Days Free Trial)</option>
+                    <option value="TRIAL">TRIAL (10 Days Free Trial)</option>
                     <option value="SILVER">SILVER (Silver Monthly Tier - 1 Month)</option>
+                    <option value="GOLD">GOLD (Gold Monthly Tier - 1 Month)</option>
                     <option value="PLATINUM">PLATINUM (Platinum Monthly Tier - 1 Month)</option>
                     <option value="LIFETIME">LIFETIME (Offline / Manual Onboarding Only)</option>
                   </select>

@@ -4,7 +4,7 @@ import axios from 'axios';
 const DEFAULT_FALLBACK_PLANS = [
   {
     planKey: 'TRIAL',
-    title: '14 Day Exploration',
+    title: '10 Day Exploration',
     badgeText: 'TRANCEZARDS',
     tagline: 'Start exploring all transit management capabilities.',
     price: 0,
@@ -39,6 +39,28 @@ const DEFAULT_FALLBACK_PLANS = [
     accentColor: 'emerald'
   },
   {
+    planKey: 'GOLD',
+    title: 'Gold Plan',
+    badgeText: 'TRANCEZARDS',
+    tagline: 'Optimized for expanding fleets & automated compliance.',
+    price: 2499,
+    originalPrice: 3299,
+    priceDisplay: '₹2,499/mo',
+    features: [
+      'Up to 30 Vehicles & Fleet Assets',
+      'Up to 6 Team Users',
+      'Up to 2 Sister Companies & Workspaces',
+      'Live GPS & Telemetry Tracking',
+      'Automated Compliance Vault Alerts',
+      'Financial Ledger & Advanced Expense Tracking',
+      'Standard & Vendor Rate Cards Engine',
+      'Priority Support (12h SLA)'
+    ],
+    buttonText: 'Upgrade Monthly',
+    accentColor: 'amber',
+    isPopular: true
+  },
+  {
     planKey: 'PLATINUM',
     title: 'Platinum Plan',
     badgeText: 'TRANCEZARDS',
@@ -49,15 +71,15 @@ const DEFAULT_FALLBACK_PLANS = [
     features: [
       'Up to 50 Vehicles & Fleet Assets',
       'Up to 10 Team Users',
-      'Up to 3 Sister Companies & Workspaces',
+      'Up to 5 Sister Companies & Workspaces',
       'Live GPS & Telemetry Tracking',
       'Automated Compliance Vault Alerts',
       'Driver Mobile App Access',
       'Custom PDF Invoice Template Engine',
-      'Advanced Rate Cards & Analytics'
+      'Advanced Rate Cards & Route Analytics'
     ],
     buttonText: 'Upgrade Monthly',
-    accentColor: 'amber'
+    accentColor: 'purple'
   }
 ];
 
