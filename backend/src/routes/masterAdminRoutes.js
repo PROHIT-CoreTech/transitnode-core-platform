@@ -35,5 +35,9 @@ router.post('/testimonials', masterAdminController.createTestimonial);
 router.put('/testimonials/:id', masterAdminController.updateTestimonial);
 router.delete('/testimonials/:id', masterAdminController.deleteTestimonial);
 
+// Overview Video Settings Routes
+router.get('/overview-video', masterAdminController.getOverviewVideoSetting);
+router.put('/overview-video', masterAdminController.updateOverviewVideoSetting);
+
 module.exports = router;
 

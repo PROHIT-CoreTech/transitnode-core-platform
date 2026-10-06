@@ -223,6 +223,60 @@ const MasterAdminDashboard = () => {
   });
   const [isSavingTestimonial, setIsSavingTestimonial] = useState(false);
 
+  // Overview Video Management State
+  const [videoForm, setVideoForm] = useState({
+    youtubeUrl: '',
+    posterUrl: '',
+    title: 'TransitNode Platform Overview',
+    description: 'Watch how TransitNode automates fleet dispatch, rate cards, and financial MIS.',
+    isEnabled: true
+  });
+  const [loadingVideoSetting, setLoadingVideoSetting] = useState(false);
+  const [isSavingVideo, setIsSavingVideo] = useState(false);
+
+  const fetchVideoSetting = async () => {
+    try {
+      setLoadingVideoSetting(true);
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/master-admin/overview-video`,
+        { headers: getHeaders() }
+      );
+      if (res.data?.setting) {
+        setVideoForm({
+          youtubeUrl: res.data.setting.youtubeUrl || '',
+          posterUrl: res.data.setting.posterUrl || '',
+          title: res.data.setting.title || 'TransitNode Platform Overview',
+          description: res.data.setting.description || '',
+          isEnabled: res.data.setting.isEnabled !== false
+        });
+      }
+    } catch (err) {
+      console.error('Failed to fetch video setting:', err);
+    } finally {
+      setLoadingVideoSetting(false);
+    }
+  };
+
+  const handleSaveVideoSetting = async (e) => {
+    e.preventDefault();
+    try {
+      setIsSavingVideo(true);
+      const res = await axios.put(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/master-admin/overview-video`,
+        videoForm,
+        { headers: getHeaders() }
+      );
+      if (res.data?.success) {
+        alert('Overview Video configuration updated successfully!');
+      }
+    } catch (err) {
+      console.error('Failed to save video setting:', err);
+      alert(err.response?.data?.error || 'Failed to update video configuration');
+    } finally {
+      setIsSavingVideo(false);
+    }
+  };
+
   const fetchTestimonials = async () => {
     try {
       setLoadingTestimonials(true);
@@ -332,6 +386,9 @@ const MasterAdminDashboard = () => {
     }
     if (activeTab === 'testimonials') {
       fetchTestimonials();
+    }
+    if (activeTab === 'video') {
+      fetchVideoSetting();
     }
   }, [activeTab]);
 
@@ -873,6 +930,16 @@ const MasterAdminDashboard = () => {
           }`}
         >
           <span>💬 Wall of Trust (Testimonials)</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('video')}
+          className={`flex items-center space-x-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all ${
+            activeTab === 'video'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+              : 'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 shadow-sm'
+          }`}
+        >
+          <span>🎬 Overview Video Manager</span>
         </button>
       </div>
 
@@ -1613,6 +1680,120 @@ const MasterAdminDashboard = () => {
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+        )}
+
+        {/* 7. Overview Video Manager Tab */}
+        {activeTab === 'video' && (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 flex items-center space-x-2">
+                  <span>🎬 Landing Page Overview Video Settings</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Manage the YouTube video link and settings displayed in the Hero "Watch Overview" modal without redeploying code.
+                </p>
+              </div>
+            </div>
+
+            {loadingVideoSetting ? (
+              <div className="py-12 text-center text-slate-500 font-medium">Loading video configuration...</div>
+            ) : (
+              <form onSubmit={handleSaveVideoSetting} className="space-y-6 max-w-3xl">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      YouTube Video Link / URL
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ or https://youtu.be/..."
+                      value={videoForm.youtubeUrl}
+                      onChange={(e) => setVideoForm({ ...videoForm, youtubeUrl: e.target.value })}
+                      className="w-full border border-slate-300 rounded-lg p-3 text-xs text-slate-900 font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Paste any standard YouTube link, short link, or embed URL. We will convert it automatically.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Video Title
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. TransitNode Platform Overview"
+                      value={videoForm.title}
+                      onChange={(e) => setVideoForm({ ...videoForm, title: e.target.value })}
+                      className="w-full border border-slate-300 rounded-lg p-3 text-xs text-slate-900 focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Subtitle / Description (Optional)
+                    </label>
+                    <textarea
+                      rows="3"
+                      placeholder="e.g. Discover how enterprise fleets automate daily runsheets, rate card matrices, and financial MIS audits."
+                      value={videoForm.description}
+                      onChange={(e) => setVideoForm({ ...videoForm, description: e.target.value })}
+                      className="w-full border border-slate-300 rounded-lg p-3 text-xs text-slate-900 focus:ring-2 focus:ring-indigo-500"
+                    ></textarea>
+                  </div>
+
+                  <div className="flex items-center space-x-3 pt-2">
+                    <input
+                      type="checkbox"
+                      id="videoIsEnabled"
+                      checked={videoForm.isEnabled}
+                      onChange={(e) => setVideoForm({ ...videoForm, isEnabled: e.target.checked })}
+                      className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                    />
+                    <label htmlFor="videoIsEnabled" className="text-xs font-bold text-slate-700 cursor-pointer">
+                      Enable YouTube Video Player on Landing Page
+                    </label>
+                  </div>
+                </div>
+
+                {/* Live Preview Box */}
+                {videoForm.youtubeUrl && (
+                  <div className="border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-3">
+                    <div className="text-xs font-bold text-slate-700 flex items-center space-x-2">
+                      <span>📺 Live Embed Preview</span>
+                    </div>
+                    <div className="aspect-video w-full max-w-lg bg-black rounded-lg overflow-hidden border border-slate-300">
+                      <iframe
+                        src={
+                          videoForm.youtubeUrl.includes('youtube.com/embed/')
+                            ? videoForm.youtubeUrl
+                            : `https://www.youtube-nocookie.com/embed/${
+                                videoForm.youtubeUrl.match(/[?&]v=([^&]+)/)?.[1] ||
+                                videoForm.youtubeUrl.match(/youtu\.be\/([^?&]+)/)?.[1] ||
+                                ''
+                              }`
+                        }
+                        title="YouTube Video Preview"
+                        className="w-full h-full border-0"
+                        allowFullScreen
+                      ></iframe>
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-end">
+                  <button
+                    type="submit"
+                    disabled={isSavingVideo}
+                    className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors shadow-md flex items-center space-x-2 cursor-pointer"
+                  >
+                    <span>{isSavingVideo ? 'Saving Changes...' : '💾 Save Video Settings'}</span>
+                  </button>
+                </div>
+              </form>
             )}
           </div>
         )}

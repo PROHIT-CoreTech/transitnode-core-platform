@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import axios from 'axios';
 
 const OVERVIEW_STORYBOARD = [
   {
@@ -56,7 +57,26 @@ const OverviewModal = ({ showModal, setShowModal }) => {
   const [activeChapterIndex, setActiveChapterIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
+  const [videoSetting, setVideoSetting] = useState(null);
   const videoRef = useRef(null);
+
+  // Fetch YouTube / dynamic video configuration from Master Admin API
+  useEffect(() => {
+    const fetchVideoConfig = async () => {
+      try {
+        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+        const res = await axios.get(`${apiUrl}/api/saas/overview-video`);
+        if (res.data?.videoSetting) {
+          setVideoSetting(res.data.videoSetting);
+        }
+      } catch (err) {
+        console.error('Error fetching overview video config:', err);
+      }
+    };
+    if (showModal) {
+      fetchVideoConfig();
+    }
+  }, [showModal]);
 
   // Close modal on ESC key press
   useEffect(() => {
@@ -144,34 +164,46 @@ const OverviewModal = ({ showModal, setShowModal }) => {
           <div className="lg:col-span-8 bg-slate-950 relative flex flex-col justify-between overflow-hidden aspect-video group">
             
             {/* Embedded Video Presentation Player */}
-            <div className="w-full h-full relative bg-slate-950 flex flex-col justify-center items-center p-6 text-center">
-              {/* Decorative Background Grid Pattern */}
-              <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] opacity-40"></div>
-              
-              <div className="relative z-10 max-w-md space-y-3">
-                <div className="inline-flex items-center space-x-2 bg-blue-950/80 border border-blue-500/40 text-blue-300 text-xs px-3 py-1 rounded-full font-mono">
-                  <span>CHAPTER {activeChapterIndex + 1} / 7</span>
-                  <span>•</span>
-                  <span>{currentChapter.time}</span>
-                </div>
-                
-                <h4 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
-                  {currentChapter.title}
-                </h4>
-                
-                <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-300 font-mono text-left space-y-1.5 shadow-lg">
-                  <div className="text-blue-400 font-bold uppercase text-[10px] tracking-wider">🖥️ UI Screen Action</div>
-                  <div className="leading-relaxed text-slate-200">{currentChapter.action}</div>
-                </div>
-              </div>
+            <div className="w-full h-full relative bg-slate-950 flex flex-col justify-center items-center text-center overflow-hidden">
+              {videoSetting?.embedUrl && videoSetting?.isEnabled !== false ? (
+                <iframe
+                  src={videoSetting.embedUrl}
+                  title={videoSetting.title || "TransitNode Platform Overview"}
+                  className="w-full h-full border-0 absolute inset-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              ) : (
+                <>
+                  {/* Decorative Background Grid Pattern */}
+                  <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] opacity-40"></div>
+                  
+                  <div className="relative z-10 max-w-md p-6 space-y-3">
+                    <div className="inline-flex items-center space-x-2 bg-blue-950/80 border border-blue-500/40 text-blue-300 text-xs px-3 py-1 rounded-full font-mono">
+                      <span>CHAPTER {activeChapterIndex + 1} / 7</span>
+                      <span>•</span>
+                      <span>{currentChapter.time}</span>
+                    </div>
+                    
+                    <h4 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
+                      {currentChapter.title}
+                    </h4>
+                    
+                    <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-300 font-mono text-left space-y-1.5 shadow-lg">
+                      <div className="text-blue-400 font-bold uppercase text-[10px] tracking-wider">🖥️ UI Screen Action</div>
+                      <div className="leading-relaxed text-slate-200">{currentChapter.action}</div>
+                    </div>
+                  </div>
 
-              {/* Simulation Progress Line */}
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-800">
-                <div 
-                  className="h-full bg-blue-500 transition-all duration-300"
-                  style={{ width: `${(currentTime / 120) * 100}%` }}
-                ></div>
-              </div>
+                  {/* Simulation Progress Line */}
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-800">
+                    <div 
+                      className="h-full bg-blue-500 transition-all duration-300"
+                      style={{ width: `${(currentTime / 120) * 100}%` }}
+                    ></div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Controls Overlay Bar */}

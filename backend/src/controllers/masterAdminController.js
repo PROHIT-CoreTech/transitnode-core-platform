@@ -5,6 +5,7 @@ const Company = require('../models/NoSQL/Company');
 const User = require('../models/NoSQL/User');
 const Device = require('../models/NoSQL/Device');
 const TelemetryLog = require('../models/NoSQL/TelemetryLog');
+const SystemSetting = require('../models/NoSQL/SystemSetting');
 
 // POST /api/master-admin/onboard-automated
 exports.onboardAutomated = async (req, res) => {
@@ -1135,4 +1136,73 @@ exports.deleteTestimonial = async (req, res) => {
     return res.status(500).json({ error: 'Failed to delete testimonial' });
   }
 };
+
+const extractYouTubeEmbedUrl = (url) => {
+  if (!url) return '';
+  if (url.includes('youtube.com/embed/')) return url;
+  
+  let videoId = '';
+  const watchMatch = url.match(/[?&]v=([^&]+)/);
+  if (watchMatch && watchMatch[1]) {
+    videoId = watchMatch[1];
+  } else {
+    const shortMatch = url.match(/youtu\.be\/([^?&]+)/);
+    if (shortMatch && shortMatch[1]) {
+      videoId = shortMatch[1];
+    } else if (!url.includes('/') && url.length > 5) {
+      videoId = url;
+    }
+  }
+
+  if (videoId) {
+    return `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`;
+  }
+  return url;
+};
+
+exports.getOverviewVideoSetting = async (req, res) => {
+  try {
+    const setting = await SystemSetting.findOne({ key: 'OVERVIEW_VIDEO' });
+    const defaultData = {
+      youtubeUrl: '',
+      embedUrl: '',
+      posterUrl: '',
+      title: 'TransitNode Platform Overview',
+      description: 'Watch how TransitNode automates fleet dispatch, rate cards, and financial MIS.',
+      isEnabled: true
+    };
+    return res.status(200).json({ success: true, setting: setting ? setting.value : defaultData });
+  } catch (error) {
+    console.error('[MasterAdmin] getOverviewVideoSetting error:', error);
+    return res.status(500).json({ error: 'Failed to fetch overview video setting' });
+  }
+};
+
+exports.updateOverviewVideoSetting = async (req, res) => {
+  try {
+    const { youtubeUrl, posterUrl, title, description, isEnabled } = req.body;
+    const embedUrl = extractYouTubeEmbedUrl(youtubeUrl);
+
+    const updatedValue = {
+      youtubeUrl: youtubeUrl || '',
+      embedUrl,
+      posterUrl: posterUrl || '',
+      title: title || 'TransitNode Platform Overview',
+      description: description || '',
+      isEnabled: isEnabled !== undefined ? Boolean(isEnabled) : true
+    };
+
+    const setting = await SystemSetting.findOneAndUpdate(
+      { key: 'OVERVIEW_VIDEO' },
+      { key: 'OVERVIEW_VIDEO', value: updatedValue },
+      { upsert: true, new: true }
+    );
+
+    return res.status(200).json({ success: true, message: 'Overview video setting updated successfully', setting: setting.value });
+  } catch (error) {
+    console.error('[MasterAdmin] updateOverviewVideoSetting error:', error);
+    return res.status(500).json({ error: 'Failed to update overview video setting' });
+  }
+};
+
 

@@ -27,6 +27,11 @@ router.get('/tenant-profile', saasController.getTenantProfile);
 // @access  Public
 router.get('/testimonials', saasController.getPublicTestimonials);
 
+// @route   GET /api/saas/overview-video
+// @desc    Get active overview video setting for landing page
+// @access  Public
+router.get('/overview-video', saasController.getPublicOverviewVideo);
+
 
 const authGuard = require('../middleware/authGuard');
 const { ensureLifetimeTier } = require('../middleware/tierGuard');

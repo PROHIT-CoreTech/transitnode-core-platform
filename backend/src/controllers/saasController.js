@@ -3,6 +3,8 @@ const User = require('../models/NoSQL/User');
 const SubscriptionTransaction = require('../models/NoSQL/SubscriptionTransaction');
 const SubscriptionPlan = require('../models/NoSQL/SubscriptionPlan');
 const Coupon = require('../models/NoSQL/Coupon');
+const SystemSetting = require('../models/NoSQL/SystemSetting');
+const Testimonial = require('../models/NoSQL/Testimonial');
 const crypto = require('crypto');
 const { verifyWebhookSignature } = require('../config/cashfree');
 
@@ -752,4 +754,33 @@ exports.getPublicTestimonials = async (req, res) => {
     return res.status(500).json({ error: 'Failed to fetch testimonials' });
   }
 };
+
+exports.getPublicOverviewVideo = async (req, res) => {
+  try {
+    const setting = await SystemSetting.findOne({ key: 'OVERVIEW_VIDEO' });
+    const defaultData = {
+      youtubeUrl: '',
+      embedUrl: '',
+      posterUrl: '',
+      title: 'TransitNode Platform Overview',
+      description: 'Watch how TransitNode automates fleet dispatch, rate cards, and financial MIS.',
+      isEnabled: true
+    };
+    return res.status(200).json({ success: true, videoSetting: setting ? setting.value : defaultData });
+  } catch (error) {
+    console.error('[SaasController] getPublicOverviewVideo error:', error);
+    return res.status(200).json({
+      success: true,
+      videoSetting: {
+        youtubeUrl: '',
+        embedUrl: '',
+        posterUrl: '',
+        title: 'TransitNode Platform Overview',
+        description: '',
+        isEnabled: true
+      }
+    });
+  }
+};
+
 
