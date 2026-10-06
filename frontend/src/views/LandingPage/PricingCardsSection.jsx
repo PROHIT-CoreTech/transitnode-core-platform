@@ -119,7 +119,9 @@ const PricingCardsSection = ({ openRegisterModal, plansProp }) => {
       axios.get(`${apiUrl}/api/saas/plans`)
         .then(res => {
           if (res.data?.plans && res.data.plans.length > 0) {
-            const publicPlans = res.data.plans.filter(p => (p.planKey || '').toUpperCase() !== 'LIFETIME');
+            const publicPlans = res.data.plans
+              .filter(p => (p.planKey || '').toUpperCase() !== 'LIFETIME')
+              .sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
             setPlans(publicPlans);
           }
         })
@@ -127,7 +129,10 @@ const PricingCardsSection = ({ openRegisterModal, plansProp }) => {
           console.warn('Could not fetch dynamic plans, using default presentation:', err);
         });
     } else {
-      setPlans((plansProp || []).filter(p => (p.planKey || '').toUpperCase() !== 'LIFETIME'));
+      const publicPlans = (plansProp || [])
+        .filter(p => (p.planKey || '').toUpperCase() !== 'LIFETIME')
+        .sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
+      setPlans(publicPlans);
     }
   }, [plansProp]);
 

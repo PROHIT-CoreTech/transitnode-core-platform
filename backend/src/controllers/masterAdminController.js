@@ -778,29 +778,30 @@ const DEFAULT_PLANS = [
 ];
 
 const seedPlansIfEmpty = async () => {
-  const count = await SubscriptionPlan.countDocuments();
-  if (count === 0) {
-    await SubscriptionPlan.insertMany(DEFAULT_PLANS);
-    console.log('[SubscriptionPlan] Default plans initialized.');
-  } else {
+  for (const plan of DEFAULT_PLANS) {
     await SubscriptionPlan.updateOne(
-      { planKey: 'TRIAL' },
-      { $set: { features: DEFAULT_PLANS[0].features } }
-    );
-    await SubscriptionPlan.updateOne(
-      { planKey: 'SILVER' },
-      { $set: { price: 1499, originalPrice: 1999, priceDisplay: '₹1,499/mo', durationDays: 30, durationLabel: '1 Month', buttonText: 'Upgrade Monthly', features: DEFAULT_PLANS[1].features } }
-    );
-    await SubscriptionPlan.updateOne(
-      { planKey: 'PLATINUM' },
-      { $set: { price: 3999, originalPrice: 4999, priceDisplay: '₹3,999/mo', durationDays: 30, durationLabel: '1 Month', buttonText: 'Upgrade Monthly', features: DEFAULT_PLANS[2].features } }
-    );
-    await SubscriptionPlan.updateOne(
-      { planKey: 'LIFETIME' },
-      { $set: { price: 450000, originalPrice: 500000, priceDisplay: '₹450k', features: DEFAULT_PLANS[3].features } }
+      { planKey: plan.planKey },
+      {
+        $set: {
+          title: plan.title,
+          badgeText: plan.badgeText,
+          tagline: plan.tagline,
+          price: plan.price,
+          originalPrice: plan.originalPrice,
+          priceDisplay: plan.priceDisplay,
+          durationDays: plan.durationDays,
+          durationLabel: plan.durationLabel,
+          features: plan.features,
+          buttonText: plan.buttonText,
+          accentColor: plan.accentColor,
+          isPopular: plan.isPopular,
+          isActive: plan.isActive !== false
+        }
+      },
+      { upsert: true }
     );
   }
-  return await SubscriptionPlan.find().sort({ createdAt: 1 });
+  return await SubscriptionPlan.find().sort({ price: 1, createdAt: 1 });
 };
 
 exports.getSubscriptionPlans = async (req, res) => {

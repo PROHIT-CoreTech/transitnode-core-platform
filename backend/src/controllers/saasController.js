@@ -507,7 +507,7 @@ exports.updateInvoiceFormat = async (req, res) => {
 // GET /api/saas/plans (Public)
 exports.getPublicSubscriptionPlans = async (req, res) => {
   try {
-    let plans = await SubscriptionPlan.find({ isActive: true, planKey: { $ne: 'LIFETIME' } }).sort({ createdAt: 1 });
+    let plans = await SubscriptionPlan.find({ isActive: true, planKey: { $ne: 'LIFETIME' } }).sort({ price: 1, createdAt: 1 });
     if (plans.length === 0) {
       // Return hardcoded default structures if not seeded yet
       plans = [
