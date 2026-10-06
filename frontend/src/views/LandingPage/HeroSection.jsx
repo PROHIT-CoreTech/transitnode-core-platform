@@ -1,6 +1,6 @@
 import React from 'react';
 
-const HeroSection = ({ openRegisterModal }) => {
+const HeroSection = ({ openRegisterModal, openOverviewModal }) => {
   return (
     <section className="w-full relative z-10 pt-24 sm:pt-32 pb-12 overflow-hidden">
       
@@ -60,11 +60,11 @@ const HeroSection = ({ openRegisterModal }) => {
               </button>
 
               <button 
-                onClick={() => openRegisterModal('free')}
-                className="bg-white hover:opacity-80 transition-all flex items-center space-x-2 py-2"
+                onClick={openOverviewModal}
+                className="bg-white hover:opacity-80 transition-all flex items-center space-x-2 py-2 cursor-pointer group"
               >
-                <img src="/play_circle.svg" alt="Play Icon" className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0" />
-                <span className="font-['Inter'] font-normal text-xs sm:text-[15px] leading-[150%]" style={{ color: 'rgba(28, 27, 31, 1)' }}>
+                <img src="/play_circle.svg" alt="Play Icon" className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                <span className="font-['Inter'] font-semibold text-xs sm:text-[15px] leading-[150%] text-slate-800 group-hover:text-blue-600 transition-colors">
                   Watch Overview
                 </span>
               </button>

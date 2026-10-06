@@ -9,6 +9,7 @@ import AboutUsSection from './AboutUsSection';
 import ContactUsSection from './ContactUsSection';
 import Footer from './Footer';
 import RegisterModal from './RegisterModal';
+import OverviewModal from './OverviewModal';
 
 const PricingPortal = () => {
   const hostname = window.location.hostname;
@@ -16,6 +17,7 @@ const PricingPortal = () => {
   const domainSuffix = isLocalhost ? '.localhost:3001' : '.transitnode.prohitcoretech.com';
 
   const [showModal, setShowModal] = useState(false);
+  const [showOverviewModal, setShowOverviewModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState('free');
   const [formData, setFormData] = useState({
     companyName: '',
@@ -196,7 +198,10 @@ const PricingPortal = () => {
       <Header openRegisterModal={openRegisterModal} />
 
       {/* Main Sections */}
-      <HeroSection openRegisterModal={openRegisterModal} />
+      <HeroSection 
+        openRegisterModal={openRegisterModal} 
+        openOverviewModal={() => setShowOverviewModal(true)} 
+      />
       <PricingCardsSection openRegisterModal={openRegisterModal} />
       <TestimonialsSection testimonials={testimonials} isLoading={loadingTestimonials} />
       <WhyUsSection />
@@ -206,6 +211,12 @@ const PricingPortal = () => {
       {/* Footer */}
       <Footer />
       
+      {/* Overview Video Modal */}
+      <OverviewModal 
+        showModal={showOverviewModal} 
+        setShowModal={setShowOverviewModal} 
+      />
+
       {/* Interactive SaaS Registration Portal Modal */}
       <RegisterModal 
         showModal={showModal}
