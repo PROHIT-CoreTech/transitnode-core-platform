@@ -3125,43 +3125,7 @@ const AdminDashboard = () => {
                 </div>
               )}
 
-              {subscriptionDetails.planType !== 'LIFETIME' ? (
-                <div className="bg-slate-900 rounded-xl shadow-lg p-4 sm:p-6 md:p-8 text-center mt-8 text-white relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500 opacity-20 rounded-full blur-3xl -mr-20 -mt-20"></div>
-                  <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500 opacity-20 rounded-full blur-3xl -ml-20 -mb-20"></div>
-                  
-                  <h3 className="text-2xl font-bold mb-2 relative z-10">Ready for more?</h3>
-                  <p className="text-slate-300 mb-8 max-w-2xl mx-auto relative z-10">Upgrade your plan at any time to instantly unlock higher user limits and premium operations capabilities.</p>
-                  
-                  <div className="flex flex-col sm:flex-row justify-center gap-4 relative z-10">
-                    {/* Free Trial is Rank 1, so no upgrades to Free Trial */}
-                    
-                    {/* Upgrade to Silver (Rank 2) - Only show if current is Rank 1 (TRIAL) */}
-                    {subscriptionDetails.planType === 'TRIAL' && (
-                      <button onClick={() => handleUpgradePlan('SILVER')} className="px-3 sm:px-4 md:px-6 py-3 bg-white text-slate-900 hover:bg-slate-100 font-bold rounded-lg transition-colors shadow-md">
-                        Upgrade to Silver Plan
-                      </button>
-                    )}
 
-                    {/* Upgrade to Platinum (Rank 3) - Only show if current is Rank 1 or 2 */}
-                    {(subscriptionDetails.planType === 'TRIAL' || subscriptionDetails.planType === 'SILVER') && (
-                      <button onClick={() => handleUpgradePlan('PLATINUM')} className="px-4 sm:px-6 md:px-8 py-3 bg-indigo-500 hover:bg-indigo-400 text-white font-bold rounded-lg transition-colors shadow-lg shadow-indigo-500/30">
-                        Go PLATINUM (Unlimited)
-                      </button>
-                    )}
-
-                    {/* Upgrade to Lifetime (Rank 4) - Always show unless already on Lifetime */}
-                    <button onClick={() => handleUpgradePlan('LIFETIME')} className="px-4 sm:px-6 md:px-8 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-bold rounded-lg transition-colors shadow-lg shadow-amber-500/30">
-                      Unlock LIFETIME
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-4 sm:p-6 md:p-8 text-center mt-8 relative overflow-hidden">
-                  <h3 className="text-2xl font-bold mb-2 text-amber-600">Lifetime Member</h3>
-                  <p className="text-amber-700/80 max-w-2xl mx-auto">You have unlocked the absolute highest tier. Thank you for your infinite commitment to PROHIT CoreTech!</p>
-                </div>
-              )}
             </div>
           )}
 
