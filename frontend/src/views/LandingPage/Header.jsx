@@ -24,10 +24,6 @@ const Header = ({ openRegisterModal }) => {
 
         {/* Right Action Buttons */}
         <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
-          <a href="/login" className="hidden sm:inline-block text-xs sm:text-sm font-semibold text-slate-700 hover:text-[#187baa] transition-colors whitespace-nowrap">
-            Log In
-          </a>
-          
           <button 
             onClick={() => openRegisterModal('free')}
             className="bg-[#187baa] hover:bg-[#14668f] text-white font-semibold text-xs sm:text-sm px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center space-x-1 whitespace-nowrap flex-shrink-0"
@@ -76,8 +72,7 @@ const Header = ({ openRegisterModal }) => {
           >
             Contact Us
           </a>
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-            <a href="/login" className="text-xs font-semibold text-slate-700 hover:text-[#187baa]">Log In to Account</a>
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-end">
             <button 
               onClick={() => { setMobileMenuOpen(false); openRegisterModal('free'); }}
               className="text-xs font-bold text-[#187baa] hover:underline"
