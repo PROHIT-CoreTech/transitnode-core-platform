@@ -53,7 +53,7 @@ router.get('/rates', checkRole(['ADMIN', 'OPERATION_EXECUTIVE', 'OPERATION', 'RE
 // Require ADMIN role for the rest
 router.use(checkRole(['ADMIN']));
 
-const { startDemoSimulation, stopDemoSimulation } = require('../hardware/demoSimulator');
+
 
 // User Management
 router.post('/users/create', adminController.createUser);
@@ -100,18 +100,6 @@ router.put('/subscription/upgrade', adminController.updateSubscriptionPlan);
 router.post('/submit-testimonial', adminController.submitTestimonial);
 router.get('/my-testimonials', adminController.getMyTestimonials);
 
-// Demo Simulation Toggle
-router.post('/demo/toggle', (req, res) => {
-  const { active } = req.body;
-  const io = req.app.get('io');
-  
-  if (active) {
-    startDemoSimulation(io);
-    res.status(200).json({ message: 'Demo simulation started', active: true });
-  } else {
-    stopDemoSimulation();
-    res.status(200).json({ message: 'Demo simulation stopped', active: false });
-  }
-});
+
 
 module.exports = router;

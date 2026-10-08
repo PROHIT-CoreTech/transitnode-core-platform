@@ -26,8 +26,7 @@ const AdminDashboard = () => {
     if (user?.role === 'OPERATION' || user?.role === 'OPERATION_EXECUTIVE') return 'MAP';
     return 'ANALYTICS';
   }); // ANALYTICS, MANAGEMENT, DRIVER_MANAGEMENT, MAP
-  const [expandedMenu, setExpandedMenu] = useState('DASHBOARD');
-  const [isDemoActive, setIsDemoActive] = useState(false);
+
   const [timeRange, setTimeRange] = useState('daily');
   const [metrics, setMetrics] = useState({
     totalRevenue: 0,
@@ -1061,17 +1060,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const toggleDemoMode = async () => {
-    try {
-      const newState = !isDemoActive;
-      await axios.post(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/demo/toggle`, { active: newState }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setIsDemoActive(newState);
-    } catch (error) {
-      alert(error.response?.data?.message || 'Failed to toggle demo mode');
-    }
-  };
 
   const formatVehicleNumber = (val) => {
     let clean = val.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
@@ -1252,26 +1240,7 @@ const AdminDashboard = () => {
       <main className="flex-1 overflow-y-auto">
         <div className="p-4 sm:p-6 md:p-8">
           
-          {/* Demo Mode Toggle & Banner */}
-          {user?.role === 'ADMIN' && (
-            <>
-              <div className="mb-6 flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                <div className="flex items-center space-x-3">
-                  <div className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer ${isDemoActive ? 'bg-indigo-600' : 'bg-slate-300'}`} onClick={toggleDemoMode}>
-                    <div className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ease-in-out ${isDemoActive ? 'translate-x-6' : ''}`}></div>
-                  </div>
-                  <span className="font-bold text-slate-800">⚡ Activate System Demo Mode</span>
-                </div>
-              </div>
 
-              {isDemoActive && (
-                <div className="mb-6 bg-amber-100 border border-amber-300 text-amber-800 px-4 py-3 rounded-xl shadow-sm animate-pulse flex items-center">
-                  <span className="mr-2">⚠️</span>
-                  <p className="font-medium">System running in simulated environment. Mocking live tracking streams.</p>
-                </div>
-              )}
-            </>
-          )}
 
           {/* Top Metrics Bar */}
           {user?.role === 'ADMIN' && (
