@@ -26,6 +26,7 @@ const AdminDashboard = () => {
     if (user?.role === 'OPERATION' || user?.role === 'OPERATION_EXECUTIVE') return 'MAP';
     return 'ANALYTICS';
   }); // ANALYTICS, MANAGEMENT, DRIVER_MANAGEMENT, MAP
+  const [expandedMenu, setExpandedMenu] = useState('DASHBOARD');
 
   const [timeRange, setTimeRange] = useState('daily');
   const [metrics, setMetrics] = useState({
