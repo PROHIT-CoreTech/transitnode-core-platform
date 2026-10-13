@@ -443,7 +443,7 @@ exports.updateTenantProfile = async (req, res) => {
     console.log('req.user:', req.user);
     console.log('tenantId:', tenantId);
     
-    const { companyName, gstin, pan, address, state, stateCode, contactNumber, logoUrl, dominantHexColor, requireDriverMobileApp } = req.body;
+    const { companyName, gstin, pan, address, state, stateCode, contactNumber, logoUrl, dominantHexColor } = req.body;
 
     const tenant = await Tenant.findById(tenantId);
     console.log('Found tenant:', tenant ? tenant._id : 'NOT FOUND');
@@ -458,10 +458,7 @@ exports.updateTenantProfile = async (req, res) => {
     if (state !== undefined) tenant.state = state;
     if (stateCode !== undefined) tenant.stateCode = stateCode;
     if (contactNumber !== undefined) tenant.contactNumber = contactNumber;
-    if (requireDriverMobileApp !== undefined) {
-      // Need to convert string 'true'/'false' to boolean since FormData sends strings
-      tenant.requireDriverMobileApp = requireDriverMobileApp === 'true' || requireDriverMobileApp === true;
-    }
+    // Note: requireDriverMobileApp is exclusively managed by Master Admin
     
     // Update brandingOptions if provided
     if (req.file || logoUrl !== undefined || dominantHexColor !== undefined) {

@@ -693,6 +693,50 @@ const MasterAdminDashboard = () => {
     }
   };
 
+  const handleToggleRequireDriverMobileApp = async () => {
+    if (!tenantDetails || !tenantDetails.tenant) return;
+    const currentStatus = tenantDetails.tenant.requireDriverMobileApp === true;
+    const newStatus = !currentStatus;
+    const actionText = newStatus ? 'enable' : 'disable';
+
+    if (!window.confirm(`Are you sure you want to ${actionText} Require Driver Mobile App for this tenant?`)) {
+      return;
+    }
+
+    try {
+      setIsUpdatingFeature(true);
+      const response = await axios.put(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/master-admin/tenant/${tenantDetails.tenant._id}/features`,
+        { requireDriverMobileApp: newStatus },
+        { headers: getHeaders() }
+      );
+
+      // Update tenant details in modal
+      setTenantDetails(prev => ({
+        ...prev,
+        tenant: response.data.tenant
+      }));
+
+      // Update tenant directory in summary
+      setSummary(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          allTenants: prev.allTenants.map(t =>
+            t._id === tenantDetails.tenant._id ? response.data.tenant : t
+          )
+        };
+      });
+
+      alert(`Require Driver Mobile App has been ${newStatus ? 'enabled' : 'disabled'} for this tenant.`);
+    } catch (error) {
+      console.error('Failed to toggle Require Driver Mobile App:', error);
+      alert(error.response?.data?.error || 'Failed to update feature settings.');
+    } finally {
+      setIsUpdatingFeature(false);
+    }
+  };
+
   const fetchDashboardSummary = async () => {
     try {
       setLoading(true);
@@ -2251,6 +2295,35 @@ const MasterAdminDashboard = () => {
                             (tenantDetails.tenant.enableFinancialEngine !== false) ? 'bg-emerald-200 animate-pulse' : 'bg-slate-400'
                           }`}></span>
                           {(tenantDetails.tenant.enableFinancialEngine !== false) ? 'ENABLED' : 'DISABLED'}
+                        </button>
+                      </div>
+
+                      {/* Require Driver Mobile App */}
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-t border-slate-100 pt-4">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            <h4 className="font-bold text-slate-900 text-base">Require Driver Mobile App</h4>
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1 max-w-lg">
+                            Mandate driver mobile application authentication and shipment run-sheet authorization for this tenant.
+                          </p>
+                        </div>
+                        <button
+                          onClick={handleToggleRequireDriverMobileApp}
+                          disabled={isUpdatingFeature}
+                          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold tracking-wider transition-all flex items-center gap-2.5 cursor-pointer shadow-sm ${
+                            (tenantDetails.tenant.requireDriverMobileApp === true)
+                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500'
+                              : 'bg-slate-200 hover:bg-slate-300 text-slate-700 border border-slate-300'
+                          }`}
+                        >
+                          <span className={`w-2.5 h-2.5 rounded-full ${
+                            (tenantDetails.tenant.requireDriverMobileApp === true) ? 'bg-emerald-200 animate-pulse' : 'bg-slate-400'
+                          }`}></span>
+                          {(tenantDetails.tenant.requireDriverMobileApp === true) ? 'ENABLED' : 'DISABLED'}
                         </button>
                       </div>
                     </div>

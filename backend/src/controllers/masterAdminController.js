@@ -595,7 +595,7 @@ exports.updateTenantSubscription = async (req, res) => {
 exports.updateTenantFeatures = async (req, res) => {
   try {
     const { tenantId } = req.params;
-    const { enableLiveFleetMap, enableFinancialEngine } = req.body;
+    const { enableLiveFleetMap, enableFinancialEngine, requireDriverMobileApp } = req.body;
 
     const tenant = await Tenant.findById(tenantId);
     if (!tenant) {
@@ -607,6 +607,10 @@ exports.updateTenantFeatures = async (req, res) => {
     }
     if (enableFinancialEngine !== undefined) {
       tenant.enableFinancialEngine = Boolean(enableFinancialEngine);
+    }
+    if (requireDriverMobileApp !== undefined) {
+      tenant.requireDriverMobileApp = Boolean(requireDriverMobileApp);
+      await Company.updateMany({ tenantId: tenant._id }, { $set: { requireDriverMobileApp: Boolean(requireDriverMobileApp) } });
     }
 
     await tenant.save();

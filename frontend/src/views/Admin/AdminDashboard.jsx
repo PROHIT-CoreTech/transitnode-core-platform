@@ -593,7 +593,7 @@ const AdminDashboard = () => {
       if (editingWorkspace.isPrimary) {
         const formData = new FormData();
         Object.keys(editWorkspaceForm).forEach(key => {
-          if (key !== 'logoFile' && editWorkspaceForm[key] !== null && editWorkspaceForm[key] !== undefined) {
+          if (key !== 'logoFile' && key !== 'requireDriverMobileApp' && editWorkspaceForm[key] !== null && editWorkspaceForm[key] !== undefined) {
             formData.append(key, editWorkspaceForm[key]);
           }
         });
@@ -3061,11 +3061,16 @@ const AdminDashboard = () => {
                           </div>
                         )}
                         
-                        {/* Require Driver App Flag (Only for Primary Workspace as requested) */}
+                        {/* Driver Mobile App (Configured exclusively by Master Admin) */}
                         {editingWorkspace.isPrimary && (
-                          <div className="mt-4 flex items-center space-x-3">
-                            <input type="checkbox" id="editRequireDriverApp" checked={editWorkspaceForm.requireDriverMobileApp || false} onChange={e => setEditWorkspaceForm({...editWorkspaceForm, requireDriverMobileApp: e.target.checked})} className="w-5 h-5 accent-indigo-600 rounded cursor-pointer" />
-                            <label htmlFor="editRequireDriverApp" className="text-sm font-medium text-slate-700 cursor-pointer">Require driver Mobile app</label>
+                          <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-slate-700">Require Driver Mobile App</p>
+                              <p className="text-xs text-slate-400">Exclusively configured by Master Admin</p>
+                            </div>
+                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${subscriptionDetails.requireDriverMobileApp ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-slate-200 text-slate-600 border border-slate-300'}`}>
+                              {subscriptionDetails.requireDriverMobileApp ? 'Enforced' : 'Disabled'}
+                            </span>
                           </div>
                         )}
                         {subscriptionDetails.planType === 'LIFETIME' && (
