@@ -11,11 +11,8 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [initLoading, setInitLoading] = useState(false);
 
-  const [showWorkspaceInput, setShowWorkspaceInput] = useState(false);
-  const [workspaceSearch, setWorkspaceSearch] = useState('');
-  
   const { login } = useContext(AuthContext);
-  const { tenantProfile, fetchTenantBySubdomain } = useContext(TenantBrandingContext);
+  const { tenantProfile } = useContext(TenantBrandingContext);
   const navigate = useNavigate();
 
   const hostname = window.location.hostname;
@@ -41,18 +38,6 @@ const Login = () => {
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
     const backendBase = process.env.REACT_APP_API_URL || '';
     return `${backendBase}${url}`;
-  };
-
-  const handleSearchWorkspace = async () => {
-    if (!workspaceSearch.trim()) return;
-    setError('');
-    const profile = await fetchTenantBySubdomain(workspaceSearch.trim());
-    if (profile) {
-      setShowWorkspaceInput(false);
-      setWorkspaceSearch('');
-    } else {
-      setError(`Workspace "${workspaceSearch}" not found. Please verify your company subdomain.`);
-    }
   };
 
   const handleInitMasterUser = async () => {
@@ -205,82 +190,6 @@ const Login = () => {
           )}
         </div>
 
-        {/* Workspace Switcher / Lookup */}
-        {!isMasterAdminPortal && (
-          <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-            {!showWorkspaceInput ? (
-              <button
-                type="button"
-                onClick={() => setShowWorkspaceInput(true)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--text-secondary, #94a3b8)',
-                  fontSize: '0.78rem',
-                  textDecoration: 'underline',
-                  cursor: 'pointer'
-                }}
-              >
-                {tenantProfile ? 'Switch Workspace / Subdomain' : 'Looking for your company workspace?'}
-              </button>
-            ) : (
-              <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-                <input
-                  type="text"
-                  placeholder="Enter subdomain (e.g. dualima)"
-                  value={workspaceSearch}
-                  onChange={(e) => setWorkspaceSearch(e.target.value)}
-                  style={{
-                    flex: 1,
-                    padding: '6px 10px',
-                    borderRadius: '6px',
-                    fontSize: '0.8rem',
-                    backgroundColor: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    color: '#fff'
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleSearchWorkspace();
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={handleSearchWorkspace}
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: '6px',
-                    fontSize: '0.78rem',
-                    fontWeight: '600',
-                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                    border: '1px solid rgba(59, 130, 246, 0.4)',
-                    color: '#93c5fd',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Load
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowWorkspaceInput(false)}
-                  style={{
-                    padding: '6px 8px',
-                    borderRadius: '6px',
-                    fontSize: '0.78rem',
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    color: '#94a3b8',
-                    cursor: 'pointer'
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
-            )}
-          </div>
-        )}
 
         {successMessage && (
           <div style={{ backgroundColor: 'rgba(20, 184, 166, 0.1)', border: '1px solid rgba(20, 184, 166, 0.3)', color: '#2dd4bf', padding: '12px', borderRadius: '8px', marginBottom: '24px', fontSize: '0.875rem' }}>
