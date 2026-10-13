@@ -88,8 +88,8 @@ router.post('/devices/map', adminController.mapDevice);
 router.get('/compliance/documents', adminController.getComplianceDocuments);
 
 // Supplier Management
-router.post('/suppliers/create', supplierController.createSupplier);
-router.put('/suppliers/:id', supplierController.updateSupplier);
+router.post('/suppliers/create', upload.single('invoiceFormat'), supplierController.createSupplier);
+router.put('/suppliers/:id', upload.single('invoiceFormat'), supplierController.updateSupplier);
 router.delete('/suppliers/:id', supplierController.deleteSupplier);
 
 // Subscription Management

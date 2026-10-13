@@ -23,6 +23,11 @@ const SupplierManagement = () => {
     supportedInvoiceTypes: []
   });
 
+  const [invoiceFormatFile, setInvoiceFormatFile] = useState(null);
+  const [existingInvoiceFormat, setExistingInvoiceFormat] = useState('');
+  const [existingInvoiceFormatName, setExistingInvoiceFormatName] = useState('');
+  const [removeInvoiceFormat, setRemoveInvoiceFormat] = useState(false);
+
   const fetchSuppliers = async () => {
     try {
       const res = await axios.get('/api/admin/suppliers');
@@ -35,6 +40,18 @@ const SupplierManagement = () => {
   useEffect(() => {
     fetchSuppliers();
   }, []);
+
+  const resetFormState = () => {
+    setFormData({
+      supplierName: '', gstin: '', pan: '', address: '', locationCode: '', state: '', stateCode: '',
+      mobileNumber: '', emailId: '', identifierType: '', supportedBillingCycles: [], supportedInvoiceTypes: []
+    });
+    setInvoiceFormatFile(null);
+    setExistingInvoiceFormat('');
+    setExistingInvoiceFormatName('');
+    setRemoveInvoiceFormat(false);
+    setEditingId(null);
+  };
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -57,17 +74,43 @@ const SupplierManagement = () => {
     setLoading(true);
     setError(null);
     try {
-      if (editingId) {
-        await axios.put(`/api/admin/suppliers/${editingId}`, formData);
-      } else {
-        await axios.post('/api/admin/suppliers/create', formData);
-      }
-      setFormData({
-        supplierName: '', gstin: '', pan: '', address: '', locationCode: '', state: '', stateCode: '',
-        mobileNumber: '', emailId: '', identifierType: '', supportedBillingCycles: [], supportedInvoiceTypes: []
+      const data = new FormData();
+      data.append('supplierName', formData.supplierName);
+      data.append('gstin', formData.gstin || '');
+      data.append('pan', formData.pan || '');
+      data.append('address', formData.address || '');
+      data.append('locationCode', formData.locationCode || '');
+      data.append('state', formData.state || '');
+      data.append('stateCode', formData.stateCode || '');
+      data.append('mobileNumber', formData.mobileNumber || '');
+      data.append('emailId', formData.emailId || '');
+      data.append('identifierType', formData.identifierType || '');
+      
+      formData.supportedBillingCycles.forEach(cycle => {
+        data.append('supportedBillingCycles', cycle);
       });
+      formData.supportedInvoiceTypes.forEach(type => {
+        data.append('supportedInvoiceTypes', type);
+      });
+
+      if (invoiceFormatFile) {
+        data.append('invoiceFormat', invoiceFormatFile);
+      }
+      if (removeInvoiceFormat) {
+        data.append('removeInvoiceFormat', 'true');
+      }
+
+      if (editingId) {
+        await axios.put(`/api/admin/suppliers/${editingId}`, data, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      } else {
+        await axios.post('/api/admin/suppliers/create', data, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      }
+      resetFormState();
       setShowForm(false);
-      setEditingId(null);
       fetchSuppliers();
     } catch (err) {
       if (err.response && err.response.status === 403) {
@@ -95,6 +138,10 @@ const SupplierManagement = () => {
       supportedBillingCycles: supplier.supportedBillingCycles || [],
       supportedInvoiceTypes: supplier.supportedInvoiceTypes || []
     });
+    setInvoiceFormatFile(null);
+    setExistingInvoiceFormat(supplier.invoiceFormat || '');
+    setExistingInvoiceFormatName(supplier.invoiceFormatOriginalName || '');
+    setRemoveInvoiceFormat(false);
     setEditingId(supplier._id);
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -126,11 +173,7 @@ const SupplierManagement = () => {
             setShowForm(!showForm); 
             setError(null); 
             if (showForm) {
-              setEditingId(null);
-              setFormData({
-                supplierName: '', gstin: '', pan: '', address: '', locationCode: '', state: '', stateCode: '',
-                mobileNumber: '', emailId: '', identifierType: '', supportedBillingCycles: [], supportedInvoiceTypes: []
-              });
+              resetFormState();
             }
           }}
           className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm font-medium transition-colors"
@@ -217,6 +260,62 @@ const SupplierManagement = () => {
                 </label>
               </div>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Upload Invoice Format <span className="text-xs text-slate-400 font-normal">(Optional)</span>
+              </label>
+              <input 
+                type="file" 
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    setInvoiceFormatFile(e.target.files[0]);
+                  }
+                }}
+                className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-300 rounded-md p-1 bg-white" 
+              />
+              {existingInvoiceFormat && !invoiceFormatFile && (
+                <div className="mt-2 flex items-center justify-between bg-indigo-50/50 p-2.5 rounded-md border border-indigo-100 text-xs">
+                  <span className="text-slate-700 font-medium truncate max-w-[200px]" title={existingInvoiceFormatName || 'Invoice Format'}>
+                    📎 {existingInvoiceFormatName || 'Invoice Format File'}
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <a 
+                      href={existingInvoiceFormat} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-indigo-600 hover:text-indigo-800 font-semibold underline"
+                    >
+                      View / Download
+                    </a>
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setRemoveInvoiceFormat(true);
+                        setExistingInvoiceFormat('');
+                        setExistingInvoiceFormatName('');
+                      }} 
+                      className="text-red-500 hover:text-red-700 font-medium"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              )}
+              {invoiceFormatFile && (
+                <div className="mt-1 text-xs text-emerald-600 flex items-center justify-between font-medium">
+                  <span>Selected: {invoiceFormatFile.name}</span>
+                  <button 
+                    type="button" 
+                    onClick={() => setInvoiceFormatFile(null)} 
+                    className="text-red-500 text-xs hover:underline ml-2"
+                  >
+                    Clear
+                  </button>
+                </div>
+              )}
+            </div>
             {/* End Dynamic Config Fields */}
 
             <div className="md:col-span-2">
@@ -233,7 +332,7 @@ const SupplierManagement = () => {
             </div>
             
             <div className="md:col-span-2 mt-4 flex justify-end gap-3 border-t border-slate-200 pt-4">
-              <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors text-sm font-medium">Cancel</button>
+              <button type="button" onClick={() => { setShowForm(false); resetFormState(); }} className="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors text-sm font-medium">Cancel</button>
               <button type="submit" disabled={loading} className={`px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors ${loading ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}>
                 {loading ? 'Saving...' : (editingId ? 'Update Supplier' : 'Save Supplier')}
               </button>
@@ -251,13 +350,14 @@ const SupplierManagement = () => {
               <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">GSTIN</th>
               <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">State</th>
               <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Mobile Number</th>
+              <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Invoice Format</th>
               <th className="px-3 sm:px-4 md:px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-200">
             {suppliers.length === 0 ? (
               <tr>
-                <td colSpan="5" className="px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 text-center text-sm text-slate-500">No suppliers found. Click "+ Add Supplier" to create one.</td>
+                <td colSpan="6" className="px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 text-center text-sm text-slate-500">No suppliers found. Click "+ Add Supplier" to create one.</td>
               </tr>
             ) : (
               suppliers.map(s => (
@@ -266,6 +366,24 @@ const SupplierManagement = () => {
                   <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm text-slate-500">{s.gstin || '-'}</td>
                   <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm text-slate-500">{s.state || '-'}</td>
                   <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm text-slate-500">{s.mobileNumber || '-'}</td>
+                  <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                    {s.invoiceFormat ? (
+                      <a 
+                        href={s.invoiceFormat} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
+                        title={s.invoiceFormatOriginalName || 'View Format'}
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        {s.invoiceFormatOriginalName ? (s.invoiceFormatOriginalName.length > 15 ? s.invoiceFormatOriginalName.substring(0, 12) + '...' : s.invoiceFormatOriginalName) : 'Format Doc'}
+                      </a>
+                    ) : (
+                      <span className="text-slate-400 text-xs italic">Not set</span>
+                    )}
+                  </td>
                   <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button onClick={() => handleEdit(s)} className="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
                     <button onClick={() => handleDelete(s._id)} className="text-red-600 hover:text-red-900">Delete</button>

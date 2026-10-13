@@ -10,9 +10,12 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [initLoading, setInitLoading] = useState(false);
+
+  const [showWorkspaceInput, setShowWorkspaceInput] = useState(false);
+  const [workspaceSearch, setWorkspaceSearch] = useState('');
   
   const { login } = useContext(AuthContext);
-  const { tenantProfile } = useContext(TenantBrandingContext);
+  const { tenantProfile, fetchTenantBySubdomain } = useContext(TenantBrandingContext);
   const navigate = useNavigate();
 
   const hostname = window.location.hostname;
@@ -32,6 +35,25 @@ const Login = () => {
       ? 'Payment successful! Your workspace has been activated. Please check your registered mobile/email for the magic login link.'
       : '';
   });
+
+  const resolveLogoUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    const backendBase = process.env.REACT_APP_API_URL || '';
+    return `${backendBase}${url}`;
+  };
+
+  const handleSearchWorkspace = async () => {
+    if (!workspaceSearch.trim()) return;
+    setError('');
+    const profile = await fetchTenantBySubdomain(workspaceSearch.trim());
+    if (profile) {
+      setShowWorkspaceInput(false);
+      setWorkspaceSearch('');
+    } else {
+      setError(`Workspace "${workspaceSearch}" not found. Please verify your company subdomain.`);
+    }
+  };
 
   const handleInitMasterUser = async () => {
     if (!window.confirm('Are you sure you want to initialize the Master Admin tenant and user? This will create master@transitnode.com with the default password.')) {
@@ -64,11 +86,14 @@ const Login = () => {
     setLoading(true);
 
     try {
-      // Proxied request
+      const activeSubdomain = isMasterAdminPortal 
+        ? undefined 
+        : (tenantProfile?.customSubdomain || (subdomain !== 'localhost' && subdomain !== '127' && subdomain !== 'www' ? subdomain : undefined));
+
       const response = await axios.post('/api/auth/login', {
         email,
         password,
-        subdomain: isMasterAdminPortal ? undefined : subdomain
+        subdomain: activeSubdomain
       });
 
       const token = response.data.token;
@@ -77,7 +102,6 @@ const Login = () => {
       login(token, user);
       
       // Route based on subdomain first, then role
-      // Master admin portal lives on the "masteradmin" subdomain
       if (subdomain === 'masteradmin') {
         navigate('/master-admin');
       } else if (user.role === 'ADMIN') {
@@ -97,13 +121,166 @@ const Login = () => {
   };
 
   return (
-    <div className="container animate-fade-in" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-      <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '40px' }}>
+    <div className="container animate-fade-in" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '16px' }}>
+      <div className="glass-panel" style={{ width: '100%', maxWidth: '420px', padding: '40px 32px' }}>
         
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>TransitNode</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Logistics Management System</p>
+        {/* Workspace / Tenant Branding Header */}
+        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+          {/* Corporate Logo or Monogram Icon */}
+          {tenantProfile?.logoUrl ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '16px' }}>
+              <img 
+                src={resolveLogoUrl(tenantProfile.logoUrl)} 
+                alt={tenantProfile.companyName || 'Tenant Logo'} 
+                style={{ 
+                  maxHeight: '68px', 
+                  maxWidth: '220px', 
+                  objectFit: 'contain',
+                  borderRadius: '8px',
+                  filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.25))'
+                }}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            </div>
+          ) : (
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+              <div style={{ 
+                width: '54px', 
+                height: '54px', 
+                borderRadius: '16px', 
+                background: tenantProfile?.themeColorHex 
+                  ? `linear-gradient(135deg, ${tenantProfile.themeColorHex} 0%, #1e293b 100%)`
+                  : 'linear-gradient(135deg, #3b82f6 0%, #0d9488 100%)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                color: '#fff', 
+                fontWeight: 'bold', 
+                fontSize: '1.35rem', 
+                boxShadow: '0 8px 20px rgba(0, 0, 0, 0.3)',
+                border: '1px solid rgba(255, 255, 255, 0.15)'
+              }}>
+                {tenantProfile?.companyName ? tenantProfile.companyName.substring(0, 2).toUpperCase() : 'TN'}
+              </div>
+            </div>
+          )}
+
+          {/* Tenant Registered Name */}
+          <h1 style={{ 
+            fontSize: (tenantProfile?.companyName && tenantProfile.companyName.length > 25) ? '1.35rem' : '1.75rem', 
+            fontWeight: '700', 
+            marginBottom: '6px', 
+            color: '#f8fafc', 
+            letterSpacing: '-0.02em', 
+            lineHeight: 1.25 
+          }}>
+            {tenantProfile?.companyName || 'TransitNode'}
+          </h1>
+
+          <p style={{ color: 'var(--text-secondary, #94a3b8)', fontSize: '0.85rem' }}>
+            {tenantProfile?.companyName ? 'Registered Logistics Workspace' : 'Logistics Management System'}
+          </p>
+
+          {/* Workspace Subdomain Badge */}
+          {tenantProfile?.customSubdomain && (
+            <div style={{ marginTop: '10px' }}>
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '3px 12px',
+                borderRadius: '9999px',
+                fontSize: '0.72rem',
+                fontWeight: '500',
+                backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                color: tenantProfile.themeColorHex || '#93c5fd',
+                border: `1px solid ${tenantProfile.themeColorHex ? tenantProfile.themeColorHex + '40' : 'rgba(147, 197, 253, 0.25)'}`
+              }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10b981' }}></span>
+                {tenantProfile.customSubdomain}.transitnode.in
+              </span>
+            </div>
+          )}
         </div>
+
+        {/* Workspace Switcher / Lookup */}
+        {!isMasterAdminPortal && (
+          <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+            {!showWorkspaceInput ? (
+              <button
+                type="button"
+                onClick={() => setShowWorkspaceInput(true)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-secondary, #94a3b8)',
+                  fontSize: '0.78rem',
+                  textDecoration: 'underline',
+                  cursor: 'pointer'
+                }}
+              >
+                {tenantProfile ? 'Switch Workspace / Subdomain' : 'Looking for your company workspace?'}
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                <input
+                  type="text"
+                  placeholder="Enter subdomain (e.g. dualima)"
+                  value={workspaceSearch}
+                  onChange={(e) => setWorkspaceSearch(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: '6px 10px',
+                    borderRadius: '6px',
+                    fontSize: '0.8rem',
+                    backgroundColor: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    color: '#fff'
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSearchWorkspace();
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleSearchWorkspace}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    fontSize: '0.78rem',
+                    fontWeight: '600',
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                    border: '1px solid rgba(59, 130, 246, 0.4)',
+                    color: '#93c5fd',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Load
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowWorkspaceInput(false)}
+                  style={{
+                    padding: '6px 8px',
+                    borderRadius: '6px',
+                    fontSize: '0.78rem',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    color: '#94a3b8',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {successMessage && (
           <div style={{ backgroundColor: 'rgba(20, 184, 166, 0.1)', border: '1px solid rgba(20, 184, 166, 0.3)', color: '#2dd4bf', padding: '12px', borderRadius: '8px', marginBottom: '24px', fontSize: '0.875rem' }}>
@@ -145,10 +322,14 @@ const Login = () => {
           <button 
             type="submit" 
             className="btn-primary" 
-            style={{ width: '100%' }}
+            style={{ 
+              width: '100%',
+              backgroundColor: tenantProfile?.themeColorHex || undefined,
+              borderColor: tenantProfile?.themeColorHex || undefined
+            }}
             disabled={loading}
           >
-            {loading ? 'Authenticating...' : 'Sign In'}
+            {loading ? 'Authenticating...' : `Sign In to ${tenantProfile?.companyName ? tenantProfile.companyName.split(' ')[0] : 'TransitNode'}`}
           </button>
         </form>
 

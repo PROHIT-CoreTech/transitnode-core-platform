@@ -270,7 +270,8 @@ exports.getTenantProfile = async (req, res) => {
       return res.status(400).json({ error: 'Subdomain is required' });
     }
 
-    const tenant = await Tenant.findOne({ customSubdomain: subdomain });
+    const cleanSubdomain = subdomain.trim();
+    const tenant = await Tenant.findOne({ customSubdomain: { $regex: new RegExp(`^${cleanSubdomain}$`, 'i') } });
     if (!tenant) {
       return res.status(404).json({ error: 'Tenant not found' });
     }
@@ -361,9 +362,10 @@ exports.getTenantProfile = async (req, res) => {
       adminSetupComplete: tenant.adminSetupComplete,
       enableLiveFleetMap: tenant.enableLiveFleetMap !== false,
       enableFinancialEngine: tenant.enableFinancialEngine !== false,
-      // Default theme settings (can be expanded later via db)
-      themeColorHex: '#0d9488', // teal-600 default
-      logoAssetString: 'default_tenant_logo',
+      logoUrl: tenant.brandingOptions?.logoUrl || null,
+      brandingOptions: tenant.brandingOptions || {},
+      themeColorHex: tenant.brandingOptions?.dominantHexColor || '#0d9488',
+      logoAssetString: tenant.brandingOptions?.logoUrl ? 'custom' : 'default_tenant_logo',
     });
   } catch (error) {
     console.error('Error in getTenantProfile:', error);

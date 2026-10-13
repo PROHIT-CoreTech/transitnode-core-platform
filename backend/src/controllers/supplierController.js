@@ -2,6 +2,19 @@ const Supplier = require('../models/NoSQL/Supplier');
 const User = require('../models/NoSQL/User');
 const Tenant = require('../models/NoSQL/Tenant');
 
+const parseArray = (val) => {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) {}
+    return [val];
+  }
+  return [];
+};
+
 exports.createSupplier = async (req, res) => {
   try {
     const { 
@@ -34,6 +47,13 @@ exports.createSupplier = async (req, res) => {
       return res.status(400).json({ error: 'Supplier name is required' });
     }
 
+    let invoiceFormat = '';
+    let invoiceFormatOriginalName = '';
+    if (req.file) {
+      invoiceFormat = `/uploads/${req.file.filename}`;
+      invoiceFormatOriginalName = req.file.originalname;
+    }
+
     const supplier = new Supplier({
       supplierName,
       gstin,
@@ -45,8 +65,10 @@ exports.createSupplier = async (req, res) => {
       identifierType,
       mobileNumber,
       emailId,
-      supportedBillingCycles,
-      supportedInvoiceTypes,
+      supportedBillingCycles: parseArray(supportedBillingCycles),
+      supportedInvoiceTypes: parseArray(supportedInvoiceTypes),
+      invoiceFormat,
+      invoiceFormatOriginalName,
       tenantId: tenant._id,
       companyId: companyId
     });
@@ -94,21 +116,30 @@ exports.updateSupplier = async (req, res) => {
 
     const { 
       supplierName, gstin, pan, address, locationCode, state, stateCode,
-      identifierType, supportedBillingCycles, supportedInvoiceTypes, mobileNumber, emailId
+      identifierType, supportedBillingCycles, supportedInvoiceTypes, mobileNumber, emailId,
+      removeInvoiceFormat
     } = req.body;
 
     if (supplierName) supplier.supplierName = supplierName;
     if (gstin !== undefined) supplier.gstin = gstin;
     if (pan !== undefined) supplier.pan = pan;
-    if (address) supplier.address = address;
+    if (address !== undefined) supplier.address = address;
     if (locationCode !== undefined) supplier.locationCode = locationCode;
     if (state !== undefined) supplier.state = state;
     if (stateCode !== undefined) supplier.stateCode = stateCode;
     if (identifierType !== undefined) supplier.identifierType = identifierType;
     if (mobileNumber !== undefined) supplier.mobileNumber = mobileNumber;
     if (emailId !== undefined) supplier.emailId = emailId;
-    if (supportedBillingCycles !== undefined) supplier.supportedBillingCycles = supportedBillingCycles;
-    if (supportedInvoiceTypes !== undefined) supplier.supportedInvoiceTypes = supportedInvoiceTypes;
+    if (supportedBillingCycles !== undefined) supplier.supportedBillingCycles = parseArray(supportedBillingCycles);
+    if (supportedInvoiceTypes !== undefined) supplier.supportedInvoiceTypes = parseArray(supportedInvoiceTypes);
+
+    if (req.file) {
+      supplier.invoiceFormat = `/uploads/${req.file.filename}`;
+      supplier.invoiceFormatOriginalName = req.file.originalname;
+    } else if (removeInvoiceFormat === 'true' || removeInvoiceFormat === true) {
+      supplier.invoiceFormat = '';
+      supplier.invoiceFormatOriginalName = '';
+    }
 
     await supplier.save();
     return res.status(200).json({ message: 'Supplier updated successfully', supplier });
