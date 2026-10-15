@@ -19,25 +19,23 @@ const ContactUsSection = () => {
         {/* Left Info Cards */}
         <div className="lg:col-span-5 space-y-4 sm:space-y-6">
           <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-7 shadow-sm">
-            <div className="font-bold text-slate-900 text-xs sm:text-sm uppercase tracking-wider mb-2">Corporate Headquarters</div>
-            <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
-              Plot No. D68/30, Near Ganapati Temple,<br />
-              Kharghar, Sector 12, Navi Mumbai - 410210, India
-            </p>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-7 shadow-sm">
             <div className="font-bold text-slate-900 text-xs sm:text-sm uppercase tracking-wider mb-2">Direct Phone Support</div>
-            <div className="text-[#187baa] font-bold text-base sm:text-lg">+91 757 839 7539</div>
+            <div className="text-[#187baa] font-bold text-base sm:text-lg">+91 7738445890</div>
             <div className="text-slate-500 text-[11px] sm:text-xs mt-1">Available Monday to Saturday, 9:00 AM - 7:00 PM IST</div>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-7 shadow-sm">
             <div className="font-bold text-slate-900 text-xs sm:text-sm uppercase tracking-wider mb-2">Email Operations</div>
-            <a href="mailto:connect@gmail.com" className="text-[#187baa] font-semibold text-sm sm:text-base hover:underline">
-              connect@gmail.com
+            <a href="mailto:info@prohitcoretech.com" className="text-[#187baa] font-semibold text-sm sm:text-base hover:underline">
+              info@prohitcoretech.com
             </a>
             <div className="text-slate-500 text-[11px] sm:text-xs mt-1">Typical response time: under 2 hours</div>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-7 shadow-sm">
+            <div className="font-bold text-slate-900 text-xs sm:text-sm uppercase tracking-wider mb-2">Business Hours</div>
+            <div className="text-slate-700 text-xs sm:text-sm font-medium">Monday to Saturday</div>
+            <div className="text-slate-500 text-[11px] sm:text-xs mt-1">9:00 AM - 7:00 PM IST (Dedicated technical support)</div>
           </div>
         </div>
 

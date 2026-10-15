@@ -70,7 +70,7 @@ const BecomePartnerSection = () => {
 
       <div className="text-center">
         <button
-          onClick={() => alert('Partnership application opened! Contact connect@gmail.com to complete registration.')}
+          onClick={() => alert('Partnership application opened! Contact info@prohitcoretech.com to complete registration.')}
           className="bg-[#187baa] hover:bg-[#14668f] text-white font-semibold text-sm px-8 py-3.5 rounded-lg shadow-lg hover:shadow-xl transition-all"
         >
           Apply for Partnership →

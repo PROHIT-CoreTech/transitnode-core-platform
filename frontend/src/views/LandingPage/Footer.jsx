@@ -22,12 +22,12 @@ const Footer = () => {
         {/* Col 2: Contacts */}
         <div className="space-y-3">
           <div className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-2">Contacts</div>
-          <div className="text-slate-700 font-semibold">+91 757 839 7539</div>
+          <div className="text-slate-700 font-semibold">+91 7738445890</div>
           <div>
-            <a href="mailto:connect@gmail.com" className="text-[#187baa] underline hover:text-[#14668f]">connect@gmail.com</a>
+            <a href="mailto:info@prohitcoretech.com" className="text-[#187baa] underline hover:text-[#14668f]">info@prohitcoretech.com</a>
           </div>
           <p className="text-slate-500 leading-relaxed">
-            Plot No. D68/30, Near Ganapati Temple, Kharghar, Sector 12, Navi Mumbai - 410210
+            Monday - Saturday: 9:00 AM - 7:00 PM IST
           </p>
         </div>
 
@@ -36,6 +36,7 @@ const Footer = () => {
           <div className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-2">Navigation</div>
           <ul className="space-y-2 font-medium">
             <li><a href="#why-us" className="hover:text-[#187baa] transition-colors">Why Us?</a></li>
+            <li><a href="#pricing" className="hover:text-[#187baa] transition-colors">Pricing</a></li>
             <li><a href="#about" className="hover:text-[#187baa] transition-colors">About Us</a></li>
             <li><a href="#contact" className="hover:text-[#187baa] transition-colors">Contact Us</a></li>
           </ul>
@@ -74,10 +75,9 @@ const Footer = () => {
       <div className="container mx-auto px-6 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-[11px] text-slate-500">
         <div className="flex flex-wrap items-center gap-6">
           <span>© 2026 TransitNode</span>
-          <a href="#" className="hover:text-slate-800">Sitemap</a>
-          <a href="/terms-of-service" className="hover:text-slate-800">Terms of Use</a>
-          <a href="/privacy-policy" className="hover:text-slate-800">Privacy and Data Protection Notice</a>
-          <a href="#" className="hover:text-slate-800">Cookie Settings</a>
+          <a href="/terms-of-service" className="hover:text-slate-800 transition-colors">Terms &amp; Conditions</a>
+          <a href="/privacy-policy" className="hover:text-slate-800 transition-colors">Privacy Policy</a>
+          <a href="/refund-policy" className="hover:text-slate-800 transition-colors">Refund &amp; Cancellation Policy</a>
         </div>
 
         <div className="flex items-center space-x-6">

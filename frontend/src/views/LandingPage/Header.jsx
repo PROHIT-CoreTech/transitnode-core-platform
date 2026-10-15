@@ -18,6 +18,7 @@ const Header = ({ openRegisterModal }) => {
         {/* Desktop Navigation Links */}
         <div className="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-600">
           <a href="#why-us" className="hover:text-[#187baa] transition-colors">Why Us?</a>
+          <a href="#pricing" className="hover:text-[#187baa] transition-colors">Pricing</a>
           <a href="#about" className="hover:text-[#187baa] transition-colors">About Us</a>
           <a href="#contact" className="hover:text-[#187baa] transition-colors">Contact Us</a>
         </div>
@@ -57,6 +58,13 @@ const Header = ({ openRegisterModal }) => {
             className="block py-2 border-b border-slate-100 hover:text-[#187baa]"
           >
             Why Us?
+          </a>
+          <a 
+            href="#pricing" 
+            onClick={() => setMobileMenuOpen(false)} 
+            className="block py-2 border-b border-slate-100 hover:text-[#187baa]"
+          >
+            Pricing
           </a>
           <a 
             href="#about" 

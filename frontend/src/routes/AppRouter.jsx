@@ -17,6 +17,7 @@ const MasterAdminDashboard = React.lazy(() => import('../views/MasterAdmin/Maste
 import YardArrivals from '../views/GateOperations/YardArrivals';
 const PrivacyPolicy = React.lazy(() => import('../views/Legal/PrivacyPolicy'));
 const TermsOfService = React.lazy(() => import('../views/Legal/TermsOfService'));
+const RefundPolicy = React.lazy(() => import('../views/Legal/RefundPolicy'));
 
 if (process.env.REACT_APP_API_URL) {
   axios.defaults.baseURL = process.env.REACT_APP_API_URL;
@@ -133,6 +134,7 @@ const AppRouter = () => {
         <Route path="/tracker/:trackingId" element={<PublicTracker />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/refund-policy" element={<RefundPolicy />} />
         
         {/* Protected Routes */}
         <Route path="/checkout" element={
