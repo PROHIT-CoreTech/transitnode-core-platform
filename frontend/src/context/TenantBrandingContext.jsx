@@ -83,6 +83,8 @@ export const TenantBrandingProvider = ({ children }) => {
           hostname === 'www.prohitcoretech.com' ||
           hostname === 'transitnode.prohitcoretech.com' ||
           hostname === 'www.transitnode.prohitcoretech.com' ||
+          hostname === 'dev.transitnode.prohitcoretech.com' ||
+          hostname === 'www.dev.transitnode.prohitcoretech.com' ||
           hostname.endsWith('.vercel.app');
 
         if (!isMainDomain && subdomain && subdomain !== 'www' && subdomain !== 'localhost' && subdomain !== '127') {
