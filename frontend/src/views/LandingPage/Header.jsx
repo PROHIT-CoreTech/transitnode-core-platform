@@ -27,7 +27,7 @@ const Header = ({ openRegisterModal }) => {
         <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
           <button 
             onClick={() => openRegisterModal('free')}
-            className="bg-[#187baa] hover:bg-[#14668f] text-white font-semibold text-xs sm:text-sm px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center space-x-1 whitespace-nowrap flex-shrink-0"
+            className="glass-btn-primary font-semibold text-xs sm:text-sm px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl transition-all duration-300 flex items-center space-x-1 whitespace-nowrap flex-shrink-0"
           >
             <span className="hidden sm:inline">Start Free Trial</span>
             <span className="sm:hidden">Free Trial</span>

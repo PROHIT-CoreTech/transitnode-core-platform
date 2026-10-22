@@ -75,8 +75,11 @@ const ContactUsSection = () => {
               <textarea rows="4" required placeholder="Tell us about your fleet requirements..." className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#187baa] focus:outline-none"></textarea>
             </div>
 
-            <button type="submit" className="w-full bg-[#187baa] hover:bg-[#14668f] text-white font-semibold text-xs sm:text-sm py-3 sm:py-3.5 rounded-lg shadow transition-all">
-              Submit Inquiry →
+            <button 
+              type="submit" 
+              className="w-full glass-btn-primary font-semibold text-xs sm:text-sm py-3 sm:py-3.5 rounded-xl transition-all duration-300 flex items-center justify-center space-x-2"
+            >
+              <span>Submit Inquiry →</span>
             </button>
           </form>
         </div>

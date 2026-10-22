@@ -53,7 +53,7 @@ const HeroSection = ({ openRegisterModal, openOverviewModal }) => {
             <div className="flex flex-wrap items-center gap-3 sm:gap-5 pt-3">
               <button 
                 onClick={() => openRegisterModal('free')}
-                className="bg-[#136bcf] hover:bg-[#0f5bb3] text-white font-semibold text-xs sm:text-sm px-5 sm:px-7 py-2.5 sm:py-3 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center space-x-2"
+                className="glass-btn-primary font-semibold text-xs sm:text-sm px-5 sm:px-7 py-2.5 sm:py-3 rounded-xl transition-all duration-300 flex items-center space-x-2"
               >
                 <span>Start Free Trial</span>
                 <span>→</span>
