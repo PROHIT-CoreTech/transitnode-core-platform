@@ -101,7 +101,8 @@ const RegisterModal = ({
               setCurrentStep('WORKSPACE');
               setResult(null);
             }} 
-            className="absolute top-4 right-4 sm:top-6 sm:right-6 text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 p-1.5 sm:p-2 rounded-full transition-colors z-10"
+            className="absolute top-4 right-4 sm:top-6 sm:right-6 text-slate-500 hover:text-slate-800 bg-white/70 hover:bg-white/95 backdrop-blur-md border border-slate-200/80 hover:border-slate-300 p-1.5 sm:p-2 rounded-full transition-all duration-300 z-10 shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_1px_rgba(255,255,255,0.9)] hover:scale-105 active:scale-95"
+            aria-label="Close Modal"
           >
             <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
@@ -148,8 +149,12 @@ const RegisterModal = ({
                     </div>
                   </div>
                   
-                  <button disabled={loading} type="submit" className="w-full bg-[#187baa] hover:bg-[#14668f] text-white font-bold py-3 sm:py-3.5 px-4 rounded-xl mt-4 sm:mt-6 transition-all disabled:opacity-50 text-xs sm:text-sm shadow-md">
-                    {loading ? 'Reserving Subdomain...' : 'Create Workspace & Proceed to Payment →'}
+                  <button 
+                    disabled={loading} 
+                    type="submit" 
+                    className="w-full glass-btn-primary font-bold py-3 sm:py-3.5 px-4 rounded-xl mt-4 sm:mt-6 transition-all duration-300 disabled:opacity-50 text-xs sm:text-sm flex items-center justify-center space-x-2"
+                  >
+                    <span>{loading ? 'Reserving Subdomain...' : 'Create Workspace & Proceed to Payment →'}</span>
                   </button>
                 </form>
               </>
@@ -176,7 +181,7 @@ const RegisterModal = ({
                       type="button"
                       disabled={validatingCoupon || !couponCode.trim()}
                       onClick={handleApplyCoupon}
-                      className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors flex-shrink-0"
+                      className="bg-blue-600/85 hover:bg-blue-600/95 active:bg-blue-700 backdrop-blur-md border border-white/30 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all duration-200 shadow-[0_4px_12px_rgba(37,99,235,0.3),inset_0_1px_1.5px_rgba(255,255,255,0.5)] disabled:opacity-50 flex-shrink-0 hover:-translate-y-0.5 active:translate-y-0"
                     >
                       {validatingCoupon ? 'Validating...' : 'Apply'}
                     </button>
@@ -225,16 +230,16 @@ const RegisterModal = ({
                   {tenantInfo?.orderSessionId && (
                     <button 
                       onClick={handlePayment} 
-                      className="w-full bg-[#187baa] hover:bg-[#14668f] text-white font-bold py-3 sm:py-3.5 px-4 rounded-xl transition-colors text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-md"
+                      className="w-full glass-btn-primary font-bold py-3 sm:py-3.5 px-4 rounded-xl transition-all duration-300 text-xs sm:text-sm flex items-center justify-center space-x-2"
                     >
-                      <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                       <span>Pay via Cashfree Gateway</span>
                     </button>
                   )}
 
                   <button 
                     onClick={() => setCurrentStep('ADMIN_SETUP')} 
-                    className="w-full bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-medium py-2.5 sm:py-3 px-4 rounded-xl transition-colors text-[11px] sm:text-xs"
+                    className="w-full glass-btn-secondary font-medium py-2.5 sm:py-3 px-4 rounded-xl transition-all duration-300 text-[11px] sm:text-xs"
                   >
                     Complete Payment & Proceed to First User Setup →
                   </button>
@@ -284,8 +289,12 @@ const RegisterModal = ({
                     />
                   </div>
                   
-                  <button disabled={loading} type="submit" className="w-full bg-[#187baa] hover:bg-[#14668f] text-white font-bold py-3 sm:py-3.5 px-4 rounded-xl mt-4 sm:mt-6 transition-all disabled:opacity-50 text-xs sm:text-sm shadow-md">
-                    {loading ? 'Securing Credentials...' : 'Create Admin Account & Secure Workspace →'}
+                  <button 
+                    disabled={loading} 
+                    type="submit" 
+                    className="w-full glass-btn-primary font-bold py-3 sm:py-3.5 px-4 rounded-xl mt-4 sm:mt-6 transition-all duration-300 disabled:opacity-50 text-xs sm:text-sm flex items-center justify-center space-x-2"
+                  >
+                    <span>{loading ? 'Securing Credentials...' : 'Create Admin Account & Secure Workspace →'}</span>
                   </button>
                 </form>
               </>
@@ -302,7 +311,7 @@ const RegisterModal = ({
                 
                 <a 
                   href={result?.fullLoginUrl || tenantInfo?.fullLoginUrl || `http://${formData.customSubdomain}${domainSuffix}/login`}
-                  className="w-full bg-[#187baa] hover:bg-[#14668f] text-white font-bold py-3.5 sm:py-4 px-6 rounded-xl transition-colors text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg"
+                  className="w-full glass-btn-primary font-bold py-3.5 sm:py-4 px-6 rounded-xl transition-all duration-300 text-xs sm:text-sm flex items-center justify-center space-x-2"
                 >
                   <span>Login via Magic Link</span>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>

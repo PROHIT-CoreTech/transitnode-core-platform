@@ -88,25 +88,25 @@ const ACCENT_STYLES = {
     border: 'border-blue-500/80',
     badgeText: 'text-blue-600',
     checkBg: 'bg-blue-500',
-    btnBg: 'bg-[#187baa] hover:bg-[#14668f]'
+    btnBg: 'glass-btn-primary'
   },
   emerald: {
     border: 'border-emerald-500/80',
     badgeText: 'text-emerald-600',
     checkBg: 'bg-emerald-500',
-    btnBg: 'bg-[#0d9488] hover:bg-[#0f766e]'
+    btnBg: 'glass-btn-emerald'
   },
   amber: {
     border: 'border-amber-500/80',
     badgeText: 'text-amber-600',
     checkBg: 'bg-amber-500',
-    btnBg: 'bg-[#d97706] hover:bg-[#b45309]'
+    btnBg: 'glass-btn-amber'
   },
   purple: {
     border: 'border-purple-500/80',
     badgeText: 'text-purple-600',
     checkBg: 'bg-purple-500',
-    btnBg: 'bg-[#6d28d9] hover:bg-[#5b21b6]'
+    btnBg: 'glass-btn-purple'
   }
 };
 
@@ -195,7 +195,7 @@ const PricingCardsSection = ({ openRegisterModal, plansProp }) => {
 
                 <button 
                   onClick={() => openRegisterModal(planKeyLower === 'trial' ? 'free' : planKeyLower, plan)}
-                  className={`w-full ${style.btnBg} text-white font-semibold text-xs py-3 rounded-lg shadow transition-all flex items-center justify-center space-x-1`}
+                  className={`w-full ${style.btnBg} text-white font-semibold text-xs py-3 rounded-xl transition-all duration-300 flex items-center justify-center space-x-1.5`}
                 >
                   <span>{plan.buttonText || (planKeyLower === 'free' || planKeyLower === 'trial' ? 'Start Free Trial' : 'Upgrade Plan')}</span>
                   <span>→</span>
